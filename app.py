@@ -1,12 +1,38 @@
 import os
 from dotenv import load_dotenv
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 load_dotenv()
 
 from flask import Flask, render_template_string, request
 import pandas as pd
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////Users/thomasalgrenwest/aviation-platform/instance/panpanparts.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
+class Part(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    part_number = db.Column(db.String(100))
+    serial_number = db.Column(db.String(100))
+    issued_by = db.Column(db.String(200))
+    issue_date = db.Column(db.String(50))
+    part_condition = db.Column(db.String(50))
+    condition_notes = db.Column(db.Text)
+    ai_recommendation = db.Column(db.String(100))
+    price = db.Column(db.Float)
+    description = db.Column(db.Text)
+    contact_name = db.Column(db.String(200))
+    contact_email = db.Column(db.String(200))
+    contact_phone = db.Column(db.String(50))
+    location = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    part_image = db.Column(db.Text)
+    doc_image = db.Column(db.Text)
+
+with app.app_context():
+    db.create_all()
 print("Loader FAA data...")
 df = pd.read_pickle("faa_master.pkl")
 ref = pd.read_pickle("faa_ref.pkl")
@@ -225,7 +251,67 @@ def upload():
     return open("upload.html").read()
 
 @app.route("/analyze", methods=["POST"])
+@app.route("/analyze", methods=["POST"])
 def analyze():
+    import anthropic
+    import json
+
+    data = request.get_json()
+    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+
+    messages = [{
+        "role": "user",
+        "content": [
+            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": data["part_image"]}},
+            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": data["doc_image"]}},
+            {"type": "text", "text": """You are an aviation parts inspector. Analyze these two images:
+1. First image: the aircraft part
+2. Second image: the airworthiness document (Form 1 or EASA Form 1 or FAA 8130-3)
+
+Respond ONLY with a JSON object:
+{
+  "part_number": "extracted part number or null",
+  "serial_number": "extracted serial number or null",
+  "issued_by": "organization or null",
+  "issue_date": "date or null",
+  "part_condition": "Good / Fair / Poor",
+  "condition_notes": "brief note",
+  "document_readable": true or false,
+  "ai_recommendation": "Approved for listing / Needs inspection / Not recommended",
+  "recommendation_reason": "brief reason"
+}"""}
+        ]
+    }]
+
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1000,
+        messages=messages
+    )
+
+    text = response.content[0].text
+    clean = text.replace("```json", "").replace("```", "").strip()
+    result = json.loads(clean)
+
+    part = Part(
+        part_number=result.get("part_number"),
+        serial_number=result.get("serial_number"),
+        issued_by=result.get("issued_by"),
+        issue_date=result.get("issue_date"),
+        part_condition=result.get("part_condition"),
+        condition_notes=result.get("condition_notes"),
+        ai_recommendation=result.get("ai_recommendation"),
+        part_image=data["part_image"][:500],
+        doc_image=data["doc_image"][:500]
+    )
+
+    with app.app_context():
+        db.session.add(part)
+        db.session.commit()
+        part_id = part.id
+
+    result["part_id"] = part_id
+    return json.dumps(result)
     import anthropic
     import base64
     import json

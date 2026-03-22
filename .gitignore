@@ -1,0 +1,8 @@
+venv/
+faa_data/
+faa_registry.zip
+faa_master.pkl
+faa_ref.pkl
+*.pkl
+.env
+.env

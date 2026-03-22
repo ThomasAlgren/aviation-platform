@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Part</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+        .upload-box { border: 2px dashed #ddd; border-radius: 8px; padding: 32px; text-align: center; cursor: pointer; }
+        .preview { width: 100%; border-radius: 8px; margin-top: 12px; display: none; }
+        .btn { background: #4a9eff; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 15px; cursor: pointer; width: 100%; margin-top: 8px; }
+        .btn:disabled { background: #ccc; }
+        .result { background: #f0f7ff; border-radius: 8px; padding: 16px; margin-top: 16px; display: none; white-space: pre-wrap; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h2>SkyReg - Upload Part</h2>
+
+    <div class="card">
+        <h3>1. Photo of part</h3>
+        <div class="upload-box" onclick="document.getElementById('part-input').click()">
+            Click to upload image
+            <input type="file" id="part-input" accept="image/*" style="display:none" onchange="loadImage(this,'part-preview','part')">
+        </div>
+        <img id="part-preview" class="preview">
+    </div>
+
+    <div class="card">
+        <h3>2. Photo of Form 1 document</h3>
+        <div class="upload-box" onclick="document.getElementById('doc-input').click()">
+            Click to upload document
+            <input type="file" id="doc-input" accept="image/*" style="display:none" onchange="loadImage(this,'doc-preview','doc')">
+        </div>
+        <img id="doc-preview" class="preview">
+    </div>
+
+    <button class="btn" id="btn" onclick="analyze()" disabled>Analyze with AI</button>
+
+    <div class="result" id="result"></div>
+
+    <script>
+        var partB64 = null;
+        var docB64 = null;
+
+        function loadImage(input, previewId, which) {
+            var file = input.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = document.getElementById(previewId);
+                img.src = e.target.result;
+                img.style.display = 'block';
+                var b64 = e.target.result.split(',')[1];
+                if (which === 'part') partB64 = b64;
+                if (which === 'doc') docB64 = b64;
+                document.getElementById('btn').disabled = !(partB64 && docB64);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function analyze() {
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('result').textContent = 'Analyzing...';
+            document.getElementById('btn').disabled = true;
+
+            fetch('/analyze', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({part_image: partB64, doc_image: docB64})
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('btn').disabled = false;
+            })
+            .catch(function(e) {
+                document.getElementById('result').textContent = 'Error: ' + e.message;
+                document.getElementById('btn').disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>

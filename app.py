@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, render_template_string, request
 import pandas as pd
 
@@ -8,7 +12,7 @@ df = pd.read_pickle("faa_master.pkl")
 ref = pd.read_pickle("faa_ref.pkl")
 print("Klar!")
 
-HTML = """
+SEARCH_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -17,20 +21,23 @@ HTML = """
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, sans-serif; background: #f0f4f8; color: #1a1a2e; }
         .header { background: #1a1a2e; color: white; padding: 20px 40px; display: flex; align-items: center; gap: 16px; }
-        .header h1 { font-size: 24px; font-weight: 600; }
+        .header h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; }
         .header span { color: #4a9eff; }
         .search-box { background: white; padding: 40px; margin: 40px auto; max-width: 800px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
         input, select { padding: 12px 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; width: 100%; }
-        input:focus { outline: none; border-color: #4a9eff; }
-        button { background: #1a1a2e; color: white; border: none; padding: 12px 32px; border-radius: 8px; font-size: 15px; cursor: pointer; }
+        input:focus, select:focus { outline: none; border-color: #4a9eff; }
+        button { background: #1a1a2e; color: white; border: none; padding: 12px 32px; border-radius: 8px; font-size: 15px; cursor: pointer; white-space: nowrap; }
+        button:hover { background: #2d2d4e; }
         .search-row { display: flex; gap: 12px; margin-bottom: 16px; }
         .results { max-width: 800px; margin: 0 auto 40px; }
-        .result-count { color: #666; margin-bottom: 16px; font-size: 14px; }
-        .aircraft-card { background: white; border-radius: 12px; padding: 20px 24px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; }
+        .result-count { color: #666; margin-bottom: 16px; font-size: 14px; padding: 0 4px; }
+        .aircraft-card { background: white; border-radius: 12px; padding: 20px 24px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; transition: box-shadow 0.15s; }
+        .aircraft-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
         .aircraft-info h3 { font-size: 16px; margin-bottom: 4px; }
         .aircraft-info p { color: #666; font-size: 14px; }
         .tail { font-size: 22px; font-weight: 700; color: #4a9eff; font-family: monospace; }
-        .status-v { background: #e6f4ea; color: #2d7a3a; padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+        .status-v { background: #e6f4ea; color: #2d7a3a; padding: 4px 10px; border-radius: 20px; font-size: 12px; margin-top: 6px; display: inline-block; }
+        h2 { margin-bottom: 20px; font-size: 18px; }
     </style>
 </head>
 <body>
@@ -39,11 +46,11 @@ HTML = """
         <p style="color:#aaa; font-size:14px;">Aviation Registry & Marketplace</p>
     </div>
     <div class="search-box">
-        <h2 style="margin-bottom:20px;">Search Aircraft</h2>
+        <h2>Search Aircraft</h2>
         <form method="GET">
             <div class="search-row">
                 <input name="tail" placeholder="Tail number (e.g. N12345)" value="{{ tail }}">
-                <input name="model" placeholder="Model (e.g. 172)" value="{{ model }}">
+                <input name="model" placeholder="Model (e.g. 172, PA-28)" value="{{ model }}">
             </div>
             <div class="search-row">
                 <select name="state">
@@ -60,22 +67,80 @@ HTML = """
     </div>
     {% if results is not none %}
     <div class="results">
-        <p class="result-count">{{ result_count }} aircraft found</p>
+        <p class="result-count">{{ result_count }} aircraft found {% if result_count > 50 %}(showing first 50){% endif %}</p>
         {% for r in results %}
         <a class="aircraft-card" href="/aircraft/{{ r.tail }}">
             <div class="aircraft-info">
-                <h3>{{ r.model }}</h3>
-                <p>{{ r.manufacturer }} &bull; {{ r.city }}, {{ r.state }}</p>
-                <p style="color:#999; font-size:13px; margin-top:4px;">{{ r.year }} &bull; {{ r.name }}</p>
+                <h3>{{ r.manufacturer }} {{ r.model }}</h3>
+                <p>{{ r.name }} &bull; {{ r.city }}, {{ r.state }}</p>
+                <p style="color:#999; font-size:13px; margin-top:4px;">{{ r.year }}</p>
             </div>
             <div style="text-align:right">
                 <div class="tail">N{{ r.tail }}</div>
-                <div class="status-v">Active</div>
+                <div class="status-v">Active</a>
             </div>
         </a>
         {% endfor %}
     </div>
     {% endif %}
+</body>
+</html>
+"""
+
+DETAIL_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>N{{ aircraft.tail }} - SkyReg</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #f0f4f8; color: #1a1a2e; }
+        .header { background: #1a1a2e; color: white; padding: 20px 40px; display: flex; align-items: center; gap: 16px; }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        .header span { color: #4a9eff; }
+        .header a { color: #aaa; font-size: 14px; text-decoration: none; margin-left: 20px; }
+        .header a:hover { color: white; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .hero { background: white; border-radius: 12px; padding: 32px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .tail-number { font-size: 48px; font-weight: 700; color: #4a9eff; font-family: monospace; }
+        .model-name { font-size: 24px; font-weight: 600; margin: 8px 0 4px; }
+        .status-v { background: #e6f4ea; color: #2d7a3a; padding: 6px 14px; border-radius: 20px; font-size: 13px; display: inline-block; margin-top: 8px; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .card h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; margin-bottom: 16px; }
+        .field { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .field:last-child { border-bottom: none; }
+        .field-label { color: #666; font-size: 14px; }
+        .field-value { font-weight: 500; font-size: 14px; text-align: right; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Sky<span>Reg</span></h1>
+        <a href="/">← Back to search</a>
+    </div>
+    <div class="container">
+        <div class="hero">
+            <div class="tail-number">N{{ aircraft.tail }}</div>
+            <div class="model-name">{{ aircraft.manufacturer }} {{ aircraft.model }}</div>
+            <div class="status-v">✓ Active Registration</div>
+        </div>
+        <div class="card">
+            <h3>Registration</h3>
+            <div class="field"><span class="field-label">Owner</span><span class="field-value">{{ aircraft.name }}</span></div>
+            <div class="field"><span class="field-label">Street</span><span class="field-value">{{ aircraft.street }}</span></div>
+            <div class="field"><span class="field-label">City</span><span class="field-value">{{ aircraft.city }}, {{ aircraft.state }} {{ aircraft.zip }}</span></div>
+            <div class="field"><span class="field-label">Country</span><span class="field-value">{{ aircraft.country }}</span></div>
+        </div>
+        <div class="card">
+            <h3>Aircraft Details</h3>
+            <div class="field"><span class="field-label">Year manufactured</span><span class="field-value">{{ aircraft.year }}</span></div>
+            <div class="field"><span class="field-label">Serial number</span><span class="field-value">{{ aircraft.serial }}</span></div>
+            <div class="field"><span class="field-label">Engine type</span><span class="field-value">{{ aircraft.engine }}</span></div>
+            <div class="field"><span class="field-label">Cert issued</span><span class="field-value">{{ aircraft.cert_date }}</span></div>
+            <div class="field"><span class="field-label">Last action</span><span class="field-value">{{ aircraft.last_action }}</span></div>
+            <div class="field"><span class="field-label">Expiration</span><span class="field-value">{{ aircraft.expiration }}</span></div>
+        </div>
+    </div>
 </body>
 </html>
 """
@@ -120,30 +185,86 @@ def index():
                 "state": str(row["STATE"]).strip(),
                 "year": str(row["YEAR MFR"]).strip(),
             })
-    return render_template_string(HTML, tail=tail, model=model, state=state,
+    return render_template_string(SEARCH_HTML, tail=tail, model=model, state=state,
         year_from=year_from, year_to=year_to, states=states,
         results=results, result_count=result_count)
 
-
 @app.route("/aircraft/<tail>")
 def aircraft_detail(tail):
-    tail_clean = tail.upper().lstrip("N")
-    ref2 = ref[ref.columns[:3]].copy()
+    ref2 = ref[["ï»¿CODE","MFR","MODEL"]].copy()
     ref2.columns = ["MFR MDL CODE","MANUFACTURER","MODEL_NAME"]
     ref2["MFR MDL CODE"] = ref2["MFR MDL CODE"].astype(str).str.strip()
     merged = df.copy()
     merged["MFR MDL CODE"] = merged["MFR MDL CODE"].astype(str).str.strip()
     merged = merged.merge(ref2, on="MFR MDL CODE", how="left")
-    row = merged[merged[merged.columns[0]].astype(str).str.strip() == tail_clean]
+    row = merged[merged["ï»¿N-NUMBER"].astype(str).str.strip() == tail.upper()]
     if len(row) == 0:
-        return f"Aircraft N{tail_clean} not found", 404
+        return "Aircraft not found", 404
     r = row.iloc[0]
-    return f"""<h1>N{tail_clean}</h1>
-<p>Owner: {r["NAME"]}</p>
-<p>City: {r["CITY"]}, {r["STATE"]}</p>
-<p>Year: {r["YEAR MFR"]}</p>
-<p>Serial: {r["SERIAL NUMBER"]}</p>
-<a href="/">Back to search</a>"""
+    aircraft = {
+        "tail": str(r["ï»¿N-NUMBER"]).strip(),
+        "model": str(r.get("MODEL_NAME", "")).strip(),
+        "manufacturer": str(r.get("MANUFACTURER", "")).strip(),
+        "name": str(r["NAME"]).strip(),
+        "street": str(r["STREET"]).strip(),
+        "city": str(r["CITY"]).strip(),
+        "state": str(r["STATE"]).strip(),
+        "zip": str(r["ZIP CODE"]).strip(),
+        "country": str(r["COUNTRY"]).strip(),
+        "year": str(r["YEAR MFR"]).strip(),
+        "serial": str(r["SERIAL NUMBER"]).strip(),
+        "engine": str(r["ENG MFR MDL"]).strip(),
+        "cert_date": str(r["CERT ISSUE DATE"]).strip(),
+        "last_action": str(r["LAST ACTION DATE"]).strip(),
+        "expiration": str(r["EXPIRATION DATE"]).strip(),
+    }
+    return render_template_string(DETAIL_HTML, aircraft=aircraft)
 
+@app.route("/upload")
+def upload():
+    return open("upload.html").read()
+
+@app.route("/analyze", methods=["POST"])
+def analyze():
+    import anthropic
+    import base64
+    import json
+    
+    data = request.get_json()
+    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+    
+    messages = [{
+        "role": "user",
+        "content": [
+            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": data["part_image"]}},
+            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": data["doc_image"]}},
+            {"type": "text", "text": """You are an aviation parts inspector. Analyze these two images:
+1. First image: the aircraft part
+2. Second image: the airworthiness document
+
+Respond ONLY with a JSON object:
+{
+  "part_number": "extracted part number or null",
+  "serial_number": "extracted serial number or null",
+  "issued_by": "organization or null",
+  "issue_date": "date or null",
+  "part_condition": "Good / Fair / Poor",
+  "condition_notes": "brief note",
+  "document_readable": true or false,
+  "ai_recommendation": "Approved for listing / Needs inspection / Not recommended",
+  "recommendation_reason": "brief reason"
+}"""}
+        ]
+    }]
+    
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1000,
+        messages=messages
+    )
+    
+    text = response.content[0].text
+    clean = text.replace("```json", "").replace("```", "").strip()
+    return json.loads(clean)
 if __name__ == "__main__":
     app.run(debug=True, port=8080)

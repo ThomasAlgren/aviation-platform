@@ -15,7 +15,7 @@
     </style>
 </head>
 <body>
-    <h2>SkyReg - Upload Part</h2>
+    <h2>PanPanParts - Upload Part</h2>
 
     <div class="card">
         <h3>1. Photo of part</h3>
@@ -80,6 +80,7 @@ function loadImage(input, previewId, which) {
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+if (data.part_id) { setTimeout(function() { window.location.href = '/listing/' + data.part_id; }, 2000); }
                 document.getElementById('btn').disabled = false;
             })
             .catch(function(e) {

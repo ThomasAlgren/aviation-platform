@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 load_dotenv()
 
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template_string, request, redirect
 import pandas as pd
 
 app = Flask(__name__)
@@ -37,7 +37,120 @@ print("Loader FAA data...")
 df = pd.read_pickle("faa_master.pkl")
 ref = pd.read_pickle("faa_ref.pkl")
 print("Klar!")
+LISTING_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>List Your Part - PanPanParts</title>
+    <meta charset="utf-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #f0f4f8; color: #1a1a2e; }
+        .header { background: #1a1a2e; color: white; padding: 20px 40px; }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        .header span { color: #4a9eff; }
+        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .ai-card { background: #e8f5e9; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .ai-card h3 { color: #2d7a3a; margin-bottom: 12px; }
+        .field { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #c8e6c9; }
+        .field:last-child { border-bottom: none; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .card h3 { margin-bottom: 16px; font-size: 16px; }
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 12px; }
+        textarea { height: 100px; resize: vertical; }
+        button { background: #1a1a2e; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 15px; cursor: pointer; width: 100%; }
+        .warn { background: #fff3e0; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 14px; color: #e65100; }
+    </style>
+</head>
+<body>
+    <div class="header"><h1>PanPan<span>Parts</span></h1></div>
+    <div class="container">
+        <div class="ai-card">
+            <h3>AI Analysis Result</h3>
+            <div class="field"><span>Part number</span><span>{{ part.part_number or 'Not found' }}</span></div>
+            <div class="field"><span>Serial number</span><span>{{ part.serial_number or 'Not found' }}</span></div>
+            <div class="field"><span>Issued by</span><span>{{ part.issued_by or 'Not found' }}</span></div>
+            <div class="field"><span>Condition</span><span>{{ part.part_condition }}</span></div>
+            <div class="field"><span>AI recommendation</span><span>{{ part.ai_recommendation }}</span></div>
+            <div class="field"><span>Notes</span><span>{{ part.condition_notes }}</span></div>
+        </div>
+        {% if part.ai_recommendation == 'Not recommended' %}
+        <div class="warn">AI has flagged this part. You can still list it but buyers will see this warning.</div>
+        {% endif %}
+        <div class="card">
+            <h3>Add your listing details</h3>
+            <form method="POST">
+                <input name="price" type="number" placeholder="Price (EUR)" required>
+                <textarea name="description" placeholder="Description — condition, history, why are you selling?"></textarea>
+                <input name="location" placeholder="Location (e.g. Roskilde, Denmark)">
+                <input name="contact_name" placeholder="Your name">
+                <input name="contact_email" placeholder="Email">
+                <input name="contact_phone" placeholder="Phone (optional)">
+                <button type="submit">Publish listing</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+"""
 
+PARTS_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Parts for Sale - PanPanParts</title>
+    <meta charset="utf-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #f0f4f8; color: #1a1a2e; }
+        .header { background: #1a1a2e; color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        .header span { color: #ff6b35; }
+        .header a { color: #4a9eff; font-size: 14px; text-decoration: none; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .part-card { background: white; border-radius: 12px; padding: 20px 24px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; }
+        .part-info h3 { font-size: 16px; margin-bottom: 4px; }
+        .part-info p { color: #666; font-size: 14px; }
+        .price { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+        .location { color: #999; font-size: 13px; margin-top: 4px; }
+        .badge { background: #e8f5e9; color: #2d7a3a; padding: 4px 10px; border-radius: 20px; font-size: 12px; display: inline-block; margin-top: 6px; }
+        .badge-warn { background: #fff3e0; color: #e65100; }
+        .empty { text-align: center; color: #999; padding: 60px 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PanPan<span>Parts</span></h1>
+        <a href="/upload">+ List a part</a>
+    </div>
+    <div class="container">
+        {% if parts %}
+            {% for p in parts %}
+            <div class="part-card">
+                <div class="part-info">
+                    <h3>{{ p.part_number or 'Unknown part' }}</h3>
+                    <p>{{ p.description[:80] if p.description else 'No description' }}</p>
+                    <p>{{ p.contact_name }} &bull; {{ p.location }}</p>
+                    <span class="badge {% if p.ai_recommendation != 'Approved for listing' %}badge-warn{% endif %}">
+                        {{ p.ai_recommendation }}
+                    </span>
+                </div>
+                <div style="text-align:right">
+                    <div class="price">€{{ p.price }}</div>
+                    <div class="location">{{ p.part_condition }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                <p>No parts listed yet</p>
+                <a href="/upload" style="color:#4a9eff">Be the first to list a part</a>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+"""
 SEARCH_HTML = """
 <!DOCTYPE html>
 <html>
@@ -352,5 +465,26 @@ Respond ONLY with a JSON object:
     text = response.content[0].text
     clean = text.replace("```json", "").replace("```", "").strip()
     return json.loads(clean)
+
+@app.route("/listing/<int:part_id>", methods=["GET", "POST"])
+def listing(part_id):
+    with app.app_context():
+        part = Part.query.get_or_404(part_id)
+        if request.method == "POST":
+            part.price = float(request.form.get("price", 0))
+            part.description = request.form.get("description", "")
+            part.contact_name = request.form.get("contact_name", "")
+            part.contact_email = request.form.get("contact_email", "")
+            part.contact_phone = request.form.get("contact_phone", "")
+            part.location = request.form.get("location", "")
+            db.session.commit()
+            return redirect("/parts")
+        return render_template_string(LISTING_HTML, part=part)
+
+@app.route("/parts")
+def parts():
+    with app.app_context():
+        all_parts = Part.query.filter(Part.price != None).order_by(Part.created_at.desc()).all()
+        return render_template_string(PARTS_HTML, parts=all_parts)
 if __name__ == "__main__":
     app.run(debug=True, port=8080)

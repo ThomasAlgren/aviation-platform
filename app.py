@@ -65,8 +65,8 @@ HTML = """
         <div class="aircraft-card">
             <div class="aircraft-info">
                 <h3>{{ r.model }}</h3>
-                <p>{{ r.name }} &bull; {{ r.city }}, {{ r.state }}</p>
-                <p style="color:#999; font-size:13px; margin-top:4px;">{{ r.year }}</p>
+                <p>{{ r.manufacturer }} &bull; {{ r.city }}, {{ r.state }}</p>
+                <p style="color:#999; font-size:13px; margin-top:4px;">{{ r.year }} &bull; {{ r.name }}</p>
             </div>
             <div style="text-align:right">
                 <div class="tail">N{{ r.tail }}</div>
@@ -92,6 +92,11 @@ def index():
     result_count = 0
     if any([tail, model, state, year_from, year_to]):
         filtered = df[df["STATUS CODE"].str.strip() == "V"].copy()
+        ref2 = ref[["ï»¿CODE","MFR","MODEL"]].copy()
+        ref2.columns = ["MFR MDL CODE","MANUFACTURER","MODEL_NAME"]
+        ref2["MFR MDL CODE"] = ref2["MFR MDL CODE"].astype(str).str.strip()
+        filtered["MFR MDL CODE"] = filtered["MFR MDL CODE"].astype(str).str.strip()
+        filtered = filtered.merge(ref2, on="MFR MDL CODE", how="left")
         if tail:
             filtered = filtered[filtered["ï»¿N-NUMBER"].astype(str).str.strip() == tail.upper().replace("N","")]
         if state:
@@ -101,15 +106,15 @@ def index():
         if year_to:
             filtered = filtered[pd.to_numeric(filtered["YEAR MFR"], errors="coerce") <= int(year_to)]
         if model:
-            koder = ref[ref["MODEL"].astype(str).str.contains(model.upper(), na=False)]["ï»¿CODE"].astype(str).str.strip().tolist()
-            filtered = filtered[filtered["MFR MDL CODE"].astype(str).str.strip().isin(koder)]
+            filtered = filtered[filtered["MODEL_NAME"].astype(str).str.contains(model.upper(), na=False)]
         result_count = len(filtered)
         filtered = filtered.head(50)
         results = []
         for _, row in filtered.iterrows():
             results.append({
                 "tail": str(row["ï»¿N-NUMBER"]).strip(),
-                "model": str(row["MFR MDL CODE"]).strip(),
+                "model": str(row.get("MODEL_NAME", "")).strip(),
+                "manufacturer": str(row.get("MANUFACTURER", "")).strip(),
                 "name": str(row["NAME"]).strip(),
                 "city": str(row["CITY"]).strip(),
                 "state": str(row["STATE"]).strip(),
@@ -120,4 +125,4 @@ def index():
         results=results, result_count=result_count)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=8080)

@@ -42,22 +42,30 @@
     <script>
         var partB64 = null;
         var docB64 = null;
-
-        function loadImage(input, previewId, which) {
-            var file = input.files[0];
-            if (!file) return;
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                var img = document.getElementById(previewId);
-                img.src = e.target.result;
-                img.style.display = 'block';
-                var b64 = e.target.result.split(',')[1];
-                if (which === 'part') partB64 = b64;
-                if (which === 'doc') docB64 = b64;
-                document.getElementById('btn').disabled = !(partB64 && docB64);
-            };
-            reader.readAsDataURL(file);
-        }
+function loadImage(input, previewId, which) {
+    var file = input.files[0];
+    if (!file) return;
+    var img = new Image();
+    var url = URL.createObjectURL(file);
+    img.onload = function() {
+        var canvas = document.createElement('canvas');
+        var max = 1200;
+        var w = img.width, h = img.height;
+        if (w > max) { h = h * max / w; w = max; }
+        if (h > max) { w = w * max / h; h = max; }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        var jpeg = canvas.toDataURL('image/jpeg', 0.7);
+        document.getElementById(previewId).src = jpeg;
+        document.getElementById(previewId).style.display = 'block';
+        if (which === 'part') partB64 = jpeg.split(',')[1];
+        if (which === 'doc') docB64 = jpeg.split(',')[1];
+        document.getElementById('btn').disabled = !(partB64 && docB64);
+        URL.revokeObjectURL(url);
+    };
+    img.src = url;
+}
 
         function analyze() {
             document.getElementById('result').style.display = 'block';

@@ -62,7 +62,7 @@ HTML = """
     <div class="results">
         <p class="result-count">{{ result_count }} aircraft found</p>
         {% for r in results %}
-        <div class="aircraft-card">
+        <a class="aircraft-card" href="/aircraft/{{ r.tail }}">
             <div class="aircraft-info">
                 <h3>{{ r.model }}</h3>
                 <p>{{ r.manufacturer }} &bull; {{ r.city }}, {{ r.state }}</p>
@@ -72,7 +72,7 @@ HTML = """
                 <div class="tail">N{{ r.tail }}</div>
                 <div class="status-v">Active</div>
             </div>
-        </div>
+        </a>
         {% endfor %}
     </div>
     {% endif %}
@@ -123,6 +123,27 @@ def index():
     return render_template_string(HTML, tail=tail, model=model, state=state,
         year_from=year_from, year_to=year_to, states=states,
         results=results, result_count=result_count)
+
+
+@app.route("/aircraft/<tail>")
+def aircraft_detail(tail):
+    tail_clean = tail.upper().lstrip("N")
+    ref2 = ref[ref.columns[:3]].copy()
+    ref2.columns = ["MFR MDL CODE","MANUFACTURER","MODEL_NAME"]
+    ref2["MFR MDL CODE"] = ref2["MFR MDL CODE"].astype(str).str.strip()
+    merged = df.copy()
+    merged["MFR MDL CODE"] = merged["MFR MDL CODE"].astype(str).str.strip()
+    merged = merged.merge(ref2, on="MFR MDL CODE", how="left")
+    row = merged[merged[merged.columns[0]].astype(str).str.strip() == tail_clean]
+    if len(row) == 0:
+        return f"Aircraft N{tail_clean} not found", 404
+    r = row.iloc[0]
+    return f"""<h1>N{tail_clean}</h1>
+<p>Owner: {r["NAME"]}</p>
+<p>City: {r["CITY"]}, {r["STATE"]}</p>
+<p>Year: {r["YEAR MFR"]}</p>
+<p>Serial: {r["SERIAL NUMBER"]}</p>
+<a href="/">Back to search</a>"""
 
 if __name__ == "__main__":
     app.run(debug=True, port=8080)

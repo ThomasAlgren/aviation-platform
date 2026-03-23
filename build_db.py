@@ -6,10 +6,18 @@ os.makedirs("instance", exist_ok=True)
 print("Opretter database...")
 conn = sqlite3.connect('instance/panpanparts.db')
 
-print("Loader FAA data...")
-faa = pd.read_pickle('faa_master.pkl')
-ref = pd.read_pickle('faa_ref.pkl')
-ref2 = ref[['ï»¿CODE', 'MFR', 'MODEL']].copy()
+print("Downloader FAA data fra FAA.gov...")
+import urllib.request
+import zipfile
+urllib.request.urlretrieve(
+    'https://registry.faa.gov/database/ReleasableAircraft.zip',
+    'faa_data.zip'
+)
+with zipfile.ZipFile('faa_data.zip', 'r') as z:
+    z.extractall('faa_data')
+faa = pd.read_csv('faa_data/MASTER.txt', low_memory=False)
+ref = pd.read_csv('faa_data/ACFTREF.txt', low_memory=False)
+ref2 = ref[ref.columns[:3]].copy()
 ref2.columns = ['code', 'manufacturer', 'model']
 ref2['code'] = ref2['code'].astype(str).str.strip()
 faa[faa.columns[4]] = faa[faa.columns[4]].astype(str).str.strip()

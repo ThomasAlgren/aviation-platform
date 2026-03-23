@@ -6,3 +6,8 @@ faa_ref.pkl
 *.pkl
 .env
 .env
+faa_data/
+faa_master.pkl
+faa_registry.zip
+*.pkl
+*.zip

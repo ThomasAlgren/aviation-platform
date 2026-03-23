@@ -21,16 +21,16 @@
         <h3>1. Photo of part</h3>
         <div class="upload-box" onclick="document.getElementById('part-input').click()">
             Click to upload image
-            <input type="file" id="part-input" accept="image/*" style="display:none" onchange="loadImage(this,'part-preview','part')">
+            <input type="file" id="part-input" accept="image/*" capture="environment" style="display:none" onchange="loadImage(this,'part-preview','part')">
         </div>
         <img id="part-preview" class="preview">
     </div>
 
     <div class="card">
-        <h3>2. Photo of Form 1 document</h3>
+        <h3>2. Photo of 8130-3 / Form 1 document</h3>
         <div class="upload-box" onclick="document.getElementById('doc-input').click()">
             Click to upload document
-            <input type="file" id="doc-input" accept="image/*" style="display:none" onchange="loadImage(this,'doc-preview','doc')">
+            <input type="file" id="doc-input" accept="image/*" capture="environment" style="display:none" onchange="loadImage(this,'doc-preview','doc')">
         </div>
         <img id="doc-preview" class="preview">
     </div>

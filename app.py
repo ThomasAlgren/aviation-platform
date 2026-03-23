@@ -36,8 +36,7 @@ with app.app_context():
 print("Loader FAA data...")
 df = pd.read_pickle("faa_master.pkl")
 ref = pd.read_pickle("faa_ref.pkl")
-oy = pd.read_pickle("oy_register.pkl")
-da = pd.read_pickle("danish_aircraft.pkl")
+dk = pd.read_pickle("denmark.pkl")
 print("Klar!")
 LISTING_HTML = """
 <!DOCTYPE html>
@@ -83,11 +82,9 @@ LISTING_HTML = """
             <h3>Add your listing details</h3>
             <form method="POST">
                 <input name="price" type="number" placeholder="Price (EUR)" required>
-                <textarea name="description" placeholder="Description — condition, history, why are you selling?"></textarea>
+                <<textarea name="description" placeholder="Description — condition, history, why are you selling?">{{ part.condition_notes or '' }}</textarea>
                 <input name="location" placeholder="Location (e.g. Roskilde, Denmark)">
-                <input name="contact_name" placeholder="Your name">
-                <input name="contact_email" placeholder="Email">
-                <input name="contact_phone" placeholder="Phone (optional)">
+               
                 <button type="submit">Publish listing</button>
             </form>
         </div>
@@ -414,7 +411,7 @@ def index():
     results = None
     result_count = 0
     if tail and tail.upper().startswith("OY-"):
-        oy_result = oy[oy["registration"] == tail.upper()]
+        oy_result = dk[dk["registration"] == tail.upper()]
         if len(oy_result) > 0:
             r = oy_result.iloc[0]
             results = [{
@@ -424,7 +421,7 @@ def index():
                 "name": "",
                 "city": "",
                 "state": "Denmark",
-                "year": str(r["year_mfr"]),
+                "year": str(r.get("year_built", r.get("year_mfr", ""))),
             }]
             result_count = 1
             return render_template_string(SEARCH_HTML, tail=tail, model=model, state=state,
@@ -436,7 +433,7 @@ def index():
         ref2.columns = ["MFR MDL CODE","MANUFACTURER","MODEL_NAME"]
         ref2["MFR MDL CODE"] = ref2["MFR MDL CODE"].astype(str).str.strip()
         filtered["MFR MDL CODE"] = filtered["MFR MDL CODE"].astype(str).str.strip()
-        filtered = filtered.merge(ref2, on="MFR MDL CODE", how="left")
+        filtered = filtered.merge(ref2, on="MFR MDL", how="left")
         if tail:
             filtered = filtered[filtered["ï»¿N-NUMBER"].astype(str).str.strip() == tail.upper().replace("N","")]
         if state:
@@ -619,32 +616,46 @@ def listing(part_id):
 
 @app.route("/parts")
 def parts():
+    query = request.args.get("q", "")
     with app.app_context():
-        all_parts = Part.query.filter(Part.price != None).order_by(Part.created_at.desc()).all()
-        return render_template_string(PARTS_HTML, parts=all_parts)
+        if query:
+            all_parts = Part.query.filter(
+                Part.price != None,
+                db.or_(
+                    Part.part_number.ilike(f"%{query}%"),
+                    Part.description.ilike(f"%{query}%"),
+                    Part.condition_notes.ilike(f"%{query}%")
+                )
+            ).order_by(Part.created_at.desc()).all()
+        else:
+            all_parts = Part.query.filter(Part.price != None).order_by(Part.created_at.desc()).all()
+        return render_template_string(PARTS_HTML, parts=all_parts, query=query)
 
 @app.route("/aircraft/OY-<reg>")
 def oy_detail(reg):
     registration = f"OY-{reg}"
     
-    oy_row = oy[oy["registration"] == registration]
-    da_row = da[da["registration"] == registration]
+    oy_row = dk[dk["registration"] == registration]
+    da_row = dk[dk["registration"] == registration]
     
     if len(oy_row) == 0:
         return f"Aircraft {registration} not found", 404
     
     r = oy_row.iloc[0]
-    d = da_row.iloc[0] if len(da_row) > 0 else None
     
+    def s(val):
+        v = str(val).strip()
+        return "" if v == "nan" else v
+
     aircraft = {
         "tail": registration,
-        "model": d["type"].strip() if d is not None and d["type"] else str(r["type"]).strip(),
-        "manufacturer": d["manufacturer"].strip() if d is not None and d["manufacturer"] else "",
-        "build_place": d["build_place"].strip() if d is not None and d["build_place"] else "",
-        "serial": d["serial"].strip() if d is not None and d["serial"] else str(r["construction_no"]).strip(),
-        "year": d["year_built"].strip() if d is not None and d["year_built"] else str(r["year_mfr"]).strip(),
-        "reg_date": d["reg_date"].strip() if d is not None and d["reg_date"] else "",
-        "previous": d["previous"].strip() if d is not None and d["previous"] else str(r["notes"]).strip(),
+        "model": s(r.get("type", "")),
+        "manufacturer": s(r.get("manufacturer", "")),
+        "build_place": s(r.get("build_place", "")),
+        "serial": s(r.get("serial", "")),
+        "year": s(r.get("year_built", "")),
+        "reg_date": s(r.get("reg_date", "")),
+        "previous": s(r.get("previous", "")),
         "country": "Denmark",
         "name": "",
         "street": "",
@@ -653,7 +664,7 @@ def oy_detail(reg):
         "zip": "",
         "engine": "",
         "cert_date": "",
-        "last_action": str(r["year_reg"]).strip(),
+        "last_action": s(r.get("year_reg", "")),
         "expiration": "",
     }
     return render_template_string(OY_DETAIL_HTML, aircraft=aircraft)

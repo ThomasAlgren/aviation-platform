@@ -37,6 +37,7 @@ print("Loader FAA data...")
 df = pd.read_pickle("faa_master.pkl")
 ref = pd.read_pickle("faa_ref.pkl")
 oy = pd.read_pickle("oy_register.pkl")
+da = pd.read_pickle("danish_aircraft.pkl")
 print("Klar!")
 LISTING_HTML = """
 <!DOCTYPE html>
@@ -226,7 +227,124 @@ SEARCH_HTML = """
 </body>
 </html>
 """
+OY_DETAIL_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ aircraft.tail }} - PanPanParts</title>
+    <meta charset="utf-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #f0f4f8; color: #1a1a2e; }
+        .header { background: #1a1a2e; color: white; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        .header span { color: #ff6b35; }
+        .header a { color: #aaa; font-size: 14px; text-decoration: none; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .hero { background: #1a1a2e; border-radius: 16px; padding: 40px; margin-bottom: 20px; color: white; position: relative; overflow: hidden; }
+        .hero-bg { position: absolute; top: 0; right: 0; width: 300px; height: 100%; background: linear-gradient(135deg, transparent, rgba(255,107,53,0.1)); }
+        .tail-number { font-size: 56px; font-weight: 700; color: #ff6b35; font-family: monospace; letter-spacing: -2px; }
+        .model-name { font-size: 22px; font-weight: 500; margin: 8px 0 4px; color: white; }
+        .manufacturer { font-size: 15px; color: #aaa; margin-bottom: 16px; }
+        .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+        .badge { padding: 6px 14px; border-radius: 20px; font-size: 13px; }
+        .badge-green { background: rgba(45,122,58,0.3); color: #4caf50; border: 1px solid rgba(76,175,80,0.3); }
+        .badge-blue { background: rgba(74,158,255,0.2); color: #4a9eff; border: 1px solid rgba(74,158,255,0.3); }
+        .badge-orange { background: rgba(255,107,53,0.2); color: #ff6b35; border: 1px solid rgba(255,107,53,0.3); }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .stat-value { font-size: 28px; font-weight: 700; color: #1a1a2e; }
+        .stat-label { font-size: 12px; color: #999; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; margin-bottom: 16px; }
+        .field { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        .field:last-child { border-bottom: none; }
+        .field-label { color: #666; }
+        .field-value { font-weight: 500; text-align: right; max-width: 60%; }
+        .timeline { position: relative; padding-left: 24px; }
+        .timeline-item { position: relative; padding-bottom: 20px; }
+        .timeline-item:before { content: ''; position: absolute; left: -20px; top: 6px; width: 8px; height: 8px; background: #ff6b35; border-radius: 50%; }
+        .timeline-item:after { content: ''; position: absolute; left: -17px; top: 14px; width: 2px; height: calc(100% - 8px); background: #f0f0f0; }
+        .timeline-item:last-child:after { display: none; }
+        .timeline-reg { font-weight: 600; font-size: 15px; color: #1a1a2e; font-family: monospace; }
+        .timeline-date { font-size: 12px; color: #999; margin-top: 2px; }
+        .sell-btn { background: #ff6b35; color: white; border: none; padding: 16px 32px; border-radius: 10px; font-size: 16px; cursor: pointer; width: 100%; margin-top: 8px; font-weight: 500; }
+        .sell-btn:hover { background: #e55a25; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PanPan<span>Parts</span></h1>
+        <a href="/">← Search</a>
+    </div>
+    <div class="container">
+        <div class="hero">
+            <div class="hero-bg"></div>
+            <div class="tail-number">{{ aircraft.tail }}</div>
+            <div class="model-name">{{ aircraft.model }}</div>
+            <div class="manufacturer">{{ aircraft.manufacturer }}{% if aircraft.build_place %} · {{ aircraft.build_place }}{% endif %}</div>
+            <div class="badges">
+                <span class="badge badge-green">✓ Active — Denmark</span>
+                <span class="badge badge-blue">{{ aircraft.year }}</span>
+                {% if aircraft.previous %}
+                <span class="badge badge-orange">{{ aircraft.previous.split()|length }} previous identities</span>
+                {% endif %}
+            </div>
+        </div>
 
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value">{{ aircraft.year }}</div>
+                <div class="stat-label">Year built</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ aircraft.serial }}</div>
+                <div class="stat-label">Serial number</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">DK</div>
+                <div class="stat-label">Current country</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Aircraft details</h3>
+            <div class="field"><span class="field-label">Registration</span><span class="field-value">{{ aircraft.tail }}</span></div>
+            <div class="field"><span class="field-label">Type</span><span class="field-value">{{ aircraft.model }}</span></div>
+            <div class="field"><span class="field-label">Manufacturer</span><span class="field-value">{{ aircraft.manufacturer }}</span></div>
+            <div class="field"><span class="field-label">Built in</span><span class="field-value">{{ aircraft.build_place }}</span></div>
+            <div class="field"><span class="field-label">Serial number</span><span class="field-value">{{ aircraft.serial }}</span></div>
+            <div class="field"><span class="field-label">Registered in Denmark</span><span class="field-value">{{ aircraft.reg_date }}</span></div>
+        </div>
+
+        {% if aircraft.previous %}
+        <div class="card">
+            <h3>Life history</h3>
+            <div class="timeline">
+                {% for reg in aircraft.previous.split() %}
+                <div class="timeline-item">
+                    <div class="timeline-reg">{{ reg }}</div>
+                    <div class="timeline-date">Previous registration</div>
+                </div>
+                {% endfor %}
+                <div class="timeline-item">
+                    <div class="timeline-reg" style="color:#ff6b35">{{ aircraft.tail }}</div>
+                    <div class="timeline-date">Current — registered {{ aircraft.reg_date }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <h3>Own this aircraft?</h3>
+            <p style="color:#666; font-size:14px; margin-bottom:16px">Claim your aircraft profile to add photos, flight hours, avionics and maintenance history. List it for sale with one click.</p>
+            <button class="sell-btn">Claim OY-{{ aircraft.tail.replace('OY-', '') }} — it's free</button>
+        </div>
+
+    </div>
+</body>
+</html>
+"""
 DETAIL_HTML = """
 <!DOCTYPE html>
 <html>
@@ -508,27 +626,36 @@ def parts():
 @app.route("/aircraft/OY-<reg>")
 def oy_detail(reg):
     registration = f"OY-{reg}"
-    row = oy[oy["registration"] == registration]
-    if len(row) == 0:
+    
+    oy_row = oy[oy["registration"] == registration]
+    da_row = da[da["registration"] == registration]
+    
+    if len(oy_row) == 0:
         return f"Aircraft {registration} not found", 404
-    r = row.iloc[0]
+    
+    r = oy_row.iloc[0]
+    d = da_row.iloc[0] if len(da_row) > 0 else None
+    
     aircraft = {
         "tail": registration,
-        "model": str(r["type"]).strip(),
-        "manufacturer": "",
+        "model": d["type"].strip() if d is not None and d["type"] else str(r["type"]).strip(),
+        "manufacturer": d["manufacturer"].strip() if d is not None and d["manufacturer"] else "",
+        "build_place": d["build_place"].strip() if d is not None and d["build_place"] else "",
+        "serial": d["serial"].strip() if d is not None and d["serial"] else str(r["construction_no"]).strip(),
+        "year": d["year_built"].strip() if d is not None and d["year_built"] else str(r["year_mfr"]).strip(),
+        "reg_date": d["reg_date"].strip() if d is not None and d["reg_date"] else "",
+        "previous": d["previous"].strip() if d is not None and d["previous"] else str(r["notes"]).strip(),
+        "country": "Denmark",
         "name": "",
         "street": "",
         "city": "",
         "state": "Denmark",
         "zip": "",
-        "country": "Denmark",
-        "year": str(r["year_mfr"]).strip(),
-        "serial": str(r["construction_no"]).strip(),
         "engine": "",
         "cert_date": "",
         "last_action": str(r["year_reg"]).strip(),
         "expiration": "",
     }
-    return render_template_string(DETAIL_HTML, aircraft=aircraft)
+    return render_template_string(OY_DETAIL_HTML, aircraft=aircraft)
 if __name__ == "__main__":
     app.run(debug=True, port=8080)

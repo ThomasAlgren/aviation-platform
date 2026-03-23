@@ -15,6 +15,28 @@
     </style>
 </head>
 <body>
+    <div id="onboarding" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:16px; padding:32px; max-width:400px; width:90%; margin:20px;">
+        <h2 style="margin-bottom:8px; font-size:20px;">Quick setup</h2>
+        <p style="color:#666; font-size:14px; margin-bottom:24px;">Takes 10 seconds — saved for all your listings</p>
+        <label style="font-size:13px; color:#666; display:block; margin-bottom:6px;">Currency</label>
+        <select id="ob_currency" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:15px; margin-bottom:16px;">
+            <option value="EUR">EUR — Euro</option>
+            <option value="USD">USD — US Dollar</option>
+            <option value="DKK">DKK — Danish Krone</option>
+            <option value="GBP">GBP — British Pound</option>
+        </select>
+        <label style="font-size:13px; color:#666; display:block; margin-bottom:6px;">Your location</label>
+        <input id="ob_location" type="text" placeholder="e.g. Copenhagen, Denmark" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:15px; margin-bottom:16px;">
+        <label style="font-size:13px; color:#666; display:block; margin-bottom:6px;">Delivery</label>
+        <select id="ob_delivery" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:15px; margin-bottom:24px;">
+            <option value="Shipping">Shipping worldwide</option>
+            <option value="Collection">Collection only</option>
+            <option value="Both">Shipping or collection</option>
+        </select>
+        <button onclick="saveOnboarding()" style="background:#1a1a2e; color:white; border:none; padding:14px; border-radius:8px; font-size:15px; cursor:pointer; width:100%;">Save and continue</button>
+    </div>
+</div>
     <h2>PanPanParts - Upload Part</h2>
 
     <div class="card">
@@ -42,6 +64,28 @@
     <script>
         var partB64 = null;
         var docB64 = null;
+        var partB64 = null;
+        var docB64 = null;
+
+function checkOnboarding() {
+    if (!localStorage.getItem('ppp_setup')) {
+        document.getElementById('onboarding').style.display = 'flex';
+    }
+}
+
+function saveOnboarding() {
+    var currency = document.getElementById('ob_currency').value;
+    var location = document.getElementById('ob_location').value;
+    var delivery = document.getElementById('ob_delivery').value;
+    if (!location) { alert('Please enter your location'); return; }
+    localStorage.setItem('ppp_setup', '1');
+    localStorage.setItem('ppp_currency', currency);
+    localStorage.setItem('ppp_location', location);
+    localStorage.setItem('ppp_delivery', delivery);
+    document.getElementById('onboarding').style.display = 'none';
+}
+
+window.onload = checkOnboarding;
 function loadImage(input, previewId, which) {
     var file = input.files[0];
     if (!file) return;

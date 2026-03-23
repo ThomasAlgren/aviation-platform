@@ -460,7 +460,22 @@ def index():
                 results=results, result_count=result_count)
 
     if tail and tail.upper().startswith("HB-"):
-        pass
+        hb_result = hb[hb[" Registration"].str.strip() == tail.upper()]
+        if len(hb_result) > 0:
+            r = hb_result.iloc[0]
+            results = [{
+                "tail": r[" Registration"].strip(),
+                "model": str(r[" Aicraft Model"]).strip(),
+                "manufacturer": str(r[" Manufacturer"]).strip(),
+                "name": "",
+                "city": "",
+                "state": "Switzerland",
+                "year": str(r[" Year of Manufacture"]).strip(),
+            }]
+            result_count = 1
+            return render_template_string(SEARCH_HTML, tail=tail, model=model, state=state,
+                year_from=year_from, year_to=year_to, states=states,
+                results=results, result_count=result_count)
     if tail and tail.upper().startswith("VH-"):
         vh_search = tail.upper().replace("VH-", "")
         vh_result = vh[vh["Mark"].str.strip() == vh_search]

@@ -1,5 +1,7 @@
 import pandas as pd
 import sqlite3
+import os
+os.makedirs("instance", exist_ok=True)
 
 print("Opretter database...")
 conn = sqlite3.connect('instance/panpanparts.db')

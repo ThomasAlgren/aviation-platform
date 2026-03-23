@@ -309,7 +309,7 @@ OY_DETAIL_HTML = """
             <div class="model-name">{{ aircraft.model }}</div>
             <div class="manufacturer">{{ aircraft.manufacturer }}{% if aircraft.build_place %} · {{ aircraft.build_place }}{% endif %}</div>
             <div class="badges">
-                <span class="badge badge-green">✓ Active — Denmark</span>
+                <span class="badge badge-green">✓ Active — {{ aircraft.country }}</span>
                 <span class="badge badge-blue">{{ aircraft.year }}</span>
                 {% if aircraft.previous %}
                 <span class="badge badge-orange">{{ aircraft.previous.split()|length }} previous identities</span>
@@ -327,7 +327,7 @@ OY_DETAIL_HTML = """
                 <div class="stat-label">Serial number</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">DK</div>
+                <div class="stat-value">{{ aircraft.country[:2].upper() }}</div>
                 <div class="stat-label">Current country</div>
             </div>
         </div>
@@ -339,7 +339,7 @@ OY_DETAIL_HTML = """
             <div class="field"><span class="field-label">Manufacturer</span><span class="field-value">{{ aircraft.manufacturer }}</span></div>
             <div class="field"><span class="field-label">Built in</span><span class="field-value">{{ aircraft.build_place }}</span></div>
             <div class="field"><span class="field-label">Serial number</span><span class="field-value">{{ aircraft.serial }}</span></div>
-            <div class="field"><span class="field-label">Registered in Denmark</span><span class="field-value">{{ aircraft.reg_date }}</span></div>
+            <div class="field"><span class="field-label">Registered</span><span class="field-value">{{ aircraft.reg_date }}</span></div>
         </div>
 
         {% if aircraft.previous %}
@@ -363,7 +363,7 @@ OY_DETAIL_HTML = """
         <div class="card">
             <h3>Own this aircraft?</h3>
             <p style="color:#666; font-size:14px; margin-bottom:16px">Claim your aircraft profile to add photos, flight hours, avionics and maintenance history. List it for sale with one click.</p>
-            <button class="sell-btn">Claim OY-{{ aircraft.tail.replace('OY-', '') }} — it's free</button>
+            <button class="sell-btn">Claim {{ aircraft.tail }} — it's free</button>
         </div>
 
     </div>
@@ -720,7 +720,7 @@ def oy_detail(reg):
         "year": s(r.get("year_built", "")),
         "reg_date": s(r.get("reg_date", "")),
         "previous": s(r.get("previous", "")),
-        "country": "Denmark",
+        "country": "DK",
         "name": "",
         "street": "",
         "city": "",
@@ -751,7 +751,7 @@ def ln_detail(reg):
         "year": s(r.get("year_built", "")),
         "reg_date": s(r.get("reg_date", "")),
         "previous": "",
-        "country": "Norway",
+        "country": "NO",
         "name": "", "street": "", "city": "",
         "state": "Norway", "zip": "",
         "engine": "", "cert_date": "",
@@ -778,7 +778,7 @@ def hb_detail(reg):
         "year": s(r.get(" Year of Manufacture", "")),
         "reg_date": s(r.get(" Date of Registration", "")),
         "previous": "",
-        "country": "Switzerland",
+        "country": "CH",
         "name": "", "street": "", "city": "",
         "state": "Switzerland", "zip": "",
         "engine": s(r.get(" Engine", "")),

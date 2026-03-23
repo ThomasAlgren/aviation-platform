@@ -38,6 +38,7 @@ df = pd.read_pickle("faa_master.pkl")
 ref = pd.read_pickle("faa_ref.pkl")
 dk = pd.read_pickle("denmark.pkl")
 ln = pd.read_pickle("ln_register.pkl")
+vh = pd.read_pickle("vh_register.pkl")
 hb = pd.read_csv("hb_register.csv", sep=';', encoding='utf-16', skipinitialspace=True, low_memory=False)
 print("Klar!")
 LISTING_HTML = """
@@ -241,7 +242,7 @@ SEARCH_HTML = """
                 <p style="color:#555; font-size:13px; margin-top:4px;">{{ r.year }}</p>
             </div>
             <div style="text-align:right">
-                <div class="tail">{% if r.tail.startswith("OY") or r.tail.startswith("LN") or r.tail.startswith("HB") %}{{ r.tail }}{% else %}N{{ r.tail }}{% endif %}</div>
+                <div class="tail">{% if r.tail.startswith("OY") or r.tail.startswith("LN") or r.tail.startswith("HB") or r.tail.startswith("VH") %}{{ r.tail }}{% else %}N{{ r.tail }}{% endif %}</div>
                 <div class="status-v">Active</div>
             </div>
         </a>
@@ -459,6 +460,25 @@ def index():
                 results=results, result_count=result_count)
 
     if tail and tail.upper().startswith("HB-"):
+        pass
+    if tail and tail.upper().startswith("VH-"):
+        vh_search = tail.upper().replace("VH-", "")
+        vh_result = vh[vh["Mark"].str.strip() == vh_search]
+        if len(vh_result) > 0:
+            r = vh_result.iloc[0]
+            results = [{
+                "tail": "VH-" + str(r["Mark"]).strip(),
+                "model": str(r["Model"]).strip(),
+                "manufacturer": str(r["Manu"]).strip(),
+                "name": str(r.get("regholdname", "")).strip(),
+                "city": str(r.get("regholdSuburb", "")).strip(),
+                "state": "Australia",
+                "year": str(r.get("Yearmanu", "")).strip(),
+            }]
+            result_count = 1
+            return render_template_string(SEARCH_HTML, tail=tail, model=model, state=state,
+                year_from=year_from, year_to=year_to, states=states,
+                results=results, result_count=result_count)
         hb_result = hb[hb[" Registration"].str.strip() == tail.upper()]
         if len(hb_result) > 0:
             r = hb_result.iloc[0]
@@ -497,7 +517,7 @@ def index():
         ref2.columns = ["MFR MDL CODE","MANUFACTURER","MODEL_NAME"]
         ref2["MFR MDL CODE"] = ref2["MFR MDL CODE"].astype(str).str.strip()
         filtered["MFR MDL CODE"] = filtered["MFR MDL CODE"].astype(str).str.strip()
-        filtered = filtered.merge(ref2, on="MFR MDL", how="left")
+        filtered = filtered.merge(ref2, on="MFR MDL CODE", how="left")
         if tail:
             filtered = filtered[filtered["ï»¿N-NUMBER"].astype(str).str.strip() == tail.upper().replace("N","")]
         if state:

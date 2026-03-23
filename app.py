@@ -37,6 +37,8 @@ print("Loader FAA data...")
 df = pd.read_pickle("faa_master.pkl")
 ref = pd.read_pickle("faa_ref.pkl")
 dk = pd.read_pickle("denmark.pkl")
+ln = pd.read_pickle("ln_register.pkl")
+hb = pd.read_csv("hb_register.csv", sep=';', encoding='utf-16', skipinitialspace=True, low_memory=False)
 print("Klar!")
 LISTING_HTML = """
 <!DOCTYPE html>
@@ -239,7 +241,7 @@ SEARCH_HTML = """
                 <p style="color:#555; font-size:13px; margin-top:4px;">{{ r.year }}</p>
             </div>
             <div style="text-align:right">
-                <div class="tail">{% if r.tail.startswith("OY") %}{{ r.tail }}{% else %}N{{ r.tail }}{% endif %}</div>
+                <div class="tail">{% if r.tail.startswith("OY") or r.tail.startswith("LN") or r.tail.startswith("HB") %}{{ r.tail }}{% else %}N{{ r.tail }}{% endif %}</div>
                 <div class="status-v">Active</div>
             </div>
         </a>
@@ -437,6 +439,42 @@ def index():
     results = None
     result_count = 0
     if tail and tail.upper().startswith("OY-"):
+        pass
+    if tail and tail.upper().startswith("LN-"):
+        ln_result = ln[ln["registration"] == tail.upper()]
+        if len(ln_result) > 0:
+            r = ln_result.iloc[0]
+            results = [{
+                "tail": r["registration"],
+                "model": str(r["type"]).strip(),
+                "manufacturer": str(r["manufacturer"]).strip(),
+                "name": "",
+                "city": "",
+                "state": "Norway",
+                "year": str(r["year_built"]).strip(),
+            }]
+            result_count = 1
+            return render_template_string(SEARCH_HTML, tail=tail, model=model, state=state,
+                year_from=year_from, year_to=year_to, states=states,
+                results=results, result_count=result_count)
+
+    if tail and tail.upper().startswith("HB-"):
+        hb_result = hb[hb[" Registration"].str.strip() == tail.upper()]
+        if len(hb_result) > 0:
+            r = hb_result.iloc[0]
+            results = [{
+                "tail": r[" Registration"].strip(),
+                "model": str(r[" Aicraft Model"]).strip(),
+                "manufacturer": str(r[" Manufacturer"]).strip(),
+                "name": "",
+                "city": "",
+                "state": "Switzerland",
+                "year": str(r[" Year of Manufacture"]).strip(),
+            }]
+            result_count = 1
+            return render_template_string(SEARCH_HTML, tail=tail, model=model, state=state,
+                year_from=year_from, year_to=year_to, states=states,
+                results=results, result_count=result_count)
         oy_result = dk[dk["registration"] == tail.upper()]
         if len(oy_result) > 0:
             r = oy_result.iloc[0]
@@ -692,6 +730,59 @@ def oy_detail(reg):
         "cert_date": "",
         "last_action": s(r.get("year_reg", "")),
         "expiration": "",
+    }
+    return render_template_string(OY_DETAIL_HTML, aircraft=aircraft)
+@app.route("/aircraft/LN-<reg>")
+def ln_detail(reg):
+    registration = f"LN-{reg}"
+    row = ln[ln["registration"] == registration]
+    if len(row) == 0:
+        return f"Aircraft {registration} not found", 404
+    r = row.iloc[0]
+    def s(val):
+        v = str(val).strip()
+        return "" if v == "nan" else v
+    aircraft = {
+        "tail": registration,
+        "model": s(r.get("type", "")),
+        "manufacturer": s(r.get("manufacturer", "")),
+        "build_place": "Norway",
+        "serial": s(r.get("serial", "")),
+        "year": s(r.get("year_built", "")),
+        "reg_date": s(r.get("reg_date", "")),
+        "previous": "",
+        "country": "Norway",
+        "name": "", "street": "", "city": "",
+        "state": "Norway", "zip": "",
+        "engine": "", "cert_date": "",
+        "last_action": "", "expiration": "",
+    }
+    return render_template_string(OY_DETAIL_HTML, aircraft=aircraft)
+
+@app.route("/aircraft/HB-<reg>")
+def hb_detail(reg):
+    registration = f"HB-{reg}"
+    row = hb[hb[" Registration"].str.strip() == registration]
+    if len(row) == 0:
+        return f"Aircraft {registration} not found", 404
+    r = row.iloc[0]
+    def s(val):
+        v = str(val).strip()
+        return "" if v == "nan" else v
+    aircraft = {
+        "tail": registration,
+        "model": s(r.get(" Aicraft Model", "")),
+        "manufacturer": s(r.get(" Manufacturer", "")),
+        "build_place": "Switzerland",
+        "serial": s(r.get(" Serial Number", "")),
+        "year": s(r.get(" Year of Manufacture", "")),
+        "reg_date": s(r.get(" Date of Registration", "")),
+        "previous": "",
+        "country": "Switzerland",
+        "name": "", "street": "", "city": "",
+        "state": "Switzerland", "zip": "",
+        "engine": s(r.get(" Engine", "")),
+        "cert_date": "", "last_action": "", "expiration": "",
     }
     return render_template_string(OY_DETAIL_HTML, aircraft=aircraft)
 if __name__ == "__main__":

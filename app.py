@@ -154,68 +154,93 @@ SEARCH_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>PanPanParts - Aircraft Search</title>
+    <title>PanPanParts — Aviation Parts & Aircraft Registry</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, sans-serif; background: #f0f4f8; color: #1a1a2e; }
-        .header { background: #1a1a2e; color: white; padding: 20px 40px; display: flex; align-items: center; gap: 16px; }
-        .header h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; }
-        .header span { color: #4a9eff; }
-        .search-box { background: white; padding: 40px; margin: 40px auto; max-width: 800px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-        input, select { padding: 12px 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; width: 100%; }
-        input:focus, select:focus { outline: none; border-color: #4a9eff; }
-        button { background: #1a1a2e; color: white; border: none; padding: 12px 32px; border-radius: 8px; font-size: 15px; cursor: pointer; white-space: nowrap; }
-        button:hover { background: #2d2d4e; }
-        .search-row { display: flex; gap: 12px; margin-bottom: 16px; }
-        .results { max-width: 800px; margin: 0 auto 40px; }
-        .result-count { color: #666; margin-bottom: 16px; font-size: 14px; padding: 0 4px; }
-        .aircraft-card { background: white; border-radius: 12px; padding: 20px 24px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; transition: box-shadow 0.15s; }
-        .aircraft-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; min-height: 100vh; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav { display: flex; gap: 24px; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; }
+        .nav a:hover { color: white; }
+        .nav a.primary { background: #ff6b35; color: white; padding: 8px 18px; border-radius: 8px; }
+        .hero { text-align: center; padding: 80px 20px 60px; }
+        .hero h1 { font-size: 52px; font-weight: 700; line-height: 1.15; margin-bottom: 16px; }
+        .hero h1 span { color: #ff6b35; }
+        .hero p { font-size: 18px; color: #aaa; margin-bottom: 48px; max-width: 560px; margin-left: auto; margin-right: auto; }
+        .search-box { background: white; border-radius: 16px; padding: 8px; display: flex; max-width: 640px; margin: 0 auto 48px; box-shadow: 0 20px 60px rgba(255,107,53,0.2); }
+        .search-box input { flex: 1; border: none; outline: none; padding: 14px 20px; font-size: 16px; color: #1a1a2e; background: transparent; }
+        .search-box button { background: #ff6b35; color: white; border: none; padding: 14px 28px; border-radius: 10px; font-size: 15px; cursor: pointer; white-space: nowrap; }
+        .search-box button:hover { background: #e55a25; }
+        .tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 48px; }
+        .tab { padding: 8px 20px; border-radius: 20px; font-size: 14px; cursor: pointer; border: 1px solid #333; color: #aaa; background: transparent; }
+        .tab.active { background: #ff6b35; color: white; border-color: #ff6b35; }
+        .stats { display: flex; gap: 40px; justify-content: center; margin-bottom: 80px; }
+        .stat { text-align: center; }
+        .stat-value { font-size: 32px; font-weight: 700; color: #ff6b35; }
+        .stat-label { font-size: 13px; color: #666; margin-top: 4px; }
+        .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 900px; margin: 0 auto 80px; padding: 0 20px; }
+        .feature { background: #1a1a2e; border-radius: 12px; padding: 24px; border: 1px solid #2a2a3e; }
+        .feature-icon { font-size: 28px; margin-bottom: 12px; }
+        .feature h3 { font-size: 15px; margin-bottom: 8px; }
+        .feature p { font-size: 13px; color: #666; line-height: 1.6; }
+        .results { max-width: 800px; margin: 0 auto 40px; padding: 0 20px; }
+        .result-count { color: #666; font-size: 14px; margin-bottom: 16px; }
+        .aircraft-card { background: #1a1a2e; border-radius: 12px; padding: 20px 24px; margin-bottom: 10px; border: 1px solid #2a2a3e; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; transition: border-color 0.15s; }
+        .aircraft-card:hover { border-color: #ff6b35; }
         .aircraft-info h3 { font-size: 16px; margin-bottom: 4px; }
         .aircraft-info p { color: #666; font-size: 14px; }
-        .tail { font-size: 22px; font-weight: 700; color: #4a9eff; font-family: monospace; }
-        .status-v { background: #e6f4ea; color: #2d7a3a; padding: 4px 10px; border-radius: 20px; font-size: 12px; margin-top: 6px; display: inline-block; }
-        h2 { margin-bottom: 20px; font-size: 18px; }
+        .tail { font-size: 22px; font-weight: 700; color: #ff6b35; font-family: monospace; }
+        .status-v { background: rgba(45,122,58,0.2); color: #4caf50; padding: 4px 10px; border-radius: 20px; font-size: 12px; margin-top: 6px; display: inline-block; border: 1px solid rgba(76,175,80,0.3); }
+        select { background: #1a1a2e; color: white; border: 1px solid #333; padding: 10px 14px; border-radius: 8px; font-size: 14px; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Sky<span>Reg</span></h1>
-        <p style="color:#aaa; font-size:14px;">Aviation Registry & Marketplace</p>
+<div class="header">
+        <div class="logo">PanPan<span>Parts</span></div>
+        <div class="nav">
+            <a href="/parts">Parts for sale</a>
+            <a href="/upload" class="primary">+ List a part</a>
+        </div>
     </div>
-    <div class="search-box">
-        <h2>Search Aircraft</h2>
+    {% if not results %}
+    <div class="hero">
+        <h1>Find <span>any aviation part</span><br>anywhere in the world</h1>
+        <p>The verified marketplace for aircraft parts — with AI-powered documentation checking</p>
         <form method="GET">
-            <div class="search-row">
-                <input name="tail" placeholder="Tail number (e.g. N12345)" value="{{ tail }}">
-                <input name="model" placeholder="Model (e.g. 172, PA-28)" value="{{ model }}">
-            </div>
-            <div class="search-row">
-                <select name="state">
-                    <option value="">All States</option>
-                    {% for s in states %}
-                    <option value="{{ s }}" {% if s == state %}selected{% endif %}>{{ s }}</option>
-                    {% endfor %}
-                </select>
-                <input name="year_from" placeholder="Year from" value="{{ year_from }}" style="width:50%">
-                <input name="year_to" placeholder="Year to" value="{{ year_to }}" style="width:50%">
+            <div class="search-box">
+                <input name="tail" placeholder="Search by tail number or aircraft type..." value="{{ tail }}">
                 <button type="submit">Search</button>
             </div>
         </form>
+        <div class="stats">
+            <div class="stat"><div class="stat-value">310K+</div><div class="stat-label">Aircraft registered</div></div>
+            <div class="stat"><div class="stat-value">7K+</div><div class="stat-label">Danish aircraft</div></div>
+            <div class="stat"><div class="stat-value">AI</div><div class="stat-label">Verified parts</div></div>
+        </div>
+        <div class="features">
+            <div class="feature"><div class="feature-icon">📷</div><h3>Photo to listing in 2 minutes</h3><p>Take photos, AI extracts all data automatically. Just add a price.</p></div>
+            <div class="feature"><div class="feature-icon">✓</div><h3>AI verified documentation</h3><p>Every part checked for valid airworthiness documentation.</p></div>
+            <div class="feature"><div class="feature-icon">🌍</div><h3>European focus</h3><p>Search across USA, Denmark and Europe.</p></div>
+        </div>
     </div>
+    {% endif %}
     {% if results is not none %}
     <div class="results">
-        <p class="result-count">{{ result_count }} aircraft found {% if result_count > 50 %}(showing first 50){% endif %}</p>
+        <p class="result-count">{{ result_count }} aircraft found</p>
         {% for r in results %}
         <a class="aircraft-card" href="/aircraft/{{ r.tail }}">
             <div class="aircraft-info">
                 <h3>{{ r.manufacturer }} {{ r.model }}</h3>
                 <p>{{ r.name }} &bull; {{ r.city }}, {{ r.state }}</p>
-                <p style="color:#999; font-size:13px; margin-top:4px;">{{ r.year }}</p>
+                <p style="color:#555; font-size:13px; margin-top:4px;">{{ r.year }}</p>
             </div>
             <div style="text-align:right">
                 <div class="tail">{% if r.tail.startswith("OY") %}{{ r.tail }}{% else %}N{{ r.tail }}{% endif %}</div>
-                <div class="status-v">Active</a>
+                <div class="status-v">Active</div>
             </div>
         </a>
         {% endfor %}
@@ -224,6 +249,7 @@ SEARCH_HTML = """
 </body>
 </html>
 """
+
 OY_DETAIL_HTML = """
 <!DOCTYPE html>
 <html>

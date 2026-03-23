@@ -36,6 +36,7 @@ with app.app_context():
 print("Loader FAA data...")
 df = pd.read_pickle("faa_master.pkl")
 ref = pd.read_pickle("faa_ref.pkl")
+oy = pd.read_pickle("oy_register.pkl")
 print("Klar!")
 LISTING_HTML = """
 <!DOCTYPE html>
@@ -155,7 +156,7 @@ SEARCH_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SkyReg - Aircraft Search</title>
+    <title>PanPanParts - Aircraft Search</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, sans-serif; background: #f0f4f8; color: #1a1a2e; }
@@ -215,7 +216,7 @@ SEARCH_HTML = """
                 <p style="color:#999; font-size:13px; margin-top:4px;">{{ r.year }}</p>
             </div>
             <div style="text-align:right">
-                <div class="tail">N{{ r.tail }}</div>
+                <div class="tail">{% if r.tail.startswith("OY") %}{{ r.tail }}{% else %}N{{ r.tail }}{% endif %}</div>
                 <div class="status-v">Active</a>
             </div>
         </a>
@@ -230,7 +231,7 @@ DETAIL_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>N{{ aircraft.tail }} - SkyReg</title>
+    <title>N{{ aircraft.tail }} - PanPanParts</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, sans-serif; background: #f0f4f8; color: #1a1a2e; }
@@ -259,7 +260,7 @@ DETAIL_HTML = """
     </div>
     <div class="container">
         <div class="hero">
-            <div class="tail-number">N{{ aircraft.tail }}</div>
+            <div class="tail-number">{% if aircraft.tail.startswith("OY") %}{{ aircraft.tail }}{% else %}N{{ aircraft.tail }}{% endif %}</div>
             <div class="model-name">{{ aircraft.manufacturer }} {{ aircraft.model }}</div>
             <div class="status-v">✓ Active Registration</div>
         </div>
@@ -294,6 +295,23 @@ def index():
     states = sorted(df["STATE"].dropna().unique().tolist())
     results = None
     result_count = 0
+    if tail and tail.upper().startswith("OY-"):
+        oy_result = oy[oy["registration"] == tail.upper()]
+        if len(oy_result) > 0:
+            r = oy_result.iloc[0]
+            results = [{
+                "tail": r["registration"],
+                "model": r["type"],
+                "manufacturer": "",
+                "name": "",
+                "city": "",
+                "state": "Denmark",
+                "year": str(r["year_mfr"]),
+            }]
+            result_count = 1
+            return render_template_string(SEARCH_HTML, tail=tail, model=model, state=state,
+                year_from=year_from, year_to=year_to, states=states,
+                results=results, result_count=result_count)
     if any([tail, model, state, year_from, year_to]):
         filtered = df[df["STATUS CODE"].str.strip() == "V"].copy()
         ref2 = ref[["ï»¿CODE","MFR","MODEL"]].copy()
@@ -486,5 +504,31 @@ def parts():
     with app.app_context():
         all_parts = Part.query.filter(Part.price != None).order_by(Part.created_at.desc()).all()
         return render_template_string(PARTS_HTML, parts=all_parts)
+
+@app.route("/aircraft/OY-<reg>")
+def oy_detail(reg):
+    registration = f"OY-{reg}"
+    row = oy[oy["registration"] == registration]
+    if len(row) == 0:
+        return f"Aircraft {registration} not found", 404
+    r = row.iloc[0]
+    aircraft = {
+        "tail": registration,
+        "model": str(r["type"]).strip(),
+        "manufacturer": "",
+        "name": "",
+        "street": "",
+        "city": "",
+        "state": "Denmark",
+        "zip": "",
+        "country": "Denmark",
+        "year": str(r["year_mfr"]).strip(),
+        "serial": str(r["construction_no"]).strip(),
+        "engine": "",
+        "cert_date": "",
+        "last_action": str(r["year_reg"]).strip(),
+        "expiration": "",
+    }
+    return render_template_string(DETAIL_HTML, aircraft=aircraft)
 if __name__ == "__main__":
     app.run(debug=True, port=8080)

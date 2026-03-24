@@ -75,6 +75,7 @@ LISTING_HTML = """
         .header { background: #1a1a2e; color: white; padding: 20px 40px; }
         .header h1 { font-size: 24px; font-weight: 600; }
         .header span { color: #4a9eff; }
+        .header a { color: #aaa; font-size: 14px; text-decoration: none; margin-left: 20px; }
         .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
         .ai-card { background: #e8f5e9; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
         .ai-card h3 { color: #2d7a3a; margin-bottom: 12px; }
@@ -89,7 +90,7 @@ LISTING_HTML = """
     </style>
 </head>
 <body>
-    <div class="header"><h1>PanPan<span>Parts</span></h1></div>
+    <div class="header"><h1>PanPan<span>Parts</span></h1><a href="/parts">← Back to listings</a></div>
     <div class="container">
         <div class="ai-card">
             <h3>AI Analysis Result</h3>
@@ -404,6 +405,7 @@ DETAIL_HTML = """
         .header { background: #1a1a2e; color: white; padding: 20px 40px; display: flex; align-items: center; gap: 16px; }
         .header h1 { font-size: 24px; font-weight: 600; }
         .header span { color: #4a9eff; }
+        .header a { color: #aaa; font-size: 14px; text-decoration: none; margin-left: 20px; }
         .header a { color: #aaa; font-size: 14px; text-decoration: none; margin-left: 20px; }
         .header a:hover { color: white; }
         .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }

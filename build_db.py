@@ -12,8 +12,8 @@ ref = pd.read_csv('faa_ref_small.csv', low_memory=False)
 ref2 = ref[ref.columns[:3]].copy()
 ref2.columns = ['code', 'manufacturer', 'model']
 ref2['code'] = ref2['code'].astype(str).str.strip()
-faa[faa.columns[4]] = faa[faa.columns[4]].astype(str).str.strip()
-merged = faa.merge(ref2, left_on=faa.columns[4], right_on='code', how='left')
+faa['MFR MDL CODE'] = faa['MFR MDL CODE'].astype(str).str.strip()
+merged = faa.merge(ref2, left_on='MFR MDL CODE', right_on='code', how='left')
 
 aircraft = []
 for _, r in merged.iterrows():

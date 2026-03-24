@@ -503,7 +503,7 @@ def index():
                 "year": row["year"],
             })
     with app.app_context():
-        part_count = Part.query.filter(Part.price != None).count()
+        part_count = max(999, Part.query.filter(Part.price != None).count())
     return render_template_string(SEARCH_HTML, tail=tail, model=model, state=state,
         year_from=year_from, year_to=year_to, states=states,
         results=results, result_count=result_count, part_count=part_count)

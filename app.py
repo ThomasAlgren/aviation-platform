@@ -264,7 +264,7 @@ SEARCH_HTML = """
                 <p style="color:#555; font-size:13px; margin-top:4px;">{{ r.year }}</p>
             </div>
             <div style="text-align:right">
-                <div class="tail">{% if r.tail.startswith("OY") or r.tail.startswith("LN") or r.tail.startswith("HB") or r.tail.startswith("VH") %}{{ r.tail }}{% else %}N{{ r.tail }}{% endif %}</div>
+                <div class="tail">{{ r.tail }}</div>
                 <div class="status-v">Active</div>
             </div>
         </a>
@@ -495,8 +495,8 @@ def index():
         for row in rows:
             results.append({
                 "tail": row["registration"],
-                "model": row["model"],
-                "manufacturer": row["manufacturer"],
+                "model": "" if str(row["model"]).strip() in ["nan", "None", ""] else str(row["model"]).strip(),
+                "manufacturer": "" if str(row["manufacturer"]).strip() in ["nan", "None", ""] else str(row["manufacturer"]).strip(),
                 "name": row["owner"],
                 "city": row["city"],
                 "state": row["state"],

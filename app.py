@@ -191,7 +191,7 @@ SEARCH_HTML = """
         .nav { display: flex; gap: 24px; }
         .nav a { color: #aaa; text-decoration: none; font-size: 14px; }
         .nav a:hover { color: white; }
-        .nav a.primary { background: #ff6b35; color: white; padding: 8px 18px; border-radius: 8px; }
+        .nav a.primary { background: #ff6b35; color: white; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; }
         .hero { text-align: center; padding: 80px 20px 60px; }
         .hero h1 { font-size: 52px; font-weight: 700; line-height: 1.15; margin-bottom: 16px; }
         .hero h1 span { color: #ff6b35; }

@@ -143,6 +143,32 @@ with open('ACG_LFZ_24032026.csv', 'r', encoding='latin-1') as f:
 aircraft.extend(austria_aircraft)
 print(f'Efter AT: {len(aircraft)} fly')
 
+
+print('Loader OpenSky data (nye lande)...')
+import pandas as pd
+osky = pd.read_csv('opensky.csv', low_memory=False, on_bad_lines='skip')
+osky.columns = osky.columns.str.replace(chr(39), '')
+exclude = ['United States', 'Canada', 'Australia', 'Denmark', 'Norway', 'Switzerland', 'Austria']
+osky_new = osky[~osky['country'].isin(exclude)]
+opensky_aircraft = []
+for _, r in osky_new.iterrows():
+    reg = str(r.get('registration', '')).replace(chr(39), '').strip()
+    if not reg or reg == 'nan':
+        continue
+    opensky_aircraft.append({
+        'registration': reg,
+        'manufacturer': str(r.get('manufacturerName', '')).replace(chr(39), '').strip(),
+        'model': str(r.get('model', '')).replace(chr(39), '').strip(),
+        'year': str(r.get('built', '')).replace(chr(39), '').strip()[:4],
+        'serial': str(r.get('serialNumber', '')).replace(chr(39), '').strip(),
+        'country': str(r.get('country', '')).replace(chr(39), '').strip()[:2],
+        'owner': str(r.get('owner', '')).replace(chr(39), '').strip()[:100],
+        'city': '',
+        'state': str(r.get('country', '')).replace(chr(39), '').strip(),
+    })
+aircraft.extend(opensky_aircraft)
+print(f'Efter OpenSky: {len(aircraft)} fly')
+
 df = pd.DataFrame(aircraft)
 df.to_sql('aircraft', conn, if_exists='replace', index=False)
 conn.execute('CREATE INDEX IF NOT EXISTS idx_registration ON aircraft(registration)')

@@ -119,6 +119,30 @@ with open('carscurr.txt', 'r', encoding='latin-1') as f:
         })
 aircraft.extend(canada_aircraft)
 print(f'Efter CA: {len(aircraft)} fly')
+
+print('Loader østrigsk data...')
+import csv
+austria_aircraft = []
+with open('ACG_LFZ_24032026.csv', 'r', encoding='latin-1') as f:
+    reader = csv.DictReader(f, delimiter=';')
+    for row in reader:
+        reg = row.get('Registration ', '').strip()
+        if not reg:
+            continue
+        austria_aircraft.append({
+            'registration': 'OE-' + reg,
+            'manufacturer': row.get('Manufacturer', '').strip(),
+            'model': row.get('Manufacturer ', '').strip(),
+            'year': '',
+            'serial': row.get('Serial number', '').strip(),
+            'country': 'AT',
+            'owner': row.get('Operator', '').strip()[:100],
+            'city': '',
+            'state': 'Austria',
+        })
+aircraft.extend(austria_aircraft)
+print(f'Efter AT: {len(aircraft)} fly')
+
 df = pd.DataFrame(aircraft)
 df.to_sql('aircraft', conn, if_exists='replace', index=False)
 conn.execute('CREATE INDEX IF NOT EXISTS idx_registration ON aircraft(registration)')

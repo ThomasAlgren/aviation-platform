@@ -242,8 +242,8 @@ SEARCH_HTML = """
             </div>
         </form>
         <div class="stats">
-            <div class="stat"><div class="stat-value">310K+</div><div class="stat-label">Aircraft registered</div></div>
-            <div class="stat"><div class="stat-value">7K+</div><div class="stat-label">Danish aircraft</div></div>
+            <div class="stat"><div class="stat-value">346K+</div><div class="stat-label">Aircraft registered</div></div>
+            <div class="stat"><div class="stat-value">{{ part_count }}</div><div class="stat-label">Parts for sale</div></div>
             <div class="stat"><div class="stat-value">AI</div><div class="stat-label">Verified parts</div></div>
         </div>
         <div class="features">
@@ -502,9 +502,11 @@ def index():
                 "state": row["state"],
                 "year": row["year"],
             })
+    with app.app_context():
+        part_count = Part.query.filter(Part.price != None).count()
     return render_template_string(SEARCH_HTML, tail=tail, model=model, state=state,
         year_from=year_from, year_to=year_to, states=states,
-        results=results, result_count=result_count)
+        results=results, result_count=result_count, part_count=part_count)
 
 @app.route("/aircraft/<tail>")
 def aircraft_detail(tail):

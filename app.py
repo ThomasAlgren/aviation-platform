@@ -237,7 +237,7 @@ SEARCH_HTML = """
         <p>The verified marketplace for aircraft parts — with AI-powered documentation checking</p>
         <form method="GET">
             <div class="search-box">
-                <input name="tail" placeholder="Search by tail number or aircraft type..." value="{{ tail }}">
+                <input name="tail" placeholder="Search tail number, aircraft type or manufacturer..." value="{{ tail }}">
                 <button type="submit">Search</button>
             </div>
         </form>
@@ -472,8 +472,10 @@ def index():
         params = []
         if tail:
             t = tail.upper()
-            query += " AND registration LIKE ?"
+            query += " AND (registration LIKE ? OR model LIKE ? OR manufacturer LIKE ?)"
             params.append(f'%{t}%')
+            params.append(f'%{tail}%')
+            params.append(f'%{tail}%')
         if model:
             query += " AND model LIKE ?"
             params.append(f'%{model}%')

@@ -1,134 +1,164 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Upload Part</title>
+    <title>List a Part - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
-        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 16px; }
-        .upload-box { border: 2px dashed #ddd; border-radius: 8px; padding: 32px; text-align: center; cursor: pointer; }
-        .preview { width: 100%; border-radius: 8px; margin-top: 12px; display: none; }
-        .btn { background: #4a9eff; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 15px; cursor: pointer; width: 100%; margin-top: 8px; }
-        .btn:disabled { background: #ccc; }
-        .result { background: #f0f7ff; border-radius: 8px; padding: 16px; margin-top: 16px; display: none; white-space: pre-wrap; font-size: 14px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; }
+        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        h2 { font-size: 28px; margin-bottom: 8px; }
+        h2 span { color: #ff6b35; }
+        .sub { color: #aaa; margin-bottom: 32px; font-size: 15px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-bottom: 16px; border: 1px solid #2a2a3e; }
+        .card h3 { font-size: 15px; margin-bottom: 16px; color: #ff6b35; }
+        .upload-row { display: flex; gap: 10px; margin-bottom: 8px; }
+        .upload-box { flex: 1; border: 2px dashed #333; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; font-size: 13px; color: #666; position: relative; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+        .upload-box:hover { border-color: #ff6b35; color: #ff6b35; }
+        .upload-box img { width: 100%; height: 70px; object-fit: cover; border-radius: 6px; display: none; }
+        input[type=file] { display: none; }
+        input[type=text], input[type=email], input[type=tel], input[type=number], textarea, select { width: 100%; padding: 12px; border: 1px solid #333; border-radius: 8px; font-size: 15px; margin-bottom: 12px; background: #0d0d1a; color: white; }
+        textarea { height: 80px; resize: vertical; }
+        .btn { background: #ff6b35; color: white; border: none; padding: 16px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; font-weight: 600; margin-top: 8px; }
+        .btn:disabled { background: #444; cursor: not-allowed; }
+        .status { background: #1a1a2e; border-radius: 8px; padding: 16px; margin-top: 16px; display: none; color: #aaa; font-size: 14px; border: 1px solid #2a2a3e; }
     </style>
 </head>
 <body>
-    <div id="onboarding" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
-    <div style="background:white; border-radius:16px; padding:32px; max-width:400px; width:90%; margin:20px;">
-        <h2 style="margin-bottom:8px; font-size:20px;">Quick setup</h2>
-        <p style="color:#666; font-size:14px; margin-bottom:24px;">Takes 10 seconds — saved for all your listings</p>
-        <label style="font-size:13px; color:#666; display:block; margin-bottom:6px;">Currency</label>
-        <select id="ob_currency" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:15px; margin-bottom:16px;">
-            <option value="EUR">EUR — Euro</option>
-            <option value="USD">USD — US Dollar</option>
-            <option value="DKK">DKK — Danish Krone</option>
-            <option value="GBP">GBP — British Pound</option>
-        </select>
-        <label style="font-size:13px; color:#666; display:block; margin-bottom:6px;">Your location</label>
-        <input id="ob_location" type="text" placeholder="e.g. Copenhagen, Denmark" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:15px; margin-bottom:16px;">
-        <label style="font-size:13px; color:#666; display:block; margin-bottom:6px;">Delivery</label>
-        <select id="ob_delivery" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:15px; margin-bottom:24px;">
-            <option value="Shipping">Shipping worldwide</option>
-            <option value="Collection">Collection only</option>
-            <option value="Both">Shipping or collection</option>
-        </select>
-        <button onclick="saveOnboarding()" style="background:#1a1a2e; color:white; border:none; padding:14px; border-radius:8px; font-size:15px; cursor:pointer; width:100%;">Save and continue</button>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav"><a href="/parts">Parts for sale</a></div>
     </div>
-</div>
-    <h2>PanPanParts - Upload Part</h2>
+    <div class="container">
+        <h2>List a <span>Part</span></h2>
+        <p class="sub">Upload photos and let AI verify your documentation automatically.</p>
 
-    <div class="card">
-        <h3>1. Photo of part</h3>
-        <div class="upload-box" onclick="document.getElementById('part-input').click()">
-            Click to upload image
-            <input type="file" id="part-input" accept="image/*" capture="environment" style="display:none" onchange="loadImage(this,'part-preview','part')">
+        <div class="card">
+            <h3>Photos of part (up to 3)</h3>
+            <div class="upload-row">
+                <div class="upload-box" onclick="document.getElementById('p1').click()">
+                    <img id="p1-preview"><span id="p1-label">+ Photo</span>
+                    <input type="file" id="p1" accept="image/*" onchange="loadImg(this,'p1-preview','p1-label',0)">
+                </div>
+                <div class="upload-box" onclick="document.getElementById('p2').click()">
+                    <img id="p2-preview"><span id="p2-label">+ Photo</span>
+                    <input type="file" id="p2" accept="image/*" onchange="loadImg(this,'p2-preview','p2-label',1)">
+                </div>
+                <div class="upload-box" onclick="document.getElementById('p3').click()">
+                    <img id="p3-preview"><span id="p3-label">+ Photo</span>
+                    <input type="file" id="p3" accept="image/*" onchange="loadImg(this,'p3-preview','p3-label',2)">
+                </div>
+            </div>
         </div>
-        <img id="part-preview" class="preview">
-    </div>
 
-    <div class="card">
-        <h3>2. Photo of 8130-3 / Form 1 document</h3>
-        <div class="upload-box" onclick="document.getElementById('doc-input').click()">
-            Click to upload document
-            <input type="file" id="doc-input" accept="image/*" capture="environment" style="display:none" onchange="loadImage(this,'doc-preview','doc')">
+        <div class="card">
+            <h3>Photos of documentation / 8130-3 / Form 1 (up to 3)</h3>
+            <div class="upload-row">
+                <div class="upload-box" onclick="document.getElementById('d1').click()">
+                    <img id="d1-preview"><span id="d1-label">+ Doc</span>
+                    <input type="file" id="d1" accept="image/*" onchange="loadImg(this,'d1-preview','d1-label',3)">
+                </div>
+                <div class="upload-box" onclick="document.getElementById('d2').click()">
+                    <img id="d2-preview"><span id="d2-label">+ Doc</span>
+                    <input type="file" id="d2" accept="image/*" onchange="loadImg(this,'d2-preview','d2-label',4)">
+                </div>
+                <div class="upload-box" onclick="document.getElementById('d3').click()">
+                    <img id="d3-preview"><span id="d3-label">+ Doc</span>
+                    <input type="file" id="d3" accept="image/*" onchange="loadImg(this,'d3-preview','d3-label',5)">
+                </div>
+            </div>
         </div>
-        <img id="doc-preview" class="preview">
+
+        <div class="card">
+            <h3>Your contact details</h3>
+            <input type="text" id="contact_name" placeholder="Full name" required>
+            <input type="email" id="contact_email" placeholder="Email address" required>
+            <input type="tel" id="contact_phone" placeholder="Phone number (optional)">
+            <input type="text" id="location" placeholder="Location (e.g. Roskilde, Denmark)" required>
+        </div>
+
+        <div class="card">
+            <h3>Part details</h3>
+            <input type="number" id="price" placeholder="Price (EUR)" required>
+            <textarea id="description" placeholder="Description — condition, history, why are you selling?"></textarea>
+        </div>
+
+        <button class="btn" id="btn" onclick="analyze()" disabled>Analyze with AI and list part</button>
+        <div class="status" id="status"></div>
     </div>
-
-    <button class="btn" id="btn" onclick="analyze()" disabled>Analyze with AI</button>
-
-    <div class="result" id="result"></div>
 
     <script>
-        var partB64 = null;
-        var docB64 = null;
-        var partB64 = null;
-        var docB64 = null;
+        var images = [null, null, null, null, null, null];
 
-function checkOnboarding() {
-    if (!localStorage.getItem('ppp_setup')) {
-        document.getElementById('onboarding').style.display = 'flex';
-    }
-}
+        function loadImg(input, previewId, labelId, index) {
+            var file = input.files[0];
+            if (!file) return;
+            var img = new Image();
+            var url = URL.createObjectURL(file);
+            img.onload = function() {
+                var canvas = document.createElement('canvas');
+                var max = 1200;
+                var w = img.width, h = img.height;
+                if (w > max) { h = h * max / w; w = max; }
+                if (h > max) { w = w * max / h; h = max; }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                var jpeg = canvas.toDataURL('image/jpeg', 0.7);
+                var preview = document.getElementById(previewId);
+                preview.src = jpeg;
+                preview.style.display = 'block';
+                document.getElementById(labelId).style.display = 'none';
+                images[index] = jpeg.split(',')[1];
+                checkReady();
+                URL.revokeObjectURL(url);
+            };
+            img.src = url;
+        }
 
-function saveOnboarding() {
-    var currency = document.getElementById('ob_currency').value;
-    var location = document.getElementById('ob_location').value;
-    var delivery = document.getElementById('ob_delivery').value;
-    if (!location) { alert('Please enter your location'); return; }
-    localStorage.setItem('ppp_setup', '1');
-    localStorage.setItem('ppp_currency', currency);
-    localStorage.setItem('ppp_location', location);
-    localStorage.setItem('ppp_delivery', delivery);
-    document.getElementById('onboarding').style.display = 'none';
-}
-
-window.onload = checkOnboarding;
-function loadImage(input, previewId, which) {
-    var file = input.files[0];
-    if (!file) return;
-    var img = new Image();
-    var url = URL.createObjectURL(file);
-    img.onload = function() {
-        var canvas = document.createElement('canvas');
-        var max = 1200;
-        var w = img.width, h = img.height;
-        if (w > max) { h = h * max / w; w = max; }
-        if (h > max) { w = w * max / h; h = max; }
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        var jpeg = canvas.toDataURL('image/jpeg', 0.7);
-        document.getElementById(previewId).src = jpeg;
-        document.getElementById(previewId).style.display = 'block';
-        if (which === 'part') partB64 = jpeg.split(',')[1];
-        if (which === 'doc') docB64 = jpeg.split(',')[1];
-        document.getElementById('btn').disabled = !(partB64 && docB64);
-        URL.revokeObjectURL(url);
-    };
-    img.src = url;
-}
+        function checkReady() {
+            var hasPartPhoto = images[0] !== null;
+            var hasDocPhoto = images[3] !== null;
+            document.getElementById('btn').disabled = !(hasPartPhoto && hasDocPhoto);
+        }
 
         function analyze() {
-            document.getElementById('result').style.display = 'block';
-            document.getElementById('result').textContent = 'Analyzing...';
+            var name = document.getElementById('contact_name').value;
+            var email = document.getElementById('contact_email').value;
+            var price = document.getElementById('price').value;
+            if (!name || !email || !price) { alert('Please fill in name, email and price'); return; }
+
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('status').textContent = 'Analyzing with AI...';
             document.getElementById('btn').disabled = true;
 
             fetch('/analyze', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({part_image: partB64, doc_image: docB64})
+                body: JSON.stringify({
+                    part_image: images[0],
+                    doc_image: images[3],
+                    contact_name: name,
+                    contact_email: email,
+                    contact_phone: document.getElementById('contact_phone').value,
+                    location: document.getElementById('location').value,
+                    price: price,
+                    description: document.getElementById('description').value
+                })
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
-if (data.part_id) { setTimeout(function() { window.location.href = '/listing/' + data.part_id; }, 2000); }
-                document.getElementById('btn').disabled = false;
+                if (data.part_id) {
+                    document.getElementById('status').textContent = 'Done! Redirecting...';
+                    setTimeout(function() { window.location.href = '/listing/' + data.part_id; }, 1500);
+                }
             })
             .catch(function(e) {
-                document.getElementById('result').textContent = 'Error: ' + e.message;
+                document.getElementById('status').textContent = 'Error: ' + e.message;
                 document.getElementById('btn').disabled = false;
             });
         }

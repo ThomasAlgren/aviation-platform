@@ -8,8 +8,9 @@ from flask import Flask, render_template_string, request, redirect
 import pandas as pd
 
 app = Flask(__name__)
-os.makedirs('instance', exist_ok=True)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/panpanparts.db'
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance')
+os.makedirs(DB_PATH, exist_ok=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(DB_PATH, 'panpanparts.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -36,7 +37,7 @@ with app.app_context():
     db.create_all()
 print("Loader FAA data...")
 import sqlite3 as sql
-DB = 'instance/panpanparts.db'
+DB = os.path.join(DB_PATH, 'panpanparts.db')
 
 def search_aircraft(query, limit=50):
     conn = sql.connect(DB)

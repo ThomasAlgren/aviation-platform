@@ -31,7 +31,7 @@ for _, r in merged.iterrows():
 print(f"FAA: {len(aircraft)} fly")
 
 print("Loader dansk data...")
-dk = pd.read_pickle('denmark.pkl')
+dk = pd.read_csv('denmark.csv')
 for _, r in dk.iterrows():
     aircraft.append({
         'registration': str(r.get('registration', '')).strip(),
@@ -47,7 +47,7 @@ for _, r in dk.iterrows():
 print(f"Efter DK: {len(aircraft)} fly")
 
 print("Loader norsk data...")
-ln = pd.read_pickle('ln_register.pkl')
+ln = pd.read_csv('ln_register.csv')
 for _, r in ln.iterrows():
     aircraft.append({
         'registration': str(r.get('registration', '')).strip(),
@@ -79,7 +79,7 @@ for _, r in hb.iterrows():
 print(f"Efter CH: {len(aircraft)} fly")
 
 print("Loader australsk data...")
-vh = pd.read_pickle('vh_register.pkl')
+vh = pd.read_csv('vh_register.csv')
 for _, r in vh.iterrows():
     aircraft.append({
         'registration': 'VH-' + str(r.get('Mark', '')).strip(),

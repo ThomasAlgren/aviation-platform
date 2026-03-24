@@ -452,6 +452,9 @@ DETAIL_HTML = """
 
 @app.route("/")
 def index():
+    import os
+    if not os.path.exists('instance/panpanparts.db'):
+        return "<html><body style='font-family:sans-serif;text-align:center;padding:100px'><h1>PanPanParts</h1><p>Loading aircraft database... please refresh in 30 seconds.</p></body></html>"
     tail = request.args.get("tail", "")
     model = request.args.get("model", "")
     state = request.args.get("state", "")

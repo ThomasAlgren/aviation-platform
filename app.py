@@ -488,7 +488,7 @@ def index():
         if year_to:
             query += " AND CAST(year AS INTEGER) <= ?"
             params.append(int(year_to))
-        query += " LIMIT 100"
+        query += " ORDER BY RANDOM() LIMIT 50"
         cur.execute(query, params)
         rows = cur.fetchall()
         conn.close()

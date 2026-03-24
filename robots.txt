@@ -1,0 +1,14 @@
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: *
+Disallow: /parts
+Disallow: /listing/
+Disallow: /analyze
+Disallow: /upload
+Crawl-delay: 10
+
+Sitemap: https://www.panpanparts.com/sitemap.xml

@@ -8,7 +8,8 @@ from flask import Flask, render_template_string, request, redirect
 import pandas as pd
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////Users/thomasalgrenwest/aviation-platform/instance/panpanparts.db'
+os.makedirs('instance', exist_ok=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/panpanparts.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 

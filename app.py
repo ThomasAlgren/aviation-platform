@@ -488,7 +488,7 @@ def index():
         if year_to:
             query += " AND CAST(year AS INTEGER) <= ?"
             params.append(int(year_to))
-        query += " LIMIT 50"
+        query += " LIMIT 100"
         cur.execute(query, params)
         rows = cur.fetchall()
         conn.close()

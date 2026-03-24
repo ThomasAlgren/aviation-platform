@@ -9,7 +9,7 @@ import pandas as pd
 
 app = Flask(__name__)
 os.makedirs('instance', exist_ok=True)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////opt/render/project/src/instance/panpanparts.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/panpanparts.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 

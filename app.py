@@ -472,10 +472,8 @@ def index():
         params = []
         if tail:
             t = tail.upper()
-            query += " AND (registration LIKE ? OR model LIKE ? OR manufacturer LIKE ?)"
+            query += " AND registration LIKE ?"
             params.append(f'%{t}%')
-            params.append(f'%{tail}%')
-            params.append(f'%{tail}%')
         if model:
             query += " AND model LIKE ?"
             params.append(f'%{model}%')
@@ -488,7 +486,7 @@ def index():
         if year_to:
             query += " AND CAST(year AS INTEGER) <= ?"
             params.append(int(year_to))
-        query += " ORDER BY RANDOM() LIMIT 50"
+        query += " LIMIT 20"
         cur.execute(query, params)
         rows = cur.fetchall()
         conn.close()

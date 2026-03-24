@@ -249,7 +249,7 @@ SEARCH_HTML = """
         <div class="features">
             <div class="feature"><div class="feature-icon">📷</div><h3>Photo to listing in 2 minutes</h3><p>Take photos, AI extracts all data automatically. Just add a price.</p></div>
             <div class="feature"><div class="feature-icon">✓</div><h3>AI verified documentation</h3><p>Every part checked for valid airworthiness documentation.</p></div>
-            <div class="feature"><div class="feature-icon">🌍</div><h3>European focus</h3><p>Search across USA, Denmark and Europe.</p></div>
+            <div class="feature"><div class="feature-icon">🌍</div><h3>European focus</h3><p>Search across USA, Denmark, Norway, Switzerland, Australia and more — with new registries added continuously.</p></div>
         </div>
     </div>
     {% endif %}

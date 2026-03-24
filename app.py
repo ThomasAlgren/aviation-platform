@@ -533,7 +533,7 @@ def aircraft_detail(tail):
         "last_action": "",
         "expiration": "",
     }
-    return render_template_string(DETAIL_HTML, aircraft=aircraft)
+    return render_template_string(OY_DETAIL_HTML, aircraft=aircraft)
 
 @app.route("/upload")
 def upload():

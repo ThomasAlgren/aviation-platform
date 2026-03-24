@@ -806,3 +806,7 @@ ABOUT_HTML = """
 @app.route('/robots.txt')
 def robots():
     return open('robots.txt').read(), 200, {'Content-Type': 'text/plain'}
+
+@app.route('/tos')
+def tos():
+    return open('tos.html').read()

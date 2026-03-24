@@ -421,12 +421,12 @@ DETAIL_HTML = """
 </head>
 <body>
     <div class="header">
-        <h1>Sky<span>Reg</span></h1>
+        <h1>PanPan<span>Parts</span></h1>
         <a href="/">← Back to search</a>
     </div>
     <div class="container">
         <div class="hero">
-            <div class="tail-number">{% if aircraft.tail.startswith("OY") %}{{ aircraft.tail }}{% else %}N{{ aircraft.tail }}{% endif %}</div>
+            <div class="tail-number">{% if aircraft.tail.startswith("OY") or aircraft.tail.startswith("LN") or aircraft.tail.startswith("HB") or aircraft.tail.startswith("VH") %}{{ aircraft.tail }}{% else %}N{{ aircraft.tail }}{% endif %}</div>
             <div class="model-name">{{ aircraft.manufacturer }} {{ aircraft.model }}</div>
             <div class="status-v">✓ Active Registration</div>
         </div>

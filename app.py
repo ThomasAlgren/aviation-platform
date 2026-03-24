@@ -237,7 +237,7 @@ SEARCH_HTML = """
         <p>The verified marketplace for aircraft parts — with AI-powered documentation checking</p>
         <form method="GET">
             <div class="search-box">
-                <input name="tail" placeholder="Search tail number, aircraft type or manufacturer..." value="{{ tail }}">
+                <input name="tail" placeholder="Search by tail number, e.g. OY-RYY or N12345..." value="{{ tail }}">
                 <button type="submit">Search</button>
             </div>
         </form>

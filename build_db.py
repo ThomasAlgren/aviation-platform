@@ -95,9 +95,34 @@ for _, r in vh.iterrows():
 print(f"Efter AU: {len(aircraft)} fly")
 
 print("Gemmer til database...")
+print('Loader canadisk data...')
+import csv
+canada_aircraft = []
+with open('carscurr.txt', 'r', encoding='latin-1') as f:
+    reader = csv.reader(f)
+    for row in reader:
+        if len(row) < 7:
+            continue
+        mark = row[0].strip()
+        if not mark:
+            continue
+        canada_aircraft.append({
+            'registration': 'C-' + mark,
+            'manufacturer': row[3].strip() if len(row) > 3 else '',
+            'model': row[4].strip() if len(row) > 4 else '',
+            'year': '',
+            'serial': row[5].strip() if len(row) > 5 else '',
+            'country': 'CA',
+            'owner': '',
+            'city': '',
+            'state': 'Canada',
+        })
+aircraft.extend(canada_aircraft)
+print(f'Efter CA: {len(aircraft)} fly')
 df = pd.DataFrame(aircraft)
 df.to_sql('aircraft', conn, if_exists='replace', index=False)
 conn.execute('CREATE INDEX IF NOT EXISTS idx_registration ON aircraft(registration)')
 conn.commit()
 conn.close()
 print(f"FAERDIG! {len(df)} fly i databasen!")
+

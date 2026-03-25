@@ -532,6 +532,9 @@ def index():
     if not os.path.exists('instance/panpanparts.db'):
         return "<html><body style='font-family:sans-serif;text-align:center;padding:100px'><h1>PanPanParts</h1><p>Loading aircraft database... please refresh in 30 seconds.</p></body></html>"
     tail = request.args.get("tail", "")
+    # Hvis søgning ikke ligner et tail-nummer, send til type-søgning
+    if tail and not any(tail.upper().startswith(p) for p in ["OY", "LN", "HB", "VH", "N", "C-", "G-", "D-", "F-", "OE"]):
+        return redirect("/type/" + tail.strip().replace(" ", "-"))
     model = request.args.get("model", "")
     state = request.args.get("state", "")
     year_from = request.args.get("year_from", "")
@@ -1546,6 +1549,148 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
             <p>No aircraft listed yet</p>
             <p style="margin-top:12px;color:#ff6b35">Be the first to list your aircraft</p>
         </div>
+        {% endif %}
+    </div>
+</body>
+</html>"""
+
+@app.route('/type/<query>')
+def aircraft_type(query):
+    search = query.replace("-", " ")
+    
+    # Tæl fly i databasen
+    conn_t = sql.connect(DB)
+    
+    # Worldwide count
+    total = conn_t.execute(
+        "SELECT COUNT(*) FROM aircraft WHERE model LIKE ? OR manufacturer LIKE ?",
+        (f'%{search}%', f'%{search}%')
+    ).fetchone()[0]
+    
+    # Per land top 10
+    by_country = conn_t.execute(
+        "SELECT country, COUNT(*) as cnt FROM aircraft WHERE model LIKE ? OR manufacturer LIKE ? GROUP BY country ORDER BY cnt DESC LIMIT 10",
+        (f'%{search}%', f'%{search}%')
+    ).fetchall()
+    
+    conn_t.close()
+    
+    # Fly til salg
+    listings = AircraftListing.query.filter(
+        db.or_(
+            AircraftListing.model.ilike(f'%{search}%'),
+            AircraftListing.manufacturer.ilike(f'%{search}%')
+        )
+    ).all()
+    
+    # Dele til salg
+    parts = Part.query.filter(
+        db.or_(
+            Part.part_number.ilike(f'%{search}%'),
+            Part.description.ilike(f'%{search}%'),
+            Part.condition_notes.ilike(f'%{search}%')
+        )
+    ).filter(Part.price != None).all()
+    
+    return render_template_string(TYPE_PAGE_HTML, 
+        search=search, 
+        total=total, 
+        by_country=by_country,
+        listings=listings,
+        parts=parts)
+
+TYPE_PAGE_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ search }} - PanPanParts</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
+        .nav a.primary { background: #ff6b35; color: white; padding: 10px 20px; border-radius: 8px; }
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        .back { color: #aaa; text-decoration: none; font-size: 14px; display: block; margin-bottom: 24px; }
+        h1 { font-size: 40px; font-weight: 700; margin-bottom: 8px; }
+        h1 span { color: #ff6b35; }
+        .sub { color: #666; margin-bottom: 40px; }
+        h2 { font-size: 20px; margin-bottom: 16px; margin-top: 40px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .stat-card { background: #1a1a2e; border-radius: 10px; padding: 16px; border: 1px solid #2a2a3e; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: 700; color: #ff6b35; }
+        .stat-label { font-size: 12px; color: #666; margin-top: 4px; }
+        .aircraft-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .aircraft-card { background: #1a1a2e; border-radius: 12px; padding: 20px; border: 1px solid #2a2a3e; text-decoration: none; color: white; }
+        .aircraft-card:hover { border-color: #ff6b35; }
+        .tail { font-size: 22px; font-weight: 700; color: #ff6b35; font-family: monospace; }
+        .price { font-size: 20px; font-weight: 700; margin-top: 10px; }
+        .meta { color: #666; font-size: 13px; margin-top: 4px; }
+        .part-card { background: #1a1a2e; border-radius: 12px; padding: 20px; border: 1px solid #2a2a3e; text-decoration: none; color: white; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .part-card:hover { border-color: #ff6b35; }
+        .empty { color: #555; font-size: 14px; padding: 20px 0; }
+        .total-badge { background: rgba(255,107,53,0.15); border: 1px solid rgba(255,107,53,0.3); border-radius: 20px; padding: 6px 16px; font-size: 14px; color: #ff6b35; display: inline-block; margin-bottom: 32px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav">
+            <a href="/aircraft-for-sale">Aircraft for sale</a>
+            <a href="/parts">Parts for sale</a>
+            {% if current_user.is_authenticated %}
+            <a href="/my-aircraft" class="primary">My aircraft</a>
+            {% else %}
+            <a href="/register" class="primary">Sign up</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="container">
+        <a href="/" class="back">← Search</a>
+        <h1>{{ search }}</h1>
+        <span class="total-badge">{{ "{:,}".format(total) }} aircraft in our registry</span>
+        
+        <h2>In our registry by country</h2>
+        <div class="stats-grid">
+            {% for country, count in by_country %}
+            <div class="stat-card">
+                <div class="stat-value">{{ "{:,}".format(count) }}</div>
+                <div class="stat-label">{{ country }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <h2>Aircraft for sale</h2>
+        {% if listings %}
+        <div class="aircraft-grid">
+            {% for l in listings %}
+            <a class="aircraft-card" href="/aircraft-listing/{{ l.id }}">
+                <div class="tail">{{ l.tail }}</div>
+                <div class="meta">{{ l.year }} · {{ l.location }}</div>
+                <div class="price">€{{ "{:,.0f}".format(l.price) }}</div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty">No {{ search }} listed for sale yet. <a href="/" style="color:#ff6b35">Own one? List it free.</a></p>
+        {% endif %}
+
+        <h2>Parts for sale</h2>
+        {% if parts %}
+            {% for p in parts %}
+            <a class="part-card" href="/part/{{ p.id }}">
+                <div>
+                    <div style="font-weight:600">{{ p.part_number or "Unknown part" }}</div>
+                    <div class="meta">{{ p.location }} · {{ p.part_condition }}</div>
+                </div>
+                <div style="font-weight:700;color:#ff6b35">€{{ p.price }}</div>
+            </a>
+            {% endfor %}
+        {% else %}
+        <p class="empty">No parts for {{ search }} listed yet. <a href="/upload" style="color:#ff6b35">List a part free.</a></p>
         {% endif %}
     </div>
 </body>

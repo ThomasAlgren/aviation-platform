@@ -1162,3 +1162,76 @@ MY_AIRCRAFT_HTML = """<!DOCTYPE html>
     </div>
 </body>
 </html>"""
+
+@app.route('/my-listings')
+@login_required
+def my_listings():
+    with app.app_context():
+        parts = Part.query.filter_by(contact_email=current_user.email).order_by(Part.created_at.desc()).all()
+    return render_template_string(MY_LISTINGS_HTML, parts=parts)
+
+MY_LISTINGS_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>My Listings - PanPanParts</title>
+    <meta charset="utf-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 32px; margin-bottom: 8px; }
+        h1 span { color: #ff6b35; }
+        .sub { color: #666; margin-bottom: 32px; font-size: 15px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-bottom: 12px; border: 1px solid #2a2a3e; display: flex; justify-content: space-between; align-items: center; }
+        .part-number { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+        .meta { color: #666; font-size: 13px; }
+        .price { font-size: 24px; font-weight: 700; color: #ff6b35; }
+        .badge { background: rgba(45,122,58,0.2); color: #4caf50; padding: 4px 10px; border-radius: 20px; font-size: 12px; margin-top: 6px; display: inline-block; }
+        .empty { text-align: center; padding: 60px 0; color: #666; }
+        .empty a { color: #ff6b35; text-decoration: none; }
+        .btn { background: #ff6b35; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; }
+        .user-menu { position: relative; margin-left: 8px; }
+        .user-btn { background: #1a1a2e; color: #aaa; border: 1px solid #333; padding: 8px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        .dropdown { display: none; position: absolute; right: 0; top: 44px; background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 8px; min-width: 140px; z-index: 100; }
+        .dropdown a { display: block; padding: 12px 16px; color: #aaa; text-decoration: none; font-size: 14px; }
+        .dropdown a:hover { color: white; background: #2a2a3e; }
+        .dropdown.open { display: block; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav">
+            <a href="/upload" class="btn">+ List a part</a>
+            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} &#9660;</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
+        </div>
+    </div>
+    <div class="container">
+        <h1>My <span>Listings</span></h1>
+        <p class="sub">Parts you have listed for sale</p>
+        {% if parts %}
+            {% for p in parts %}
+            <div class="card">
+                <div>
+                    <div class="part-number">{{ p.part_number or 'Unknown part' }}</div>
+                    <div class="meta">{{ p.location }} · {{ p.part_condition }}</div>
+                    <span class="badge">{{ p.ai_recommendation }}</span>
+                </div>
+                <div style="text-align:right">
+                    <div class="price">€{{ p.price }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                <p>No listings yet</p>
+                <p style="margin-top:12px"><a href="/upload">List your first part</a></p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>"""

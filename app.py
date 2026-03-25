@@ -306,7 +306,7 @@ SEARCH_HTML = """
             </div>
         </form>
         <div class="stats">
-            <div class="stat"><div class="stat-value">546K+</div><div class="stat-label">Aircraft registered</div></div>
+            <div class="stat"><div class="stat-value">{{ "{:,.0f}".format(registry_count) }}</div><div class="stat-label">Aircraft registered</div></div>
             <div class="stat"><div class="stat-value">{{ part_count }}</div><div class="stat-label">Parts for sale</div></div>
             <div class="stat"><div class="stat-value">{{ aircraft_count }}</div><div class="stat-label">Aircraft for sale</div></div>
             <div class="stat"><div class="stat-value">AI</div><div class="stat-label">Verified parts</div></div>
@@ -572,9 +572,13 @@ def index():
     with app.app_context():
         part_count = Part.query.filter(Part.price != None).count()
         aircraft_count = AircraftListing.query.count()
+        import sqlite3 as sql2
+        conn2 = sql2.connect(DB)
+        registry_count = conn2.execute("SELECT COUNT(*) FROM aircraft").fetchone()[0]
+        conn2.close()
     return render_template_string(SEARCH_HTML, tail=tail, model=model, state=state,
         year_from=year_from, year_to=year_to, states=states,
-        results=results, result_count=result_count, part_count=part_count, aircraft_count=aircraft_count)
+        results=results, result_count=result_count, part_count=part_count, aircraft_count=aircraft_count, registry_count=registry_count)
 
 @app.route("/aircraft/<tail>")
 def aircraft_detail(tail):

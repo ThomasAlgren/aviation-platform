@@ -306,7 +306,7 @@ SEARCH_HTML = """
             </div>
         </form>
         <div class="stats">
-            <div class="stat"><div class="stat-value">526K+</div><div class="stat-label">Aircraft registered</div></div>
+            <div class="stat"><div class="stat-value">546K+</div><div class="stat-label">Aircraft registered</div></div>
             <div class="stat"><div class="stat-value">{{ part_count }}</div><div class="stat-label">Parts for sale</div></div>
             <div class="stat"><div class="stat-value">{{ aircraft_count }}</div><div class="stat-label">Aircraft for sale</div></div>
             <div class="stat"><div class="stat-value">AI</div><div class="stat-label">Verified parts</div></div>

@@ -39,6 +39,16 @@ class User(UserMixin, db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+class ClaimedAircraft(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    tail = db.Column(db.String(20), unique=True)
+    arc_valid_until = db.Column(db.String(50))
+    arc_verified = db.Column(db.Boolean, default=False)
+    arc_document = db.Column(db.Text)
+    arc_checked_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class AircraftListing(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
@@ -54,6 +64,9 @@ class AircraftListing(db.Model):
     contact_name = db.Column(db.String(200))
     contact_email = db.Column(db.String(200))
     images = db.Column(db.Text)
+    arc_valid_until = db.Column(db.String(50))
+    arc_verified = db.Column(db.Boolean, default=False)
+    arc_document = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Part(db.Model):
@@ -1815,5 +1828,209 @@ REGISTER_AIRCRAFT_HTML = """<!DOCTYPE html>
             <p class="note">Your aircraft will be added to the PanPanParts registry and automatically claimed to your account.</p>
         </div>
     </div>
+</body>
+</html>"""
+
+@app.route('/upload-arc/<tail>', methods=['GET', 'POST'])
+@login_required
+def upload_arc(tail):
+    return render_template_string(UPLOAD_ARC_HTML, tail=tail)
+
+@app.route('/verify-arc', methods=['POST'])
+@login_required
+def verify_arc():
+    import anthropic as ac, json, base64
+    data = request.get_json()
+    tail = data.get('tail', '')
+    image = data.get('image', '')
+    
+    client = ac.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+    
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=500,
+        messages=[{"role": "user", "content": [
+            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image}},
+            {"type": "text", "text": f"""You are an aviation document expert. Analyze this document.
+Is this an Airworthiness Review Certificate (ARC) or Annual Inspection record for aircraft {tail}?
+
+Respond ONLY with JSON:
+{{
+  "is_arc": true or false,
+  "tail_number": "registration found in document or null",
+  "tail_matches": true or false,
+  "valid_until": "expiry date in YYYY-MM-DD format or null",
+  "issued_by": "organization name or null",
+  "issue_date": "issue date in YYYY-MM-DD format or null",
+  "confidence": "high / medium / low",
+  "notes": "any important observations"
+}}"""}
+        ]}]
+    )
+    
+    text = response.content[0].text
+    clean = text.replace("```json","").replace("```","").strip()
+    result = json.loads(clean)
+    
+    if result.get('is_arc') and result.get('tail_matches'):
+        # Gem i databasen
+        existing = ClaimedAircraft.query.filter_by(tail=tail.upper()).first()
+        if existing:
+            existing.arc_valid_until = result.get('valid_until')
+            existing.arc_verified = True
+            existing.arc_document = image[:500]
+            existing.arc_checked_at = datetime.utcnow()
+        else:
+            claimed = ClaimedAircraft(
+                user_id=current_user.id,
+                tail=tail.upper(),
+                arc_valid_until=result.get('valid_until'),
+                arc_verified=True,
+                arc_document=image[:500],
+                arc_checked_at=datetime.utcnow()
+            )
+            db.session.add(claimed)
+        db.session.commit()
+    
+    return json.dumps(result)
+
+UPLOAD_ARC_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload ARC - {{ tail }} - PanPanParts</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .container { max-width: 560px; margin: 40px auto; padding: 0 20px; }
+        .back { color: #aaa; text-decoration: none; font-size: 14px; display: block; margin-bottom: 24px; }
+        h1 { font-size: 28px; margin-bottom: 8px; }
+        h1 span { color: #ff6b35; }
+        .sub { color: #666; margin-bottom: 32px; font-size: 15px; line-height: 1.6; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 28px; border: 1px solid #2a2a3e; margin-bottom: 16px; }
+        .card h3 { font-size: 13px; text-transform: uppercase; color: #666; margin-bottom: 16px; letter-spacing: 0.5px; }
+        .upload-box { border: 2px dashed #333; border-radius: 10px; padding: 40px 20px; text-align: center; cursor: pointer; }
+        .upload-box:hover { border-color: #ff6b35; }
+        .upload-box img { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; display: none; }
+        .upload-icon { font-size: 40px; margin-bottom: 12px; }
+        .upload-text { color: #666; font-size: 14px; }
+        input[type=file] { display: none; }
+        .btn { background: #ff6b35; color: white; border: none; padding: 16px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; font-weight: 600; margin-top: 16px; }
+        .btn:disabled { background: #333; cursor: not-allowed; }
+        .result { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-top: 16px; display: none; border: 1px solid #2a2a3e; }
+        .result.success { border-color: #4caf50; }
+        .result.error { border-color: #ff4444; }
+        .result h3 { margin-bottom: 12px; }
+        .field { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2a2a3e; font-size: 14px; }
+        .field:last-child { border-bottom: none; }
+        .field-label { color: #666; }
+        .badge-ok { color: #4caf50; }
+        .badge-warn { color: #ff6b35; }
+        .continue-btn { display: block; background: #4caf50; color: white; text-align: center; padding: 14px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+    </div>
+    <div class="container">
+        <a href="/aircraft/{{ tail }}" class="back">← Back to {{ tail }}</a>
+        <h1>Verify <span>{{ tail }}</span></h1>
+        <p class="sub">Upload your Airworthiness Review Certificate (ARC) or Annual Inspection record. AI will verify the document and confirm your aircraft is airworthy.</p>
+
+        <div class="card">
+            <h3>Upload ARC document</h3>
+            <div class="upload-box" onclick="document.getElementById('arc-input').click()">
+                <img id="arc-preview">
+                <div id="upload-content">
+                    <div class="upload-icon">📋</div>
+                    <div class="upload-text">Click to upload ARC or Annual Inspection<br><small style="color:#444">Photo or scan of the document</small></div>
+                </div>
+                <input type="file" id="arc-input" accept="image/*" onchange="loadImage(this)">
+            </div>
+            <button class="btn" id="verify-btn" onclick="verify()" disabled>Verify with AI</button>
+        </div>
+
+        <div class="result" id="result">
+            <h3 id="result-title"></h3>
+            <div id="result-fields"></div>
+            <a href="/my-aircraft" class="continue-btn" id="continue-btn" style="display:none">✓ Continue to My Aircraft</a>
+        </div>
+    </div>
+
+    <script>
+        var imageData = null;
+        var tail = "{{ tail }}";
+
+        function loadImage(input) {
+            var file = input.files[0];
+            if (!file) return;
+            var img = new Image();
+            var url = URL.createObjectURL(file);
+            img.onload = function() {
+                var canvas = document.createElement('canvas');
+                var max = 1600;
+                var w = img.width, h = img.height;
+                if (w > max) { h = h*max/w; w = max; }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                var jpeg = canvas.toDataURL('image/jpeg', 0.85);
+                var preview = document.getElementById('arc-preview');
+                preview.src = jpeg;
+                preview.style.display = 'block';
+                document.getElementById('upload-content').style.display = 'none';
+                imageData = jpeg.split(',')[1];
+                document.getElementById('verify-btn').disabled = false;
+                URL.revokeObjectURL(url);
+            };
+            img.src = url;
+        }
+
+        function verify() {
+            document.getElementById('verify-btn').disabled = true;
+            document.getElementById('verify-btn').textContent = 'Analyzing...';
+            
+            fetch('/verify-arc', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({tail: tail, image: imageData})
+            })
+            .then(r => r.json())
+            .then(data => {
+                var result = document.getElementById('result');
+                var fields = '';
+                
+                if (data.is_arc && data.tail_matches) {
+                    result.className = 'result success';
+                    document.getElementById('result-title').innerHTML = '✓ ARC Verified';
+                    fields += '<div class="field"><span class="field-label">Aircraft</span><span class="badge-ok">' + (data.tail_number || tail) + '</span></div>';
+                    fields += '<div class="field"><span class="field-label">Valid until</span><span class="badge-ok">' + (data.valid_until || 'See document') + '</span></div>';
+                    fields += '<div class="field"><span class="field-label">Issued by</span><span>' + (data.issued_by || '—') + '</span></div>';
+                    fields += '<div class="field"><span class="field-label">Confidence</span><span>' + data.confidence + '</span></div>';
+                    document.getElementById('continue-btn').style.display = 'block';
+                } else {
+                    result.className = 'result error';
+                    document.getElementById('result-title').innerHTML = '✗ Verification failed';
+                    if (!data.is_arc) fields += '<div class="field"><span class="field-label">Issue</span><span class="badge-warn">Document does not appear to be an ARC</span></div>';
+                    if (!data.tail_matches) fields += '<div class="field"><span class="field-label">Issue</span><span class="badge-warn">Tail number does not match ' + tail + '</span></div>';
+                    if (data.notes) fields += '<div class="field"><span class="field-label">Notes</span><span>' + data.notes + '</span></div>';
+                }
+                
+                document.getElementById('result-fields').innerHTML = fields;
+                result.style.display = 'block';
+                document.getElementById('verify-btn').textContent = 'Verify with AI';
+                document.getElementById('verify-btn').disabled = false;
+            })
+            .catch(e => {
+                document.getElementById('verify-btn').textContent = 'Verify with AI';
+                document.getElementById('verify-btn').disabled = false;
+                alert('Error: ' + e.message);
+            });
+        }
+    </script>
 </body>
 </html>"""

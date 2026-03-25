@@ -1632,6 +1632,9 @@ TYPE_PAGE_HTML = """<!DOCTYPE html>
     <div class="container">
         <a href="/" class="back">← Search</a>
         <h1>{{ search }}</h1>
+        {% if ai_description %}
+        <p style="color:#aaa;font-size:15px;line-height:1.7;margin:16px 0 32px;max-width:680px">{{ ai_description }}</p>
+        {% endif %}
 
         <h2>Aircraft for sale</h2>
         {% if listings %}

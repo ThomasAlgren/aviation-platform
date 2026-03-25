@@ -790,10 +790,10 @@ def oy_detail(reg):
     }
     # Statistik for flytype
     conn_stat = sql.connect(DB)
-    model_query = aircraft["model"].split()[0] if aircraft["model"] else ""
+    model_query = aircraft["model"] if aircraft["model"] else ""
     if model_query:
-        total = conn_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model LIKE ?", (f'%{model_query}%',)).fetchone()[0]
-        in_country = conn_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model LIKE ? AND country = ?", (f'%{model_query}%', "DK")).fetchone()[0]
+        total = conn_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model = ?", (model_query,)).fetchone()[0]
+        in_country = conn_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model = ? AND country = ?", (model_query, "DK")).fetchone()[0]
     else:
         total = 0
         in_country = 0

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Aircraft Documents - PanPanParts</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
+        .container { max-width: 640px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 28px; margin-bottom: 8px; }
+        h1 span { color: #ff6b35; }
+        .sub { color: #666; margin-bottom: 32px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-bottom: 16px; border: 1px solid #2a2a3e; }
+        .card h3 { font-size: 13px; text-transform: uppercase; color: #666; margin-bottom: 16px; letter-spacing: 0.5px; }
+        .upload-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px; }
+        .upload-box { border: 2px dashed #333; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; font-size: 13px; color: #666; min-height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+        .upload-box:hover { border-color: #ff6b35; color: #ff6b35; }
+        .upload-box img { width: 100%; height: 70px; object-fit: cover; border-radius: 6px; display: none; }
+        .upload-box .icon { font-size: 24px; }
+        .upload-box .label { font-size: 12px; }
+        input[type=file] { display: none; }
+        .btn { background: #ff6b35; color: white; border: none; padding: 16px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; font-weight: 600; margin-top: 8px; }
+        .btn:disabled { background: #444; cursor: not-allowed; }
+        .status { background: #1a1a2e; border-radius: 8px; padding: 16px; margin-top: 16px; display: none; color: #aaa; font-size: 14px; border: 1px solid #2a2a3e; }
+        .result-card { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-top: 16px; border: 1px solid #ff6b35; display: none; }
+        .result-card h3 { color: #ff6b35; margin-bottom: 16px; }
+        .field { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2a2a3e; font-size: 14px; }
+        .field:last-child { border-bottom: none; }
+        .field-label { color: #666; }
+        .confirm-btn { background: #ff6b35; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 15px; cursor: pointer; width: 100%; font-weight: 600; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav"><a href="/my-aircraft">My aircraft</a><a href="/logout">Log out</a></div>
+    </div>
+    <div class="container">
+        <h1>Upload <span>Aircraft Documents</span></h1>
+        <p class="sub">Let AI extract all details from your documents automatically</p>
+
+        <div class="card">
+            <h3>Logbook</h3>
+            <div class="upload-row">
+                <div class="upload-box" onclick="document.getElementById('log1').click()">
+                    <img id="log1-preview"><div class="icon">📖</div><div class="label">Last entry</div>
+                    <input type="file" id="log1" accept="image/*" onchange="loadImg(this,'log1-preview',0)">
+                </div>
+                <div class="upload-box" onclick="document.getElementById('log2').click()">
+                    <img id="log2-preview"><div class="icon">📖</div><div class="label">Engine page</div>
+                    <input type="file" id="log2" accept="image/*" onchange="loadImg(this,'log2-preview',1)">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Instrument Panel</h3>
+            <div class="upload-row">
+                <div class="upload-box" onclick="document.getElementById('panel1').click()">
+                    <img id="panel1-preview"><div class="icon">✈️</div><div class="label">Full panel</div>
+                    <input type="file" id="panel1" accept="image/*" onchange="loadImg(this,'panel1-preview',2)">
+                </div>
+                <div class="upload-box" onclick="document.getElementById('panel2').click()">
+                    <img id="panel2-preview"><div class="icon">📡</div><div class="label">Avionics stack</div>
+                    <input type="file" id="panel2" accept="image/*" onchange="loadImg(this,'panel2-preview',3)">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Airworthiness Certificate</h3>
+            <div class="upload-row">
+                <div class="upload-box" onclick="document.getElementById('cert1').click()">
+                    <img id="cert1-preview"><div class="icon">📋</div><div class="label">Certificate</div>
+                    <input type="file" id="cert1" accept="image/*" onchange="loadImg(this,'cert1-preview',4)">
+                </div>
+                <div class="upload-box" onclick="document.getElementById('cert2').click()">
+                    <img id="cert2-preview"><div class="icon">🔧</div><div class="label">Last annual</div>
+                    <input type="file" id="cert2" accept="image/*" onchange="loadImg(this,'cert2-preview',5)">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn" id="btn" onclick="analyze()" disabled>Analyze with AI</button>
+        <div class="status" id="status">Analyzing your documents...</div>
+
+        <div class="result-card" id="result-card">
+            <h3>✓ AI Analysis Complete</h3>
+            <div id="result-fields"></div>
+            <button class="confirm-btn" onclick="confirmListing()">Confirm and list aircraft</button>
+        </div>
+    </div>
+
+    <script>
+        var images = [null,null,null,null,null,null];
+        var analysisResult = null;
+        var tail = new URLSearchParams(window.location.search).get("tail") || "";
+
+        function loadImg(input, previewId, index) {
+            var file = input.files[0];
+            if (!file) return;
+            var img = new Image();
+            var url = URL.createObjectURL(file);
+            img.onload = function() {
+                var canvas = document.createElement("canvas");
+                var max = 1200;
+                var w = img.width, h = img.height;
+                if (w > max) { h = h*max/w; w = max; }
+                if (h > max) { w = w*max/h; h = max; }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                var jpeg = canvas.toDataURL("image/jpeg", 0.7);
+                var preview = document.getElementById(previewId);
+                preview.src = jpeg;
+                preview.style.display = "block";
+                images[index] = jpeg.split(",")[1];
+                document.getElementById("btn").disabled = !images.some(function(x){return x !== null;});
+                URL.revokeObjectURL(url);
+            };
+            img.src = url;
+        }
+
+        function analyze() {
+            document.getElementById("status").style.display = "block";
+            document.getElementById("btn").disabled = true;
+            var imgs = images.filter(function(x){return x !== null;});
+            fetch("/analyze-aircraft", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({images: imgs, tail: tail})
+            })
+            .then(function(r){return r.json();})
+            .then(function(data){
+                document.getElementById("status").style.display = "none";
+                analysisResult = data;
+                var fields = "";
+                if (data.hours_total) fields += "<div class=\"field\"><span class=\"field-label\">Total hours</span><span>" + data.hours_total + "</span></div>";
+                if (data.hours_engine) fields += "<div class=\"field\"><span class=\"field-label\">Engine SMOH</span><span>" + data.hours_engine + "</span></div>";
+                if (data.last_annual) fields += "<div class=\"field\"><span class=\"field-label\">Last annual</span><span>" + data.last_annual + "</span></div>";
+                if (data.avionics) fields += "<div class=\"field\"><span class=\"field-label\">Avionics</span><span>" + data.avionics + "</span></div>";
+                if (data.condition) fields += "<div class=\"field\"><span class=\"field-label\">Condition</span><span>" + data.condition + "</span></div>";
+                document.getElementById("result-fields").innerHTML = fields || "<p style=\"color:#666\">Could not extract details — please fill in manually</p>";
+                document.getElementById("result-card").style.display = "block";
+            })
+            .catch(function(e){
+                document.getElementById("status").textContent = "Error: " + e.message;
+                document.getElementById("btn").disabled = false;
+            });
+        }
+
+        function confirmListing() {
+            window.location.href = "/sell-aircraft/" + tail + "?ai=" + encodeURIComponent(JSON.stringify(analysisResult));
+        }
+    </script>
+</body>
+</html>

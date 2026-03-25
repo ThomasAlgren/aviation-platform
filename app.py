@@ -94,8 +94,14 @@ with app.app_context():
         with db.engine.connect() as conn:
             conn.execute(db.text("ALTER TABLE user ADD COLUMN claimed_aircraft TEXT"))
             conn.commit()
-    except:
-        pass
+    except: pass
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(db.text("ALTER TABLE aircraft_listing ADD COLUMN arc_valid_until TEXT"))
+            conn.execute(db.text("ALTER TABLE aircraft_listing ADD COLUMN arc_verified INTEGER DEFAULT 0"))
+            conn.execute(db.text("ALTER TABLE aircraft_listing ADD COLUMN arc_document TEXT"))
+            conn.commit()
+    except: pass
 print("Loader FAA data...")
 import sqlite3 as sql
 DB = os.path.join(DB_PATH, 'panpanparts.db')

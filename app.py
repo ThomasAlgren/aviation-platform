@@ -182,7 +182,7 @@ PARTS_HTML = """
     <div class="container">
         {% if parts %}
             {% for p in parts %}
-            <div class="part-card">
+            <a class="part-card" href="/part/{{ p.id }}" style="text-decoration:none;color:inherit">
                 <div class="part-info">
                     <h3>{{ p.part_number or 'Unknown part' }}</h3>
                     <p>{{ p.description[:80] if p.description else 'No description' }}</p>
@@ -195,7 +195,7 @@ PARTS_HTML = """
                     <div class="price">€{{ p.price }}</div>
                     <div class="location">{{ p.part_condition }}</div>
                 </div>
-            </div>
+            </a>
             {% endfor %}
         {% else %}
             <div class="empty">
@@ -1229,13 +1229,105 @@ MY_LISTINGS_HTML = """<!DOCTYPE html>
                 <div style="text-align:right">
                     <div class="price">€{{ p.price }}</div>
                 </div>
-            </div>
+            </a>
             {% endfor %}
         {% else %}
             <div class="empty">
                 <p>No listings yet</p>
                 <p style="margin-top:12px"><a href="/upload">List your first part</a></p>
             </div>
+        {% endif %}
+    </div>
+</body>
+</html>"""
+
+@app.route('/part/<int:part_id>')
+def part_detail(part_id):
+    with app.app_context():
+        part = Part.query.get_or_404(part_id)
+    return render_template_string(PART_DETAIL_HTML, part=part, logged_in=current_user.is_authenticated)
+
+PART_DETAIL_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ part.part_number or 'Part' }} - PanPanParts</title>
+    <meta charset="utf-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .back { color: #aaa; text-decoration: none; font-size: 14px; display: block; margin-bottom: 24px; }
+        .back:hover { color: white; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 28px; margin-bottom: 16px; border: 1px solid #2a2a3e; }
+        .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; margin-bottom: 16px; }
+        .part-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+        .price { font-size: 36px; font-weight: 700; color: #ff6b35; margin-bottom: 8px; }
+        .badge { background: rgba(45,122,58,0.2); color: #4caf50; padding: 6px 14px; border-radius: 20px; font-size: 13px; display: inline-block; border: 1px solid rgba(76,175,80,0.3); }
+        .badge-warn { background: rgba(255,107,53,0.2); color: #ff6b35; border-color: rgba(255,107,53,0.3); }
+        .field { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #2a2a3e; font-size: 14px; }
+        .field:last-child { border-bottom: none; }
+        .field-label { color: #666; }
+        .contact-btn { display: block; background: #ff6b35; color: white; text-align: center; padding: 16px; border-radius: 10px; font-size: 16px; font-weight: 600; text-decoration: none; margin-top: 8px; }
+        .contact-btn:hover { background: #e55a25; }
+        .login-prompt { background: #1a1a2e; border-radius: 12px; padding: 28px; text-align: center; border: 1px solid #2a2a3e; }
+        .login-prompt p { color: #666; margin-bottom: 16px; }
+        .login-prompt a { color: #ff6b35; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav">
+            {% if logged_in %}
+            <a href="/my-listings">My listings</a>
+            <a href="/logout">Log out</a>
+            {% else %}
+            <a href="/login">Log in</a>
+            <a href="/register">Sign up</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="container">
+        <a href="/parts" class="back">← Back to listings</a>
+        <div class="card">
+            <div class="part-title">{{ part.part_number or 'Unknown part' }}</div>
+            <div style="margin:12px 0">
+                <span class="badge {% if part.ai_recommendation != 'Approved for listing' %}badge-warn{% endif %}">
+                    ✓ {{ part.ai_recommendation }}
+                </span>
+            </div>
+            <div class="price">€{{ part.price }}</div>
+            <p style="color:#aaa;margin-top:12px">{{ part.description or '' }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Part details</h3>
+            <div class="field"><span class="field-label">Part number</span><span>{{ part.part_number or '—' }}</span></div>
+            <div class="field"><span class="field-label">Serial number</span><span>{{ part.serial_number or '—' }}</span></div>
+            <div class="field"><span class="field-label">Condition</span><span>{{ part.part_condition or '—' }}</span></div>
+            <div class="field"><span class="field-label">Issued by</span><span>{{ part.issued_by or '—' }}</span></div>
+            <div class="field"><span class="field-label">Issue date</span><span>{{ part.issue_date or '—' }}</span></div>
+            <div class="field"><span class="field-label">Location</span><span>{{ part.location or '—' }}</span></div>
+        </div>
+
+        {% if logged_in %}
+        <div class="card">
+            <h3>Contact seller</h3>
+            <div class="field"><span class="field-label">Name</span><span>{{ part.contact_name }}</span></div>
+            <div class="field"><span class="field-label">Location</span><span>{{ part.location or '—' }}</span></div>
+            <a href="mailto:{{ part.contact_email }}?subject=Regarding your listing: {{ part.part_number }}" class="contact-btn">
+                ✉ Contact seller
+            </a>
+        </div>
+        {% else %}
+        <div class="login-prompt">
+            <p>Log in to see seller contact details</p>
+            <a href="/login">Log in</a> or <a href="/register">create a free account</a>
+        </div>
         {% endif %}
     </div>
 </body>

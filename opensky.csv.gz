@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message><Key>metadata/aircraft-database-complete-2025-12.csv.gz</Key><BucketName>data-samples</BucketName><Resource>/data-samples/metadata/aircraft-database-complete-2025-12.csv.gz</Resource><RequestId>189FDCA46C4122CA</RequestId><HostId>e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</HostId></Error>

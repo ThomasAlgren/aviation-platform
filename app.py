@@ -418,6 +418,9 @@ OY_DETAIL_HTML = """
             <div class="badges">
                 <span class="badge badge-green">✓ Active — {{ aircraft.country }}</span>
                 <span class="badge badge-blue">{{ aircraft.year }}</span>
+                {% if arc_info and arc_info.arc_verified %}
+                <span class="badge badge-green">✓ ARC verified — valid until {{ arc_info.arc_valid_until }}</span>
+                {% endif %}
                 {% if aircraft.previous %}
                 <span class="badge badge-orange">{{ aircraft.previous.split()|length }} previous identities</span>
                 {% endif %}
@@ -833,6 +836,9 @@ a{background:#ff6b35;color:white;padding:14px 28px;border-radius:8px;text-decora
         "engine": "", "cert_date": "",
         "last_action": "", "expiration": "",
     }
+    # ARC status
+    arc_info = ClaimedAircraft.query.filter_by(tail=registration).first()
+    
     # Statistik for flytype
     conn_stat = sql.connect(DB)
     model_query = aircraft["model"] if aircraft["model"] else ""
@@ -844,7 +850,7 @@ a{background:#ff6b35;color:white;padding:14px 28px;border-radius:8px;text-decora
         total = 0
         in_country = 0
     conn_stat.close()
-    return render_template_string(OY_DETAIL_HTML, aircraft=aircraft, type_total=total, type_in_country=in_country, country_name="Denmark")
+    return render_template_string(OY_DETAIL_HTML, aircraft=aircraft, type_total=total, type_in_country=in_country, country_name="Denmark", arc_info=arc_info)
 @app.route("/aircraft/LN-<reg>")
 def ln_detail(reg):
     registration = f"LN-{reg}"

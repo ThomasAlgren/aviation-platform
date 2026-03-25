@@ -2051,3 +2051,123 @@ UPLOAD_ARC_HTML = """<!DOCTYPE html>
     </script>
 </body>
 </html>"""
+
+@app.route('/aircraft-listing/<int:listing_id>')
+def aircraft_listing_detail(listing_id):
+    listing = AircraftListing.query.get_or_404(listing_id)
+    return render_template_string(AIRCRAFT_LISTING_DETAIL_HTML, 
+        listing=listing, 
+        logged_in=current_user.is_authenticated)
+
+AIRCRAFT_LISTING_DETAIL_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ listing.tail }} for Sale - PanPanParts</title>
+    <meta charset="utf-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .back { color: #aaa; text-decoration: none; font-size: 14px; display: block; margin-bottom: 24px; }
+        .hero { background: #1a1a2e; border-radius: 16px; padding: 36px; margin-bottom: 20px; border: 1px solid #2a2a3e; }
+        .tail { font-size: 52px; font-weight: 700; color: #ff6b35; font-family: monospace; }
+        .model { font-size: 22px; margin: 8px 0 4px; }
+        .meta { color: #666; font-size: 15px; }
+        .price { font-size: 42px; font-weight: 700; margin-top: 16px; }
+        .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+        .badge { padding: 6px 14px; border-radius: 20px; font-size: 13px; }
+        .badge-green { background: rgba(76,175,80,0.2); color: #4caf50; border: 1px solid rgba(76,175,80,0.3); }
+        .badge-blue { background: rgba(74,158,255,0.2); color: #4a9eff; border: 1px solid rgba(74,158,255,0.3); }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-bottom: 16px; border: 1px solid #2a2a3e; }
+        .card h3 { font-size: 13px; text-transform: uppercase; color: #666; margin-bottom: 16px; letter-spacing: 0.5px; }
+        .field { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #2a2a3e; font-size: 14px; }
+        .field:last-child { border-bottom: none; }
+        .field-label { color: #666; }
+        .description { color: #aaa; line-height: 1.7; font-size: 15px; }
+        .contact-btn { display: block; background: #ff6b35; color: white; text-align: center; padding: 16px; border-radius: 10px; font-size: 16px; font-weight: 600; text-decoration: none; }
+        .contact-btn:hover { background: #e55a25; }
+        .login-prompt { background: #1a1a2e; border-radius: 12px; padding: 28px; text-align: center; border: 1px solid #2a2a3e; }
+        .login-prompt p { color: #666; margin-bottom: 16px; }
+        .login-prompt a { color: #ff6b35; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav">
+            <a href="/aircraft-for-sale">All aircraft</a>
+            {% if logged_in %}
+            <a href="/my-listings">My listings</a>
+            {% else %}
+            <a href="/register">Sign up</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="container">
+        <a href="/aircraft-for-sale" class="back">← All aircraft for sale</a>
+        
+        <div class="hero">
+            <div class="tail">{{ listing.tail }}</div>
+            <div class="model">{{ listing.manufacturer }} {{ listing.model }}</div>
+            <div class="meta">{{ listing.year }} · {{ listing.location }}</div>
+            <div class="price">€{{ "{:,.0f}".format(listing.price) }}</div>
+            <div class="badges">
+                {% if listing.arc_verified %}
+                <span class="badge badge-green">✓ ARC Verified</span>
+                {% endif %}
+                {% if listing.hours_total %}
+                <span class="badge badge-blue">{{ listing.hours_total|int }} hrs TT</span>
+                {% endif %}
+                {% if listing.hours_engine %}
+                <span class="badge badge-blue">{{ listing.hours_engine|int }} hrs SMOH</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if listing.description %}
+        <div class="card">
+            <h3>Description</h3>
+            <p class="description">{{ listing.description }}</p>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <h3>Details</h3>
+            <div class="field"><span class="field-label">Registration</span><span>{{ listing.tail }}</span></div>
+            <div class="field"><span class="field-label">Manufacturer</span><span>{{ listing.manufacturer }}</span></div>
+            <div class="field"><span class="field-label">Model</span><span>{{ listing.model }}</span></div>
+            <div class="field"><span class="field-label">Year</span><span>{{ listing.year }}</span></div>
+            {% if listing.hours_total %}
+            <div class="field"><span class="field-label">Total hours</span><span>{{ listing.hours_total|int }} hrs</span></div>
+            {% endif %}
+            {% if listing.hours_engine %}
+            <div class="field"><span class="field-label">Engine SMOH</span><span>{{ listing.hours_engine|int }} hrs</span></div>
+            {% endif %}
+            <div class="field"><span class="field-label">Location</span><span>{{ listing.location }}</span></div>
+            {% if listing.arc_verified and listing.arc_valid_until %}
+            <div class="field"><span class="field-label">ARC valid until</span><span style="color:#4caf50">{{ listing.arc_valid_until }}</span></div>
+            {% endif %}
+        </div>
+
+        {% if logged_in %}
+        <div class="card">
+            <h3>Contact seller</h3>
+            <div class="field"><span class="field-label">Name</span><span>{{ listing.contact_name }}</span></div>
+            <div class="field"><span class="field-label">Location</span><span>{{ listing.location }}</span></div>
+            <a href="mailto:{{ listing.contact_email }}?subject=Regarding {{ listing.tail }} for sale" class="contact-btn" style="margin-top:16px">
+                ✉ Contact seller
+            </a>
+        </div>
+        {% else %}
+        <div class="login-prompt">
+            <p>Log in to see seller contact details</p>
+            <a href="/login">Log in</a> or <a href="/register">create a free account</a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>"""

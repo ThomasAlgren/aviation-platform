@@ -792,8 +792,11 @@ def oy_detail(reg):
     conn_stat = sql.connect(DB)
     model_query = aircraft["model"] if aircraft["model"] else ""
     if model_query:
-        total = conn_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model = ?", (model_query,)).fetchone()[0]
-        in_country = conn_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model = ? AND country = ?", (model_query, "DK")).fetchone()[0]
+        # Søg på præcis model OG kortere varianter
+        words = model_query.split()
+        short = words[-1] if len(words) > 1 else model_query
+        total = conn_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model = ? OR model = ?", (model_query, short)).fetchone()[0]
+        in_country = conn_stat.execute("SELECT COUNT(*) FROM aircraft WHERE (model = ? OR model = ?) AND country = ?", (model_query, short, "DK")).fetchone()[0]
     else:
         total = 0
         in_country = 0

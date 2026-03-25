@@ -168,7 +168,7 @@ for _, r in osky_new.iterrows():
         'model': str(r.get('model', '')).replace(chr(39), '').strip(),
         'year': str(r.get('built', '')).replace(chr(39), '').strip()[:4],
         'serial': str(r.get('serialNumber', '')).replace(chr(39), '').strip(),
-        'country': str(r.get('country', '')).replace(chr(39), '').strip()[:2],
+        'country': str(r.get('country', '')).replace(chr(39), '').strip(),
         'owner': str(r.get('owner', '')).replace(chr(39), '').strip()[:100],
         'source': 'OpenSky',
         'city': '',

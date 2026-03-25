@@ -641,7 +641,12 @@ Respond ONLY with a JSON object:
         condition_notes=result.get("condition_notes"),
         ai_recommendation=result.get("ai_recommendation"),
         part_image=data["part_image"][:500],
-        doc_image=data["doc_image"][:500]
+        doc_image=data["doc_image"][:500],
+        contact_name=current_user.name,
+        contact_email=current_user.email,
+        location=data.get("location", ""),
+        price=float(data.get("price", 0) or 0),
+        description=data.get("description", "")
     )
 
     with app.app_context():

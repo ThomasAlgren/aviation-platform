@@ -2171,3 +2171,54 @@ AIRCRAFT_LISTING_DETAIL_HTML = """<!DOCTYPE html>
     </div>
 </body>
 </html>"""
+
+@app.route('/sitemap.xml')
+def sitemap():
+    return render_template_string("""<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <sitemap><loc>https://panpanparts.com/sitemap-pages.xml</loc></sitemap>
+    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-1.xml</loc></sitemap>
+    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-2.xml</loc></sitemap>
+    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-3.xml</loc></sitemap>
+    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-4.xml</loc></sitemap>
+    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-5.xml</loc></sitemap>
+    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-6.xml</loc></sitemap>
+    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-7.xml</loc></sitemap>
+    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-8.xml</loc></sitemap>
+    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-9.xml</loc></sitemap>
+    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-10.xml</loc></sitemap>
+    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-11.xml</loc></sitemap>
+</sitemapindex>"""), 200, {'Content-Type': 'application/xml'}
+
+@app.route('/sitemap-pages.xml')
+def sitemap_pages():
+    return render_template_string("""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url><loc>https://panpanparts.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+    <url><loc>https://panpanparts.com/parts</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+    <url><loc>https://panpanparts.com/aircraft-for-sale</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+    <url><loc>https://panpanparts.com/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+    <url><loc>https://panpanparts.com/tos</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
+</urlset>"""), 200, {'Content-Type': 'application/xml'}
+
+@app.route('/sitemap-aircraft-<int:page>.xml')
+def sitemap_aircraft(page):
+    limit = 50000
+    offset = (page - 1) * limit
+    conn_s = sql.connect(DB)
+    rows = conn_s.execute(
+        "SELECT registration FROM aircraft LIMIT ? OFFSET ?", 
+        (limit, offset)
+    ).fetchall()
+    conn_s.close()
+    
+    urls = []
+    for row in rows:
+        reg = row[0]
+        urls.append(f"<url><loc>https://panpanparts.com/aircraft/{reg}</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>")
+    
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+""" + "\n".join(urls) + """
+</urlset>"""
+    return xml, 200, {'Content-Type': 'application/xml'}

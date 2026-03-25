@@ -265,7 +265,7 @@ SEARCH_HTML = """
             {% if current_user.is_authenticated %}
             <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} ▾</button><div class="dropdown"><a href="/logout">Log out</a></div></div>
             {% else %}
-            <a href="/login" style="color:#aaa;text-decoration:none;font-size:14px">Log in</a>
+            <a href="/login" class="primary">Log in</a>
             <a href="/register" class="primary">Sign up</a>
             {% endif %}
         </div>

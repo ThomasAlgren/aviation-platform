@@ -1,14 +1,22 @@
-venv/
-faa_data/
-faa_registry.zip
-faa_master.pkl
-faa_ref.pkl
+# Database
+instance/
+*.db
+*.sqlite
+
+# Data filer
+*.csv
 *.pkl
-.env
-.env
-faa_data/
-faa_master.pkl
-faa_registry.zip
-*.pkl
+*.gz
 *.zip
-opensky.csv
+*.xlsx
+*.json
+*.ipynb
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.env
+
+# OS
+.DS_Store

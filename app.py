@@ -60,6 +60,12 @@ class Part(db.Model):
 
 with app.app_context():
     db.create_all()
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(db.text("ALTER TABLE user ADD COLUMN claimed_aircraft TEXT"))
+            conn.commit()
+    except:
+        pass
 print("Loader FAA data...")
 import sqlite3 as sql
 DB = os.path.join(DB_PATH, 'panpanparts.db')

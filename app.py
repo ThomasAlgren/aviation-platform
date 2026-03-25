@@ -27,6 +27,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(200))
     country = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    claimed_aircraft = db.Column(db.Text)  # JSON liste af tail numre
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method="pbkdf2:sha256")
@@ -425,7 +426,7 @@ OY_DETAIL_HTML = """
         <div class="card">
             <h3>Own this aircraft?</h3>
             <p style="color:#666; font-size:14px; margin-bottom:16px">Claim your aircraft profile to add photos, flight hours, avionics and maintenance history. List it for sale with one click.</p>
-            <button class="sell-btn">Claim {{ aircraft.tail }} — it's free</button>
+            <a href="/claim/{{ aircraft.tail }}" class="sell-btn" style="display:block;text-align:center;text-decoration:none">Claim {{ aircraft.tail }} — it's free</a>
         </div>
 
     </div>
@@ -1050,3 +1051,17 @@ def register():
 def logout():
     logout_user()
     return redirect('/')
+
+@app.route('/claim/<tail>')
+def claim(tail):
+    if not current_user.is_authenticated:
+        return redirect('/register?next=/claim/' + tail)
+    import json
+    with app.app_context():
+        user = User.query.get(current_user.id)
+        claimed = json.loads(user.claimed_aircraft or '[]')
+        if tail.upper() not in claimed:
+            claimed.append(tail.upper())
+            user.claimed_aircraft = json.dumps(claimed)
+            db.session.commit()
+    return redirect('/aircraft/' + tail + '?claimed=1')

@@ -1121,6 +1121,12 @@ MY_AIRCRAFT_HTML = """<!DOCTYPE html>
         .btn { background: #ff6b35; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; text-decoration: none; }
         .empty { text-align: center; padding: 60px 0; color: #666; }
         .empty a { color: #ff6b35; text-decoration: none; }
+        .user-menu { position: relative; margin-left: 8px; }
+        .user-btn { background: #1a1a2e; color: #aaa; border: 1px solid #333; padding: 8px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        .dropdown { display: none; position: absolute; right: 0; top: 44px; background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 8px; min-width: 140px; z-index: 100; }
+        .dropdown a { display: block; padding: 12px 16px; color: #aaa; text-decoration: none; font-size: 14px; }
+        .dropdown a:hover { color: white; background: #2a2a3e; }
+        .dropdown.open { display: block; }
     </style>
 </head>
 <body>

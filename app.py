@@ -1729,7 +1729,11 @@ TYPE_PAGE_HTML = """<!DOCTYPE html>
             {% for l in listings %}
             <a class="aircraft-card" href="/aircraft-listing/{{ l.id }}">
                 <div class="tail">{{ l.tail }}</div>
+                <div class="meta">{{ l.manufacturer }} {{ l.model }}</div>
                 <div class="meta">{{ l.year }} · {{ l.location }}</div>
+                {% if l.arc_verified %}
+                <div style="color:#4caf50;font-size:12px;margin-top:6px">✓ ARC verified</div>
+                {% endif %}
                 <div class="price">€{{ "{:,.0f}".format(l.price) }}</div>
             </a>
             {% endfor %}

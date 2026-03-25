@@ -574,7 +574,7 @@ def upload():
     return open("upload.html").read()
 
 @app.route("/analyze", methods=["POST"])
-@app.route("/analyze", methods=["POST"])
+@login_required
 def analyze():
     import anthropic
     import json
@@ -677,6 +677,7 @@ Respond ONLY with a JSON object:
     return json.loads(clean)
 
 @app.route("/listing/<int:part_id>", methods=["GET", "POST"])
+@login_required
 def listing(part_id):
     with app.app_context():
         part = Part.query.get_or_404(part_id)

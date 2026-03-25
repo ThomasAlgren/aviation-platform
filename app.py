@@ -254,6 +254,11 @@ SEARCH_HTML = """
         <div class="nav">
             <a href="/parts" class="primary">Parts for sale</a>
             <a href="/upload" class="primary">+ List a part</a>
+            {% if current_user.is_authenticated %}
+            <a href="/logout" style="color:#aaa;font-size:14px;text-decoration:none;margin-left:8px">{{ current_user.name }} · Log out</a>
+            {% else %}
+            <a href="/login" style="color:#aaa;font-size:14px;text-decoration:none;margin-left:8px">Log in</a>
+            {% endif %}
         </div>
     </div>
     {% if not results %}

@@ -284,6 +284,7 @@ SEARCH_HTML = """
 <div class="header">
         <div class="logo">PanPan<span>Parts</span></div>
         <div class="nav">
+            <a href="/aircraft-for-sale" class="primary">Aircraft for sale</a>
             <a href="/parts" class="primary">Parts for sale</a>
             <a href="/upload" class="primary">+ List a part</a>
             {% if current_user.is_authenticated %}
@@ -860,7 +861,8 @@ ABOUT_HTML = """
 <body>
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
-        <div class="nav"><a href="/parts" class="primary">Parts for sale</a><a href="/upload">+ List a part</a></div>
+        <div class="nav"><a href="/aircraft-for-sale" class="primary">Aircraft for sale</a>
+            <a href="/parts" class="primary">Parts for sale</a><a href="/upload">+ List a part</a></div>
     </div>
     <div class="container">
         <h1>About <span>PanPanParts</span></h1>

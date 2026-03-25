@@ -270,7 +270,7 @@ SEARCH_HTML = """
             <a href="/parts" class="primary">Parts for sale</a>
             <a href="/upload" class="primary">+ List a part</a>
             {% if current_user.is_authenticated %}
-            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} ▾</button><div class="dropdown"><a href="/logout">Log out</a></div></div>
+            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} ▾</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
             {% else %}
             <a href="/login" class="primary">Log in</a>
             <a href="/register" class="primary">Sign up</a>
@@ -1070,3 +1070,89 @@ def claim(tail):
         user.claimed_aircraft = json.dumps(claimed)
         db.session.commit()
     return redirect('/aircraft/' + tail + '?claimed=1')
+
+@app.route('/my-aircraft')
+@login_required
+def my_aircraft():
+    import json
+    claimed = json.loads(current_user.claimed_aircraft or '[]')
+    aircraft_list = []
+    for tail in claimed:
+        r = get_aircraft(tail)
+        if not r:
+            r = get_aircraft('N' + tail)
+        if r:
+            def s(val):
+                v = str(val).strip() if val else ""
+                return "" if v in ["nan", "None"] else v
+            aircraft_list.append({
+                "tail": s(r["registration"]),
+                "model": s(r["model"]),
+                "manufacturer": s(r["manufacturer"]),
+                "year": s(r["year"]),
+                "country": s(r["country"]),
+            })
+        else:
+            aircraft_list.append({"tail": tail, "model": "", "manufacturer": "", "year": "", "country": ""})
+    return render_template_string(MY_AIRCRAFT_HTML, aircraft=aircraft_list)
+
+MY_AIRCRAFT_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>My Aircraft - PanPanParts</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 32px; margin-bottom: 8px; }
+        h1 span { color: #ff6b35; }
+        .sub { color: #666; margin-bottom: 32px; font-size: 15px; }
+        .aircraft-card { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-bottom: 12px; border: 1px solid #2a2a3e; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: white; }
+        .aircraft-card:hover { border-color: #ff6b35; }
+        .tail { font-size: 28px; font-weight: 700; color: #ff6b35; font-family: monospace; }
+        .model { font-size: 16px; margin: 4px 0; }
+        .meta { color: #666; font-size: 13px; }
+        .btn { background: #ff6b35; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; text-decoration: none; }
+        .empty { text-align: center; padding: 60px 0; color: #666; }
+        .empty a { color: #ff6b35; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav">
+            <a href="/parts">Parts for sale</a>
+            <a href="/logout">Log out</a>
+        </div>
+    </div>
+    <div class="container">
+        <h1>My <span>Aircraft</span></h1>
+        <p class="sub">Aircraft you have claimed on PanPanParts</p>
+        {% if aircraft %}
+            {% for a in aircraft %}
+            <a class="aircraft-card" href="/aircraft/{{ a.tail }}">
+                <div>
+                    <div class="tail">{{ a.tail }}</div>
+                    <div class="model">{{ a.manufacturer }} {{ a.model }}</div>
+                    <div class="meta">{{ a.year }} · {{ a.country }}</div>
+                </div>
+                <div>
+                    <a href="/upload" class="btn">+ List a part</a>
+                </div>
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                <p>No aircraft claimed yet</p>
+                <p style="margin-top:12px"><a href="/">Search for your aircraft</a> and click Claim</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>"""

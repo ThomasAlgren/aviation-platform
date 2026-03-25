@@ -1558,23 +1558,6 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
 def aircraft_type(query):
     search = query.replace("-", " ")
     
-    # Tæl fly i databasen
-    conn_t = sql.connect(DB)
-    
-    # Worldwide count
-    total = conn_t.execute(
-        "SELECT COUNT(*) FROM aircraft WHERE model LIKE ? OR manufacturer LIKE ?",
-        (f'%{search}%', f'%{search}%')
-    ).fetchone()[0]
-    
-    # Per land top 10
-    by_country = conn_t.execute(
-        "SELECT country, COUNT(*) as cnt FROM aircraft WHERE model LIKE ? OR manufacturer LIKE ? GROUP BY country ORDER BY cnt DESC LIMIT 10",
-        (f'%{search}%', f'%{search}%')
-    ).fetchall()
-    
-    conn_t.close()
-    
     # Fly til salg
     listings = AircraftListing.query.filter(
         db.or_(
@@ -1593,9 +1576,7 @@ def aircraft_type(query):
     ).filter(Part.price != None).all()
     
     return render_template_string(TYPE_PAGE_HTML, 
-        search=search, 
-        total=total, 
-        by_country=by_country,
+        search=search,
         listings=listings,
         parts=parts)
 
@@ -1651,17 +1632,6 @@ TYPE_PAGE_HTML = """<!DOCTYPE html>
     <div class="container">
         <a href="/" class="back">← Search</a>
         <h1>{{ search }}</h1>
-        <span class="total-badge">{{ "{:,}".format(total) }} aircraft in our registry</span>
-        
-        <h2>In our registry by country</h2>
-        <div class="stats-grid">
-            {% for country, count in by_country %}
-            <div class="stat-card">
-                <div class="stat-value">{{ "{:,}".format(count) }}</div>
-                <div class="stat-label">{{ country }}</div>
-            </div>
-            {% endfor %}
-        </div>
 
         <h2>Aircraft for sale</h2>
         {% if listings %}

@@ -217,6 +217,14 @@ SEARCH_HTML = """
         .nav a { color: #aaa; text-decoration: none; font-size: 14px; }
         .nav a:hover { color: white; }
         .nav a.primary { background: #ff6b35; color: white; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; }
+        .nav-login { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 8px; }
+        .nav-signup { color: #ff6b35; border: 1px solid #ff6b35; padding: 8px 16px; border-radius: 8px; font-size: 14px; text-decoration: none; margin-left: 8px; }
+        .user-menu { position: relative; margin-left: 8px; }
+        .user-btn { background: #1a1a2e; color: #aaa; border: 1px solid #333; padding: 8px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        .dropdown { display: none; position: absolute; right: 0; top: 44px; background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 8px; min-width: 140px; z-index: 100; }
+        .dropdown a { display: block; padding: 12px 16px; color: #aaa; text-decoration: none; font-size: 14px; }
+        .dropdown a:hover { color: white; background: #2a2a3e; }
+        .dropdown.open { display: block; }
         .hero { text-align: center; padding: 80px 20px 60px; }
         .hero h1 { font-size: 52px; font-weight: 700; line-height: 1.15; margin-bottom: 16px; }
         .hero h1 span { color: #ff6b35; }
@@ -255,9 +263,10 @@ SEARCH_HTML = """
             <a href="/parts" class="primary">Parts for sale</a>
             <a href="/upload" class="primary">+ List a part</a>
             {% if current_user.is_authenticated %}
-            <a href="/logout" style="color:#aaa;font-size:14px;text-decoration:none;margin-left:8px">{{ current_user.name }} · Log out</a>
+            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} ▾</button><div class="dropdown"><a href="/logout">Log out</a></div></div>
             {% else %}
-            <a href="/login" style="color:#aaa;font-size:14px;text-decoration:none;margin-left:8px">Log in</a>
+            <a href="/login" class="nav-login">Log in</a>
+            <a href="/register" class="nav-signup">Sign up</a>
             {% endif %}
         </div>
     </div>

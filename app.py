@@ -39,6 +39,23 @@ class User(UserMixin, db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+class AircraftListing(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    tail = db.Column(db.String(20))
+    manufacturer = db.Column(db.String(200))
+    model = db.Column(db.String(200))
+    year = db.Column(db.String(10))
+    price = db.Column(db.Float)
+    hours_total = db.Column(db.Float)
+    hours_engine = db.Column(db.Float)
+    description = db.Column(db.Text)
+    location = db.Column(db.String(200))
+    contact_name = db.Column(db.String(200))
+    contact_email = db.Column(db.String(200))
+    images = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class Part(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     part_number = db.Column(db.String(100))
@@ -431,8 +448,9 @@ OY_DETAIL_HTML = """
 
         <div class="card">
             <h3>Own this aircraft?</h3>
-            <p style="color:#666; font-size:14px; margin-bottom:16px">Claim your aircraft profile to add photos, flight hours, avionics and maintenance history. List it for sale with one click.</p>
-            <a href="/claim/{{ aircraft.tail }}" class="sell-btn" style="display:block;text-align:center;text-decoration:none">Claim {{ aircraft.tail }} — it's free</a>
+            <p style="color:#666; font-size:14px; margin-bottom:16px">Claim your aircraft profile to add photos, flight hours, avionics and maintenance history.</p>
+            <a href="/claim/{{ aircraft.tail }}" class="sell-btn" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">Claim {{ aircraft.tail }} — it's free</a>
+            <a href="/sell-aircraft/{{ aircraft.tail }}" class="sell-btn" style="display:block;text-align:center;text-decoration:none;background:#2a2a3e">List {{ aircraft.tail }} for sale</a>
         </div>
 
     </div>
@@ -1327,6 +1345,179 @@ PART_DETAIL_HTML = """<!DOCTYPE html>
         <div class="login-prompt">
             <p>Log in to see seller contact details</p>
             <a href="/login">Log in</a> or <a href="/register">create a free account</a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>"""
+
+@app.route('/sell-aircraft/<tail>', methods=['GET', 'POST'])
+@login_required
+def sell_aircraft(tail):
+    r = get_aircraft(tail.upper())
+    if not r:
+        r = get_aircraft('N' + tail.upper())
+    def s(val):
+        v = str(val).strip() if val else ""
+        return "" if v in ["nan", "None"] else v
+    aircraft = {
+        "tail": tail.upper(),
+        "model": s(r["model"]) if r else "",
+        "manufacturer": s(r["manufacturer"]) if r else "",
+        "year": s(r["year"]).split(".")[0] if r else "",
+    }
+    if request.method == "POST":
+        listing = AircraftListing(
+            user_id=current_user.id,
+            tail=tail.upper(),
+            manufacturer=aircraft["manufacturer"],
+            model=aircraft["model"],
+            year=aircraft["year"],
+            price=float(request.form.get("price", 0) or 0),
+            hours_total=float(request.form.get("hours_total", 0) or 0),
+            hours_engine=float(request.form.get("hours_engine", 0) or 0),
+            description=request.form.get("description", ""),
+            location=request.form.get("location", ""),
+            contact_name=current_user.name,
+            contact_email=current_user.email,
+        )
+        db.session.add(listing)
+        db.session.commit()
+        return redirect("/aircraft-for-sale")
+    return render_template_string(SELL_AIRCRAFT_HTML, aircraft=aircraft)
+
+SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>List for Sale - PanPanParts</title>
+    <meta charset="utf-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
+        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 28px; margin-bottom: 8px; }
+        h1 span { color: #ff6b35; }
+        .sub { color: #666; margin-bottom: 32px; }
+        .info-box { background: #1a1a2e; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #2a2a3e; display: flex; justify-content: space-between; align-items: center; }
+        .tail { font-size: 32px; font-weight: 700; color: #ff6b35; font-family: monospace; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-bottom: 16px; border: 1px solid #2a2a3e; }
+        .card h3 { font-size: 13px; text-transform: uppercase; color: #666; margin-bottom: 16px; }
+        label { font-size: 13px; color: #aaa; display: block; margin-bottom: 6px; }
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #333; border-radius: 8px; font-size: 15px; margin-bottom: 14px; background: #0d0d1a; color: white; }
+        textarea { height: 100px; resize: vertical; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn { background: #ff6b35; color: white; border: none; padding: 16px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav"><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div>
+    </div>
+    <div class="container">
+        <h1>List <span>{{ aircraft.tail }}</span> for sale</h1>
+        <p class="sub">Fill in the details to list your aircraft</p>
+        <div class="info-box">
+            <div><div class="tail">{{ aircraft.tail }}</div><div style="color:#aaa;margin-top:4px">{{ aircraft.manufacturer }} {{ aircraft.model }}</div></div>
+            <div style="color:#666">{{ aircraft.year }}</div>
+        </div>
+        <form method="POST">
+            <div class="card">
+                <h3>Price</h3>
+                <label>Asking price (EUR)</label>
+                <input type="number" name="price" placeholder="e.g. 45000" min="0" required>
+            </div>
+            <div class="card">
+                <h3>Hours</h3>
+                <div class="row">
+                    <div><label>Total airframe hours</label><input type="number" name="hours_total" placeholder="e.g. 3200" min="0"></div>
+                    <div><label>Engine hours SMOH</label><input type="number" name="hours_engine" placeholder="e.g. 450" min="0"></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Description</h3>
+                <textarea name="description" placeholder="Condition, avionics, recent maintenance, reason for selling..."></textarea>
+                <label>Location</label>
+                <input type="text" name="location" placeholder="e.g. Roskilde, Denmark">
+            </div>
+            <button class="btn" type="submit">Publish listing</button>
+        </form>
+    </div>
+</body>
+</html>"""
+
+@app.route('/aircraft-for-sale')
+def aircraft_for_sale():
+    listings = AircraftListing.query.order_by(AircraftListing.created_at.desc()).all()
+    return render_template_string(AIRCRAFT_FOR_SALE_HTML, listings=listings)
+
+AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Aircraft for Sale - PanPanParts</title>
+    <meta charset="utf-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
+        .nav a.primary { background: #ff6b35; color: white; padding: 10px 20px; border-radius: 8px; }
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 36px; margin-bottom: 8px; }
+        h1 span { color: #ff6b35; }
+        .sub { color: #666; margin-bottom: 32px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; border: 1px solid #2a2a3e; text-decoration: none; color: white; display: block; }
+        .card:hover { border-color: #ff6b35; }
+        .tail { font-size: 24px; font-weight: 700; color: #ff6b35; font-family: monospace; }
+        .model { font-size: 15px; margin: 6px 0 4px; }
+        .meta { color: #666; font-size: 13px; }
+        .price { font-size: 22px; font-weight: 700; color: white; margin-top: 12px; }
+        .hours { color: #aaa; font-size: 13px; margin-top: 4px; }
+        .empty { text-align: center; padding: 80px 0; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav">
+            <a href="/">Search registry</a>
+            <a href="/parts">Parts for sale</a>
+            {% if current_user.is_authenticated %}
+            <a href="/my-aircraft" class="primary">My aircraft</a>
+            {% else %}
+            <a href="/register" class="primary">Sign up</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="container">
+        <h1>Aircraft <span>for Sale</span></h1>
+        <p class="sub">{{ listings|length }} aircraft listed</p>
+        {% if listings %}
+        <div class="grid">
+            {% for l in listings %}
+            <a class="card" href="/aircraft-listing/{{ l.id }}">
+                <div class="tail">{{ l.tail }}</div>
+                <div class="model">{{ l.manufacturer }} {{ l.model }}</div>
+                <div class="meta">{{ l.year }} · {{ l.location }}</div>
+                <div class="price">€{{ "{:,.0f}".format(l.price) }}</div>
+                <div class="hours">
+                    {% if l.hours_total %}{{ l.hours_total|int }} hrs TT{% endif %}
+                    {% if l.hours_engine %} · {{ l.hours_engine|int }} SMOH{% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty">
+            <p>No aircraft listed yet</p>
+            <p style="margin-top:12px;color:#ff6b35">Be the first to list your aircraft</p>
         </div>
         {% endif %}
     </div>

@@ -1558,6 +1558,20 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
 def aircraft_type(query):
     search = query.replace("-", " ")
     
+    # AI beskrivelse
+    try:
+        import anthropic as ac
+        client = ac.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=200,
+            messages=[{"role": "user", "content": f"Give a brief 2 sentence description of the {search} aircraft. Be concise and factual."}]
+        )
+        ai_description = response.content[0].text
+    except Exception as e:
+        print("AI fejl:", e)
+        ai_description = None
+    
     # Fly til salg
     listings = AircraftListing.query.filter(
         db.or_(
@@ -1578,7 +1592,8 @@ def aircraft_type(query):
     return render_template_string(TYPE_PAGE_HTML, 
         search=search,
         listings=listings,
-        parts=parts)
+        parts=parts,
+        ai_description=ai_description)
 
 TYPE_PAGE_HTML = """<!DOCTYPE html>
 <html>

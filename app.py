@@ -1128,7 +1128,7 @@ MY_AIRCRAFT_HTML = """<!DOCTYPE html>
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
             <a href="/parts">Parts for sale</a>
-            <a href="/logout">Log out</a>
+            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} &#9660;</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
         </div>
     </div>
     <div class="container">

@@ -448,6 +448,14 @@ OY_DETAIL_HTML = """
         </div>
         {% endif %}
 
+        {% if type_total %}
+        <div class="card">
+            <h3>Fleet statistics</h3>
+            <div class="field"><span class="field-label">{{ aircraft.model }} in {{ country_name }}</span><span class="field-value">{{ type_in_country }} aircraft</span></div>
+            <div class="field"><span class="field-label">{{ aircraft.model }} worldwide</span><span class="field-value">{{ type_total }} aircraft</span></div>
+        </div>
+        {% endif %}
+
         <div class="card">
             <h3>Own this aircraft?</h3>
             <p style="color:#666; font-size:14px; margin-bottom:16px">Claim your aircraft profile to add photos, flight hours, avionics and maintenance history.</p>
@@ -780,7 +788,17 @@ def oy_detail(reg):
         "engine": "", "cert_date": "",
         "last_action": "", "expiration": "",
     }
-    return render_template_string(OY_DETAIL_HTML, aircraft=aircraft)
+    # Statistik for flytype
+    conn_stat = sql.connect(DB)
+    model_query = aircraft["model"].split()[0] if aircraft["model"] else ""
+    if model_query:
+        total = conn_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model LIKE ?", (f'%{model_query}%',)).fetchone()[0]
+        in_country = conn_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model LIKE ? AND country = ?", (f'%{model_query}%', "DK")).fetchone()[0]
+    else:
+        total = 0
+        in_country = 0
+    conn_stat.close()
+    return render_template_string(OY_DETAIL_HTML, aircraft=aircraft, type_total=total, type_in_country=in_country, country_name="Denmark")
 @app.route("/aircraft/LN-<reg>")
 def ln_detail(reg):
     registration = f"LN-{reg}"

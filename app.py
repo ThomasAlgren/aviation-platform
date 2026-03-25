@@ -569,6 +569,7 @@ def aircraft_detail(tail):
     return render_template_string(OY_DETAIL_HTML, aircraft=aircraft)
 
 @app.route("/upload")
+@login_required
 def upload():
     return open("upload.html").read()
 

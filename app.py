@@ -1057,11 +1057,10 @@ def claim(tail):
     if not current_user.is_authenticated:
         return redirect('/register?next=/claim/' + tail)
     import json
-    with app.app_context():
-        user = User.query.get(current_user.id)
-        claimed = json.loads(user.claimed_aircraft or '[]')
-        if tail.upper() not in claimed:
-            claimed.append(tail.upper())
-            user.claimed_aircraft = json.dumps(claimed)
-            db.session.commit()
+    user = User.query.get(current_user.id)
+    claimed = json.loads(user.claimed_aircraft or '[]')
+    if tail.upper() not in claimed:
+        claimed.append(tail.upper())
+        user.claimed_aircraft = json.dumps(claimed)
+        db.session.commit()
     return redirect('/aircraft/' + tail + '?claimed=1')

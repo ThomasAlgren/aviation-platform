@@ -597,7 +597,17 @@ def aircraft_detail(tail):
     if not r:
         r = get_aircraft(tail.upper())
     if not r:
-        return "Aircraft not found", 404
+        return render_template_string("""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+body{font-family:-apple-system,sans-serif;background:#0d0d1a;color:white;text-align:center;padding:80px 20px}
+p{color:#666;margin:16px 0 32px}
+a{background:#ff6b35;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;margin:8px}
+.sec{background:#1a1a2e;color:#aaa;padding:14px 28px;border-radius:8px;text-decoration:none;display:inline-block;margin:8px}
+</style></head><body>
+<p>This aircraft is not in our registry yet.</p>
+<a href="/register-aircraft">Register it — it's free</a>
+<a href="/" class="sec">← Back to search</a>
+</body></html>""")
     def s(val):
         v = str(val).strip() if val else ""
         return "" if v == "nan" or v == "None" else v
@@ -772,7 +782,19 @@ def oy_detail(reg):
     registration = f"OY-{reg}"
     r = get_aircraft(registration)
     if not r:
-        return f"Aircraft {registration} not found", 404
+        return render_template_string("""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+body{font-family:-apple-system,sans-serif;background:#0d0d1a;color:white;text-align:center;padding:80px 20px}
+h1{font-size:48px;color:#ff6b35;font-family:monospace}
+p{color:#666;margin:16px 0 32px}
+a{background:#ff6b35;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;margin:8px}
+.sec{background:#1a1a2e;color:#aaa;padding:14px 28px;border-radius:8px;text-decoration:none;display:inline-block;margin:8px}
+</style></head><body>
+<h1>{{ tail }}</h1>
+<p>This aircraft is not in our registry yet.</p>
+<a href="/register-aircraft">Register it — it's free</a>
+<a href="/" class="sec">← Back to search</a>
+</body></html>""", tail=registration)
     def s(val):
         v = str(val).strip() if val else ""
         return "" if v == "nan" or v == "None" else v
@@ -808,7 +830,19 @@ def ln_detail(reg):
     registration = f"LN-{reg}"
     r = get_aircraft(registration)
     if not r:
-        return f"Aircraft {registration} not found", 404
+        return render_template_string("""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+body{font-family:-apple-system,sans-serif;background:#0d0d1a;color:white;text-align:center;padding:80px 20px}
+h1{font-size:48px;color:#ff6b35;font-family:monospace}
+p{color:#666;margin:16px 0 32px}
+a{background:#ff6b35;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;margin:8px}
+.sec{background:#1a1a2e;color:#aaa;padding:14px 28px;border-radius:8px;text-decoration:none;display:inline-block;margin:8px}
+</style></head><body>
+<h1>{{ tail }}</h1>
+<p>This aircraft is not in our registry yet.</p>
+<a href="/register-aircraft">Register it — it's free</a>
+<a href="/" class="sec">← Back to search</a>
+</body></html>""", tail=registration)
     def s(val):
         v = str(val).strip() if val else ""
         return "" if v == "nan" or v == "None" else v
@@ -834,7 +868,19 @@ def hb_detail(reg):
     registration = f"HB-{reg}"
     r = get_aircraft(registration)
     if not r:
-        return f"Aircraft {registration} not found", 404
+        return render_template_string("""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+body{font-family:-apple-system,sans-serif;background:#0d0d1a;color:white;text-align:center;padding:80px 20px}
+h1{font-size:48px;color:#ff6b35;font-family:monospace}
+p{color:#666;margin:16px 0 32px}
+a{background:#ff6b35;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;margin:8px}
+.sec{background:#1a1a2e;color:#aaa;padding:14px 28px;border-radius:8px;text-decoration:none;display:inline-block;margin:8px}
+</style></head><body>
+<h1>{{ tail }}</h1>
+<p>This aircraft is not in our registry yet.</p>
+<a href="/register-aircraft">Register it — it's free</a>
+<a href="/" class="sec">← Back to search</a>
+</body></html>""", tail=registration)
     def s(val):
         v = str(val).strip() if val else ""
         return "" if v == "nan" or v == "None" else v

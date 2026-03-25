@@ -4,7 +4,9 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 load_dotenv()
 
-from flask import Flask, render_template_string, request, redirect
+from flask import Flask, render_template_string, request, redirect, url_for, flash
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
 
 app = Flask(__name__)
@@ -13,6 +15,28 @@ os.makedirs(DB_PATH, exist_ok=True)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(DB_PATH, 'panpanparts.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+login_manager.login_message = ''
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200))
+    email = db.Column(db.String(200), unique=True)
+    password_hash = db.Column(db.String(200))
+    country = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password, method="pbkdf2:sha256")
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 class Part(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -812,3 +836,201 @@ def robots():
 @app.route('/tos')
 def tos():
     return open('tos.html').read()
+
+ABOUT_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>About - PanPanParts</title>
+    <meta charset="utf-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 24px; }
+        .container { max-width: 760px; margin: 60px auto; padding: 0 20px; }
+        h1 { font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+        h1 span { color: #ff6b35; }
+        .lead { font-size: 18px; color: #aaa; line-height: 1.7; margin-bottom: 40px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 28px; margin-bottom: 20px; border: 1px solid #2a2a3e; }
+        .card h3 { font-size: 16px; color: #ff6b35; margin-bottom: 12px; }
+        .card p { color: #aaa; line-height: 1.7; font-size: 15px; }
+        .contact { margin-top: 40px; color: #666; font-size: 14px; }
+        .contact a { color: #ff6b35; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav"><a href="/parts">Parts for sale</a><a href="/upload">+ List a part</a></div>
+    </div>
+    <div class="container">
+        <h1>About <span>PanPanParts</span></h1>
+        <p class="lead">A global marketplace for verified aviation parts — built by a pilot, for the aviation community.</p>
+        <div class="card"><h3>Why PanPanParts?</h3><p>Finding quality aviation parts has always been fragmented — scattered across forums, emails, and phone calls. PanPanParts brings it all together in one verified marketplace, making it faster and safer to buy and sell aircraft parts anywhere in the world.</p></div>
+        <div class="card"><h3>AI-verified documentation</h3><p>Every part listed on PanPanParts goes through AI-powered document verification. Upload a photo of the part and its airworthiness certificate — our system checks it automatically and flags anything that needs a closer look.</p></div>
+        <div class="card"><h3>Aircraft registry</h3><p>Search across 346,000+ registered aircraft from the USA, Denmark, Norway, Switzerland and Australia. More registries are being added continuously.</p></div>
+        <div class="card"><h3>Pan Pan</h3><p>In aviation, Pan Pan is an urgency call — the step before Mayday. We chose the name because finding the right part quickly can be exactly that urgent.</p></div>
+        <div class="contact">Questions: <a href="mailto:hello@panpanparts.com">hello@panpanparts.com</a></div>
+    </div>
+</body>
+</html>
+"""
+
+LOGIN_HTML = '''<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - PanPanParts</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; min-height: 100vh; }
+        .header { padding: 20px 40px; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .container { max-width: 420px; margin: 60px auto; padding: 0 20px; }
+        h1 { font-size: 32px; margin-bottom: 8px; }
+        h1 span { color: #ff6b35; }
+        .sub { color: #666; margin-bottom: 32px; font-size: 15px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 32px; border: 1px solid #2a2a3e; }
+        input { width: 100%; padding: 13px 16px; border: 1px solid #333; border-radius: 8px; font-size: 15px; margin-bottom: 14px; background: #0d0d1a; color: white; }
+        .btn { background: #ff6b35; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; font-weight: 600; }
+        .link { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+        .link a { color: #ff6b35; text-decoration: none; }
+        .error { background: rgba(255,100,100,0.1); border: 1px solid rgba(255,100,100,0.3); border-radius: 8px; padding: 12px; margin-bottom: 16px; color: #ff6b6b; font-size: 14px; }
+        label { font-size: 13px; color: #aaa; display: block; margin-bottom: 6px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+    </div>
+    <div class="container">
+        <h1>Welcome <span>back</span></h1>
+        <p class="sub">Log in to list parts or contact sellers</p>
+        <div class="card">
+            {% if error %}<div class="error">{{ error }}</div>{% endif %}
+            <form method="POST">
+                <label>Email</label>
+                <input type="email" name="email" placeholder="your@email.com" required>
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Your password" required>
+                <button class="btn" type="submit">Log in</button>
+            </form>
+        </div>
+        <div class="link">No account? <a href="/register">Sign up free</a></div>
+    </div>
+</body>
+</html>'''
+
+REGISTER_HTML = '''<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Up - PanPanParts</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; min-height: 100vh; }
+        .header { padding: 20px 40px; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .container { max-width: 420px; margin: 60px auto; padding: 0 20px; }
+        h1 { font-size: 32px; margin-bottom: 8px; }
+        h1 span { color: #ff6b35; }
+        .sub { color: #666; margin-bottom: 32px; font-size: 15px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 32px; border: 1px solid #2a2a3e; }
+        input, select { width: 100%; padding: 13px 16px; border: 1px solid #333; border-radius: 8px; font-size: 15px; margin-bottom: 14px; background: #0d0d1a; color: white; }
+        .btn { background: #ff6b35; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; font-weight: 600; }
+        .link { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+        .link a { color: #ff6b35; text-decoration: none; }
+        .error { background: rgba(255,100,100,0.1); border: 1px solid rgba(255,100,100,0.3); border-radius: 8px; padding: 12px; margin-bottom: 16px; color: #ff6b6b; font-size: 14px; }
+        label { font-size: 13px; color: #aaa; display: block; margin-bottom: 6px; }
+        .terms { font-size: 12px; color: #555; margin-top: 16px; text-align: center; }
+        .terms a { color: #ff6b35; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+    </div>
+    <div class="container">
+        <h1>Join <span>PanPanParts</span></h1>
+        <p class="sub">Free account — list parts, contact sellers, claim your aircraft</p>
+        <div class="card">
+            {% if error %}<div class="error">{{ error }}</div>{% endif %}
+            <form method="POST">
+                <label>Full name</label>
+                <input type="text" name="name" placeholder="Your name" required>
+                <label>Email</label>
+                <input type="email" name="email" placeholder="your@email.com" required>
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Min. 8 characters" required>
+                <label>Country</label>
+                <select name="country">
+                    <option>Denmark</option><option>Norway</option><option>Sweden</option>
+                    <option>Finland</option><option>United Kingdom</option><option>Germany</option>
+                    <option>France</option><option>Netherlands</option><option>Belgium</option>
+                    <option>Switzerland</option><option>Austria</option><option>United States</option>
+                    <option>Canada</option><option>Australia</option><option>Other</option>
+                </select>
+                <button class="btn" type="submit">Create free account</button>
+            </form>
+            <p class="terms">By signing up you agree to our <a href="/tos">Terms of Service</a></p>
+        </div>
+        <div class="link">Already have an account? <a href="/login">Log in</a></div>
+    </div>
+</body>
+</html>'''
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect('/')
+    error = None
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        with app.app_context():
+            user = User.query.filter_by(email=email).first()
+        if user and user.check_password(password):
+            login_user(user)
+            return redirect('/')
+        error = 'Invalid email or password'
+    return render_template_string(LOGIN_HTML, error=error)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect('/')
+    error = None
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        country = request.form.get('country', '')
+        if len(password) < 8:
+            error = 'Password must be at least 8 characters'
+        else:
+            with app.app_context():
+                existing = User.query.filter_by(email=email).first()
+                if existing:
+                    error = 'An account with this email already exists'
+                else:
+                    user = User(name=name, email=email, country=country)
+                    user.set_password(password)
+                    db.session.add(user)
+                    db.session.commit()
+                    login_user(user)
+                    return redirect('/')
+    return render_template_string(REGISTER_HTML, error=error)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect('/')

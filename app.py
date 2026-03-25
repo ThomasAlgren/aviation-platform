@@ -1683,3 +1683,91 @@ TYPE_PAGE_HTML = """<!DOCTYPE html>
     </div>
 </body>
 </html>"""
+
+@app.route('/register-aircraft', methods=['GET', 'POST'])
+@login_required
+def register_aircraft():
+    if request.method == 'POST':
+        tail = request.form.get('tail', '').strip().upper()
+        manufacturer = request.form.get('manufacturer', '').strip()
+        model = request.form.get('model', '').strip()
+        year = request.form.get('year', '').strip()
+        country = request.form.get('country', '').strip()
+        
+        if tail:
+            conn_r = sql.connect(DB)
+            existing = conn_r.execute("SELECT registration FROM aircraft WHERE registration = ?", (tail,)).fetchone()
+            if not existing:
+                conn_r.execute("INSERT INTO aircraft (registration, manufacturer, model, year, serial, country, owner, city, state, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (tail, manufacturer, model, year, '', country, current_user.name, '', country, 'User registered'))
+                conn_r.commit()
+            conn_r.close()
+            return redirect('/claim/' + tail)
+    
+    return render_template_string(REGISTER_AIRCRAFT_HTML)
+
+REGISTER_AIRCRAFT_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Register Aircraft - PanPanParts</title>
+    <meta charset="utf-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
+        .container { max-width: 500px; margin: 40px auto; padding: 0 20px; }
+        .back { color: #aaa; text-decoration: none; font-size: 14px; display: block; margin-bottom: 24px; }
+        h1 { font-size: 28px; margin-bottom: 8px; }
+        h1 span { color: #ff6b35; }
+        .sub { color: #666; margin-bottom: 32px; font-size: 15px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 28px; border: 1px solid #2a2a3e; }
+        label { font-size: 13px; color: #aaa; display: block; margin-bottom: 6px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #333; border-radius: 8px; font-size: 15px; margin-bottom: 16px; background: #0d0d1a; color: white; }
+        .btn { background: #ff6b35; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; font-weight: 600; }
+        .note { color: #555; font-size: 13px; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav"><a href="/">← Search</a></div>
+    </div>
+    <div class="container">
+        <h1>Register your <span>aircraft</span></h1>
+        <p class="sub">Can't find your aircraft in our registry? Add it manually.</p>
+        <div class="card">
+            <form method="POST">
+                <label>Registration / Tail number *</label>
+                <input type="text" name="tail" placeholder="e.g. OY-ABC or N12345" required>
+                <label>Manufacturer *</label>
+                <input type="text" name="manufacturer" placeholder="e.g. Cessna" required>
+                <label>Model *</label>
+                <input type="text" name="model" placeholder="e.g. 172S Skyhawk" required>
+                <label>Year built</label>
+                <input type="number" name="year" placeholder="e.g. 1998" min="1900" max="2030">
+                <label>Country of registration</label>
+                <select name="country">
+                    <option>Denmark</option>
+                    <option>Norway</option>
+                    <option>Sweden</option>
+                    <option>United Kingdom</option>
+                    <option>Germany</option>
+                    <option>France</option>
+                    <option>Netherlands</option>
+                    <option>Switzerland</option>
+                    <option>Austria</option>
+                    <option>United States</option>
+                    <option>Canada</option>
+                    <option>Australia</option>
+                    <option>Other</option>
+                </select>
+                <button class="btn" type="submit">Register and claim aircraft</button>
+            </form>
+            <p class="note">Your aircraft will be added to the PanPanParts registry and automatically claimed to your account.</p>
+        </div>
+    </div>
+</body>
+</html>"""

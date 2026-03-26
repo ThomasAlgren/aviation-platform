@@ -1,7 +1,8 @@
-# PanPanParts — Status 26. marts 2026 (eftermiddag)
+# PanPanParts — Status 26. marts 2026 (sen eftermiddag)
 
 ## Live
-- panpanparts.com — Railway Hobby ($5/md) — HTTPS venter stadig
+- panpanparts.com — HTTPS ✅ Let's Encrypt certifikat
+- Railway Hobby ($5/md)
 - UptimeRobot — overvåger siden
 - Google Search Console — verificeret, sitemap indsendt
 
@@ -12,8 +13,10 @@
 - Daglig backup til AWS S3 (panpanparts-backup, eu-north-1) kl. 02:00
 
 ## Features
-- ✅ Tail# søgning → fly profil (hurtig — PostgreSQL)
+- ✅ Hurtig opstart — ingen loading ventetid
+- ✅ Tail# søgning → fly profil
 - ✅ Flytype søgning → AI beskrivelse + listings + parts
+- ✅ Søgebar på alle sider
 - ✅ Login / Register
 - ✅ Claim aircraft
 - ✅ ARC upload og AI verificering
@@ -25,17 +28,15 @@
 - ✅ My listings
 - ✅ Register aircraft manuelt
 - ✅ Sitemap, About, TOS, robots.txt
-- ✅ Hurtig opstart — ingen 30 sek loading
 
 ## Næste skridt
-- HTTPS certifikat (venter på Railway)
-- Søgning på flytype i parts marketplace
+- Email notifikationer (ARC/medical udløb)
 - ARC status på My aircraft siden
 - Sverige fra officielt register
-- Email notifikationer (ARC/medical udløb)
 - Protest claim funktion
 - Betalingssystem (Stripe)
 - Slet cron job service på Railway
+- Manufacturer normalisering (Textron→Cessna etc.)
 
 ## Stack
 - Python Flask, PostgreSQL, Anthropic AI
@@ -43,3 +44,4 @@
 - Railway: aviation-platform-production-cf8f.up.railway.app
 - Domain: panpanparts.com (GoDaddy)
 - AWS S3: panpanparts-backup (eu-north-1)
+- Anthropic API: aktiv

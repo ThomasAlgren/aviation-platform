@@ -2222,3 +2222,49 @@ def sitemap_aircraft(page):
 """ + "\n".join(urls) + """
 </urlset>"""
     return xml, 200, {'Content-Type': 'application/xml'}
+
+# Daglig backup scheduler
+from apscheduler.schedulers.background import BackgroundScheduler
+import boto3
+import gzip
+import psycopg2 as pg
+
+def run_daily_backup():
+    try:
+        database_url = os.environ.get('DATABASE_URL')
+        aws_key = os.environ.get('AWS_ACCESS_KEY_ID')
+        aws_secret = os.environ.get('AWS_SECRET_ACCESS_KEY')
+        bucket = os.environ.get('AWS_S3_BUCKET', 'panpanparts-backup')
+        region = os.environ.get('AWS_REGION', 'eu-north-1')
+
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M')
+        filename = f'/tmp/backup_{timestamp}.sql.gz'
+
+        conn = pg.connect(database_url)
+        cur = conn.cursor()
+        tables = ['user', 'claimed_aircraft', 'aircraft_listing', 'part']
+
+        with gzip.open(filename, 'wt') as f:
+            for table in tables:
+                cur.execute(f'SELECT * FROM "{table}"')
+                rows = cur.fetchall()
+                cols = [d[0] for d in cur.description]
+                f.write(f'-- {table}: {len(rows)} rækker\n')
+                f.write(f'-- Kolonner: {cols}\n')
+                for row in rows:
+                    f.write(str(row) + '\n')
+                f.write('\n')
+
+        cur.close()
+        conn.close()
+
+        s3 = boto3.client('s3', aws_access_key_id=aws_key, aws_secret_access_key=aws_secret, region_name=region)
+        s3.upload_file(filename, bucket, f'backups/{filename.split("/")[-1]}')
+        os.remove(filename)
+        print(f'Backup fuldført: {filename}')
+    except Exception as e:
+        print(f'Backup fejl: {e}')
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(run_daily_backup, 'cron', hour=2, minute=0)
+scheduler.start()

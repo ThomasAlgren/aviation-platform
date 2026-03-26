@@ -76,6 +76,12 @@ AIRCRAFT_COCKPIT_HTML = """<!DOCTYPE html>
     </style>
 </head>
 <body>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
@@ -578,6 +584,8 @@ SEARCH_HTML = """
         .search-box button:hover { background: #e55a25; }
         .tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 48px; }
         .tab { padding: 8px 20px; border-radius: 20px; font-size: 14px; cursor: pointer; border: 1px solid #333; color: #aaa; background: transparent; }
+        .verify-banner { background: rgba(255,193,7,0.15); border-bottom: 1px solid rgba(255,193,7,0.3); padding: 12px 40px; text-align: center; font-size: 14px; color: #ffc107; }
+        .verify-banner a { color: #ff6b35; text-decoration: none; font-weight: 600; }
         .tab.active { background: #ff6b35; color: white; border-color: #ff6b35; }
         .stats { display: flex; gap: 40px; justify-content: center; margin-bottom: 80px; }
         .stat { text-align: center; }
@@ -845,6 +853,9 @@ DETAIL_HTML = """
 
 @app.route("/")
 def index():
+    welcome = request.args.get("welcome")
+    if welcome and current_user.is_authenticated and not current_user.email_verified:
+        flash("Welcome! Please check your email and verify your account.", "info")
     tail = request.args.get("tail", "")
     # Hvis søgning ikke ligner et tail-nummer, send til type-søgning
     if tail and not any(tail.upper().startswith(p) for p in ["OY", "LN", "HB", "VH", "N", "C-", "G-", "D-", "F-", "OE"]):
@@ -1256,6 +1267,12 @@ ABOUT_HTML = """
     </style>
 </head>
 <body>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav"><a href="/aircraft-for-sale" class="primary">Aircraft for sale</a>
@@ -1307,6 +1324,12 @@ ABOUT_HTML = """
     </style>
 </head>
 <body>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav"><a href="/parts">Parts for sale</a><a href="/upload">+ List a part</a></div>
@@ -1562,6 +1585,12 @@ MY_AIRCRAFT_HTML = """<!DOCTYPE html>
     </style>
 </head>
 <body>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
@@ -1635,6 +1664,12 @@ MY_LISTINGS_HTML = """<!DOCTYPE html>
     </style>
 </head>
 <body>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
@@ -1710,6 +1745,12 @@ PART_DETAIL_HTML = """<!DOCTYPE html>
     </style>
 </head>
 <body>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
@@ -1828,6 +1869,12 @@ SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
     </style>
 </head>
 <body>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav"><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div>
@@ -1898,6 +1945,12 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
     </style>
 </head>
 <body>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
@@ -2020,6 +2073,12 @@ TYPE_PAGE_HTML = """<!DOCTYPE html>
     </style>
 </head>
 <body>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
@@ -2133,6 +2192,12 @@ REGISTER_AIRCRAFT_HTML = """<!DOCTYPE html>
     </style>
 </head>
 <body>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav"><a href="/">← Search</a></div>
@@ -2430,6 +2495,12 @@ AIRCRAFT_LISTING_DETAIL_HTML = """<!DOCTYPE html>
     </style>
 </head>
 <body>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
@@ -2791,6 +2862,12 @@ MY_PROFILE_HTML = """<!DOCTYPE html>
     </style>
 </head>
 <body>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
@@ -3013,3 +3090,21 @@ def reset_password(token):
         </button>
     </form>
     </body></html>""")
+
+@app.route('/resend-verification')
+@login_required
+def resend_verification():
+    if current_user.email_verified:
+        return redirect('/')
+    import secrets
+    token = secrets.token_urlsafe(32)
+    current_user.verification_token = token
+    db.session.commit()
+    try:
+        from emails import send_verification_email
+        send_verification_email(current_user.email, current_user.name, token)
+        flash("Verification email sent!", "info")
+    except Exception as e:
+        print("Email fejl:", e)
+        flash("Could not send email. Please try again.", "error")
+    return redirect('/')

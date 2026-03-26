@@ -847,9 +847,6 @@ DETAIL_HTML = """
 
 @app.route("/")
 def index():
-    import os
-    if not os.path.exists('instance/panpanparts.db'):
-        return "<html><body style='font-family:sans-serif;text-align:center;padding:100px'><h1>PanPanParts</h1><p>Loading aircraft database... please refresh in 30 seconds.</p></body></html>"
     tail = request.args.get("tail", "")
     # Hvis søgning ikke ligner et tail-nummer, send til type-søgning
     if tail and not any(tail.upper().startswith(p) for p in ["OY", "LN", "HB", "VH", "N", "C-", "G-", "D-", "F-", "OE"]):
@@ -862,26 +859,26 @@ def index():
     results = None
     result_count = 0
     if any([tail, model, state, year_from, year_to]):
-        conn = sql.connect(DB)
-        conn.row_factory = sql.Row
-        cur = conn.cursor()
+        import psycopg2.extras
+        conn = get_pg_conn()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         query = "SELECT * FROM aircraft WHERE 1=1"
         params = []
         if tail:
             t = tail.upper()
-            query += " AND registration LIKE ?"
+            query += " AND registration ILIKE %s"
             params.append(f'%{t}%')
         if model:
-            query += " AND model LIKE ?"
+            query += " AND model ILIKE %s"
             params.append(f'%{model}%')
         if state:
-            query += " AND state = ?"
+            query += " AND state = %s"
             params.append(state)
         if year_from:
-            query += " AND CAST(year AS INTEGER) >= ?"
+            query += " AND CAST(year AS INTEGER) >= %s"
             params.append(int(year_from))
         if year_to:
-            query += " AND CAST(year AS INTEGER) <= ?"
+            query += " AND CAST(year AS INTEGER) <= %s"
             params.append(int(year_to))
         query += " LIMIT 20"
         cur.execute(query, params)
@@ -1138,16 +1135,19 @@ a{background:#ff6b35;color:white;padding:14px 28px;border-radius:8px;text-decora
     arc_info = ClaimedAircraft.query.filter_by(tail=registration).first()
     
     # Statistik for flytype
-    conn_stat = sql.connect(DB)
     model_query = aircraft["model"] if aircraft["model"] else ""
     if model_query:
-        # Søg på præcis model
-        total = conn_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model = ?", (model_query,)).fetchone()[0]
-        in_country = conn_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model = ? AND country = ?", (model_query, "DK")).fetchone()[0]
+        import psycopg2.extras
+        conn_stat = get_pg_conn()
+        cur_stat = conn_stat.cursor()
+        cur_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model = %s", (model_query,))
+        total = cur_stat.fetchone()[0]
+        cur_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model = %s AND country = %s", (model_query, "DK"))
+        in_country = cur_stat.fetchone()[0]
+        conn_stat.close()
     else:
         total = 0
         in_country = 0
-    conn_stat.close()
     return render_template_string(OY_DETAIL_HTML, aircraft=aircraft, type_total=total, type_in_country=in_country, country_name="Denmark", arc_info=arc_info)
 @app.route("/aircraft/LN-<reg>")
 def ln_detail(reg):
@@ -2070,10 +2070,12 @@ def register_aircraft():
         country = request.form.get('country', '').strip()
         
         if tail:
-            conn_r = sql.connect(DB)
-            existing = conn_r.execute("SELECT registration FROM aircraft WHERE registration = ?", (tail,)).fetchone()
+            conn_r = get_pg_conn()
+            cur_r = conn_r.cursor()
+            cur_r.execute("SELECT registration FROM aircraft WHERE registration = %s", (tail,))
+            existing = cur_r.fetchone()
             if not existing:
-                conn_r.execute("INSERT INTO aircraft (registration, manufacturer, model, year, serial, country, owner, city, state, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                cur_r.execute("INSERT INTO aircraft (registration, manufacturer, model, year, serial, country, owner, city, state, source) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                     (tail, manufacturer, model, year, '', country, current_user.name, '', country, 'User registered'))
                 conn_r.commit()
             conn_r.close()
@@ -2504,11 +2506,10 @@ def sitemap_pages():
 def sitemap_aircraft(page):
     limit = 50000
     offset = (page - 1) * limit
-    conn_s = sql.connect(DB)
-    rows = conn_s.execute(
-        "SELECT registration FROM aircraft LIMIT ? OFFSET ?", 
-        (limit, offset)
-    ).fetchall()
+    conn_s = get_pg_conn()
+    cur_s = conn_s.cursor()
+    cur_s.execute("SELECT registration FROM aircraft LIMIT %s OFFSET %s", (limit, offset))
+    rows = cur_s.fetchall()
     conn_s.close()
     
     urls = []

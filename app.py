@@ -715,7 +715,9 @@ Respond ONLY with a JSON object:
         contact_email=current_user.email,
         location=data.get("location", ""),
         price=float(data.get("price", 0) or 0),
-        description=data.get("description", "")
+        description=data.get("description", ""),
+        fits_manufacturer=data.get("fits_manufacturer", ""),
+        fits_model=data.get("fits_model", "")
     )
 
     with app.app_context():

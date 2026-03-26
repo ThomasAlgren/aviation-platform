@@ -766,13 +766,7 @@ OY_DETAIL_HTML = """
         </div>
         {% endif %}
 
-        {% if type_total %}
-        <div class="card">
-            <h3>Fleet statistics</h3>
-            <div class="field"><span class="field-label">{{ aircraft.model }} in {{ country_name }}</span><span class="field-value">{{ type_in_country }} aircraft</span></div>
-            <div class="field"><span class="field-label">{{ aircraft.model }} worldwide</span><span class="field-value">{{ type_total }} aircraft</span></div>
-        </div>
-        {% endif %}
+
 
         <div class="card">
             <h3>Own this aircraft?</h3>

@@ -1,4 +1,4 @@
-# PanPanParts — Status 25. marts 2026 (aften)
+# PanPanParts — Status 26. marts 2026
 
 ## Live
 - panpanparts.com — Railway Hobby ($5/md)
@@ -10,7 +10,7 @@
 - 526.081 fly fra USA, Danmark, Norge, Schweiz, Australien, Canada, Østrig, UK, Tyskland, Frankrig + flere
 - 93.596 flytyper i aircraft_type tabel (FAA)
 - PostgreSQL på Railway (migreret fra SQLite 25/3-2026)
-- Daglig backup til AWS S3 (panpanparts-backup, eu-north-1) kl. 00:00
+- Daglig backup til AWS S3 (panpanparts-backup, eu-north-1) kl. 02:00 via APScheduler i app
 
 ## Features
 - Tail# søgning → fly profil
@@ -25,7 +25,7 @@
 - Sitemap, About, TOS, robots.txt
 
 ## Næste skridt
-- HTTPS certifikat (venter)
+- HTTPS certifikat (venter på Railway)
 - Koble part tabel til aircraft_type
 - Koble aircraft til aircraft_type via model/manufacturer
 - ARC status på My aircraft siden
@@ -33,6 +33,7 @@
 - Protest claim funktion
 - Email notifikationer (ARC udløb)
 - Betalingssystem (Stripe)
+- Slet cron job service på Railway (ikke længere nødvendig)
 
 ## Stack
 - Python Flask, PostgreSQL, Anthropic AI

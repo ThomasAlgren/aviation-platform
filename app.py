@@ -28,6 +28,15 @@ class User(UserMixin, db.Model):
     country = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     claimed_aircraft = db.Column(db.Text)  # JSON liste af tail numre
+    license_number = db.Column(db.String(100))
+    license_type = db.Column(db.String(50))
+    license_valid_until = db.Column(db.String(50))
+    medical_class = db.Column(db.String(20))
+    medical_valid_until = db.Column(db.String(50))
+    total_flight_hours = db.Column(db.Float)
+    ratings = db.Column(db.Text)
+    license_document = db.Column(db.Text)
+    medical_document = db.Column(db.Text)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method="pbkdf2:sha256")
@@ -48,6 +57,18 @@ class ClaimedAircraft(db.Model):
     arc_document = db.Column(db.Text)
     arc_checked_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    coa_valid_until = db.Column(db.String(50))
+    coa_document = db.Column(db.Text)
+    registration_document = db.Column(db.Text)
+    noise_document = db.Column(db.Text)
+    radio_document = db.Column(db.Text)
+    insurance_valid_until = db.Column(db.String(50))
+    insurance_document = db.Column(db.Text)
+    total_hours = db.Column(db.Float)
+    engine_hours = db.Column(db.Float)
+    last_service_date = db.Column(db.String(50))
+    next_service_date = db.Column(db.String(50))
+    notes = db.Column(db.Text)
 
 class AircraftListing(db.Model):
     id = db.Column(db.Integer, primary_key=True)

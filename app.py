@@ -2669,3 +2669,219 @@ def aircraft_upload_doc(tail):
         return json.dumps({'ok': True})
     
     return json.dumps({'ok': False})
+
+@app.route('/my-profile', methods=['GET', 'POST'])
+@login_required
+def my_profile():
+    from datetime import datetime, date
+    
+    if request.method == 'POST':
+        fields = ['license_number', 'license_type', 'license_valid_until',
+                  'medical_class', 'medical_valid_until', 'total_flight_hours', 'ratings']
+        for field in fields:
+            val = request.form.get(field)
+            if val is not None:
+                setattr(current_user, field, val)
+        db.session.commit()
+        return redirect('/my-profile')
+    
+    # Beregn dage til udløb
+    medical_days = None
+    if current_user.medical_valid_until:
+        try:
+            med_date = datetime.strptime(current_user.medical_valid_until, '%Y-%m-%d').date()
+            medical_days = (med_date - date.today()).days
+        except:
+            pass
+
+    license_days = None
+    if current_user.license_valid_until:
+        try:
+            lic_date = datetime.strptime(current_user.license_valid_until, '%Y-%m-%d').date()
+            license_days = (lic_date - date.today()).days
+        except:
+            pass
+
+    return render_template_string(MY_PROFILE_HTML,
+        current_user=current_user,
+        medical_days=medical_days,
+        license_days=license_days)
+
+MY_PROFILE_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>My Profile - PanPanParts</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a2e; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
+        .container { max-width: 700px; margin: 40px auto; padding: 0 20px; }
+        .back { color: #666; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 24px; }
+        .hero { background: linear-gradient(135deg, #1a1a2e, #16213e); border-radius: 16px; padding: 32px; margin-bottom: 24px; border: 1px solid #2a2a3e; }
+        .hero-name { font-size: 36px; font-weight: 700; }
+        .hero-sub { color: #666; margin-top: 6px; font-size: 15px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; border: 1px solid #2a2a3e; margin-bottom: 16px; }
+        .card h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 16px; }
+        .date-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #2a2a3e; }
+        .date-item:last-child { border-bottom: none; }
+        .date-label { color: #aaa; font-size: 14px; }
+        .date-value { font-size: 14px; font-weight: 600; }
+        .date-ok { color: #4caf50; }
+        .date-warn { color: #ffc107; }
+        .date-alert { color: #ff6b35; }
+        .date-missing { color: #444; font-style: italic; font-weight: 400; }
+        .status-badge { padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600; float: right; }
+        .status-ok { background: rgba(76,175,80,0.2); color: #4caf50; border: 1px solid rgba(76,175,80,0.3); }
+        .status-warn { background: rgba(255,193,7,0.2); color: #ffc107; border: 1px solid rgba(255,193,7,0.3); }
+        .status-alert { background: rgba(255,107,53,0.2); color: #ff6b35; border: 1px solid rgba(255,107,53,0.3); }
+        .edit-btn { background: transparent; border: 1px solid #333; color: #aaa; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; float: right; margin-top: -4px; }
+        .edit-btn:hover { border-color: #ff6b35; color: #ff6b35; }
+        .hidden { display: none; }
+        input[type=text], input[type=date], input[type=number], select { width: 100%; padding: 10px 12px; border: 1px solid #333; border-radius: 8px; font-size: 14px; margin-bottom: 10px; background: #0d0d1a; color: white; }
+        .save-btn { background: #ff6b35; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 4px; }
+        .hours-value { font-size: 48px; font-weight: 700; color: #ff6b35; }
+        .hours-label { font-size: 13px; color: #666; margin-top: 4px; }
+        .user-menu { position: relative; margin-left: 8px; }
+        .user-btn { background: #1a1a2e; color: #aaa; border: 1px solid #333; padding: 8px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        .dropdown { display: none; position: absolute; right: 0; top: 44px; background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 8px; min-width: 140px; z-index: 100; }
+        .dropdown a { display: block; padding: 12px 16px; color: #aaa; text-decoration: none; font-size: 14px; }
+        .dropdown a:hover { color: white; background: #2a2a3e; }
+        .dropdown.open { display: block; }
+        label { font-size: 12px; color: #666; margin-bottom: 4px; display: block; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav">
+            <a href="/parts">Parts</a>
+            <div class="user-menu">
+                <button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} ▾</button>
+                <div class="dropdown">
+                    <a href="/my-aircraft">My aircraft</a>
+                    <a href="/my-profile">My profile</a>
+                    <a href="/my-listings">My listings</a>
+                    <a href="/logout">Log out</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <a href="/my-aircraft" class="back">← My aircraft</a>
+
+        <!-- Hero -->
+        <div class="hero">
+            <div>
+                <div class="hero-name">{{ current_user.name }}</div>
+                <div class="hero-sub">
+                    {{ current_user.license_type or 'Pilot' }}
+                    {% if current_user.license_number %} · {{ current_user.license_number }}{% endif %}
+                    {% if current_user.country %} · {{ current_user.country }}{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Kritiske datoer -->
+        <div class="card">
+            <h3>Critical dates
+                <button class="edit-btn" onclick="document.getElementById('dates-form').classList.toggle('hidden')">Edit</button>
+            </h3>
+
+            <div class="date-item">
+                <span class="date-label">Medical valid until</span>
+                <span class="date-value {% if medical_days is not none %}{% if medical_days < 0 %}date-alert{% elif medical_days < 60 %}date-warn{% else %}date-ok{% endif %}{% else %}date-missing{% endif %}">
+                    {% if current_user.medical_valid_until %}
+                        {{ current_user.medical_valid_until }}
+                        {% if medical_days is not none %}
+                            {% if medical_days < 0 %} — EXPIRED{% elif medical_days < 60 %} — {{ medical_days }} days left{% endif %}
+                        {% endif %}
+                    {% else %}
+                        Not registered
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="date-item">
+                <span class="date-label">Medical class</span>
+                <span class="date-value {% if current_user.medical_class %}date-ok{% else %}date-missing{% endif %}">
+                    {{ current_user.medical_class or 'Not registered' }}
+                </span>
+            </div>
+
+            <div class="date-item">
+                <span class="date-label">License valid until</span>
+                <span class="date-value {% if license_days is not none %}{% if license_days < 0 %}date-alert{% elif license_days < 60 %}date-warn{% else %}date-ok{% endif %}{% else %}date-missing{% endif %}">
+                    {% if current_user.license_valid_until %}
+                        {{ current_user.license_valid_until }}
+                        {% if license_days is not none %}
+                            {% if license_days < 0 %} — EXPIRED{% elif license_days < 60 %} — {{ license_days }} days left{% endif %}
+                        {% endif %}
+                    {% else %}
+                        Not registered
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="date-item">
+                <span class="date-label">Ratings</span>
+                <span class="date-value {% if current_user.ratings %}date-ok{% else %}date-missing{% endif %}">
+                    {{ current_user.ratings or 'Not registered' }}
+                </span>
+            </div>
+
+            <!-- Edit form -->
+            <div id="dates-form" class="hidden" style="margin-top:16px">
+                <form method="POST" action="/my-profile">
+                    <label>License type</label>
+                    <select name="license_type">
+                        <option value="">Select...</option>
+                        <option value="PPL" {% if current_user.license_type == 'PPL' %}selected{% endif %}>PPL — Private Pilot License</option>
+                        <option value="CPL" {% if current_user.license_type == 'CPL' %}selected{% endif %}>CPL — Commercial Pilot License</option>
+                        <option value="ATPL" {% if current_user.license_type == 'ATPL' %}selected{% endif %}>ATPL — Airline Transport Pilot License</option>
+                        <option value="SPL" {% if current_user.license_type == 'SPL' %}selected{% endif %}>SPL — Student Pilot License</option>
+                    </select>
+                    <label>License number</label>
+                    <input type="text" name="license_number" placeholder="e.g. DK.FCL.2026.PPL.12345" value="{{ current_user.license_number or '' }}">
+                    <label>License valid until</label>
+                    <input type="text" name="license_valid_until" placeholder="YYYY-MM-DD" value="{{ current_user.license_valid_until or '' }}">
+                    <label>Medical class</label>
+                    <select name="medical_class">
+                        <option value="">Select...</option>
+                        <option value="Class 1" {% if current_user.medical_class == 'Class 1' %}selected{% endif %}>Class 1 — Commercial</option>
+                        <option value="Class 2" {% if current_user.medical_class == 'Class 2' %}selected{% endif %}>Class 2 — Private</option>
+                        <option value="LAPL" {% if current_user.medical_class == 'LAPL' %}selected{% endif %}>LAPL Medical</option>
+                    </select>
+                    <label>Medical valid until</label>
+                    <input type="text" name="medical_valid_until" placeholder="YYYY-MM-DD" value="{{ current_user.medical_valid_until or '' }}">
+                    <label>Ratings (e.g. IR, Night, MEP, SEP)</label>
+                    <input type="text" name="ratings" placeholder="e.g. SEP, Night" value="{{ current_user.ratings or '' }}">
+                    <button type="submit" class="save-btn">Save profile</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Flyvetimer -->
+        <div class="card">
+            <h3>Flight hours
+                <button class="edit-btn" onclick="document.getElementById('hours-form').classList.toggle('hidden')">Edit</button>
+            </h3>
+            <div class="hours-value">{{ current_user.total_flight_hours or '0' }}</div>
+            <div class="hours-label">Total flight hours</div>
+
+            <div id="hours-form" class="hidden" style="margin-top:16px">
+                <form method="POST" action="/my-profile">
+                    <label>Total flight hours</label>
+                    <input type="number" name="total_flight_hours" placeholder="Total hours in logbook" value="{{ current_user.total_flight_hours or '' }}" step="0.1">
+                    <button type="submit" class="save-btn">Save hours</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>"""

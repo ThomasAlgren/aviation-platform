@@ -899,9 +899,10 @@ def index():
     with app.app_context():
         part_count = Part.query.filter(Part.price != None).count()
         aircraft_count = AircraftListing.query.count()
-        import sqlite3 as sql2
-        conn2 = sql2.connect(DB)
-        registry_count = conn2.execute("SELECT COUNT(*) FROM aircraft").fetchone()[0]
+        conn2 = get_pg_conn()
+        cur2 = conn2.cursor()
+        cur2.execute("SELECT COUNT(*) FROM aircraft")
+        registry_count = cur2.fetchone()[0]
         conn2.close()
     return render_template_string(SEARCH_HTML, tail=tail, model=model, state=state,
         year_from=year_from, year_to=year_to, states=states,

@@ -307,6 +307,10 @@ class User(UserMixin, db.Model):
     ratings = db.Column(db.Text)
     license_document = db.Column(db.Text)
     medical_document = db.Column(db.Text)
+    email_verified = db.Column(db.Boolean, default=False)
+    verification_token = db.Column(db.String(100))
+    reset_token = db.Column(db.String(100))
+    reset_token_expires = db.Column(db.DateTime)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method="pbkdf2:sha256")
@@ -1363,6 +1367,7 @@ LOGIN_HTML = '''<!DOCTYPE html>
             </form>
         </div>
         <div class="link">No account? <a href="/register">Sign up free</a></div>
+        <div class="link" style="margin-top:10px"><a href="/forgot-password" style="color:#666;font-size:13px">Forgot password?</a></div>
     </div>
 </body>
 </html>'''
@@ -1462,12 +1467,21 @@ def register():
                 if existing:
                     error = 'An account with this email already exists'
                 else:
+                    import secrets
+                    token = secrets.token_urlsafe(32)
                     user = User(name=name, email=email, country=country)
                     user.set_password(password)
+                    user.verification_token = token
+                    user.email_verified = False
                     db.session.add(user)
                     db.session.commit()
+                    try:
+                        from emails import send_verification_email
+                        send_verification_email(email, name, token)
+                    except Exception as e:
+                        print("Email fejl:", e)
                     login_user(user)
-                    return redirect('/')
+                    return redirect('/?welcome=1')
     return render_template_string(REGISTER_HTML, error=error)
 
 @app.route('/logout')
@@ -2906,3 +2920,96 @@ MY_PROFILE_HTML = """<!DOCTYPE html>
     </div>
 </body>
 </html>"""
+
+# Email verificering og password reset
+import secrets
+from emails import send_verification_email, send_password_reset_email
+
+@app.route('/verify-email/<token>')
+def verify_email(token):
+    user = User.query.filter_by(verification_token=token).first()
+    if not user:
+        return render_template_string("""
+        <html><body style='font-family:sans-serif;text-align:center;padding:80px;background:#0d0d1a;color:white'>
+        <h2 style='color:#ff6b35'>Invalid or expired link</h2>
+        <a href='/' style='color:#4a9eff'>Go to PanPanParts</a>
+        </body></html>""")
+    user.email_verified = True
+    user.verification_token = None
+    db.session.commit()
+    return render_template_string("""
+    <html><body style='font-family:sans-serif;text-align:center;padding:80px;background:#0d0d1a;color:white'>
+    <h2 style='color:#4caf50'>✓ Email verified!</h2>
+    <p style='color:#aaa;margin:16px 0'>Your account is now active.</p>
+    <a href='/login' style='background:#ff6b35;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600'>Log in</a>
+    </body></html>""")
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        user = User.query.filter_by(email=email).first()
+        if user:
+            token = secrets.token_urlsafe(32)
+            user.reset_token = token
+            user.reset_token_expires = datetime.utcnow().replace(microsecond=0)
+            db.session.commit()
+            try:
+                send_password_reset_email(user.email, user.name, token)
+            except Exception as e:
+                print("Email fejl:", e)
+        return render_template_string("""
+        <html><body style='font-family:sans-serif;text-align:center;padding:80px;background:#0d0d1a;color:white'>
+        <h2>Check your email</h2>
+        <p style='color:#aaa'>If an account exists, we sent a reset link.</p>
+        <a href='/login' style='color:#ff6b35'>Back to login</a>
+        </body></html>""")
+    return render_template_string("""
+    <html><body style='font-family:sans-serif;text-align:center;padding:80px;background:#0d0d1a;color:white'>
+    <h2>Forgot password</h2>
+    <form method='POST' style='margin-top:24px'>
+        <input type='email' name='email' placeholder='Your email address' required
+            style='padding:12px 16px;border:1px solid #333;border-radius:8px;background:#1a1a2e;color:white;font-size:15px;width:300px'>
+        <br><br>
+        <button type='submit' style='background:#ff6b35;color:white;border:none;padding:14px 28px;border-radius:8px;font-size:16px;cursor:pointer;font-weight:600'>
+            Send reset link
+        </button>
+    </form>
+    <br><a href='/login' style='color:#aaa;font-size:14px'>Back to login</a>
+    </body></html>""")
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    user = User.query.filter_by(reset_token=token).first()
+    if not user:
+        return render_template_string("""
+        <html><body style='font-family:sans-serif;text-align:center;padding:80px;background:#0d0d1a;color:white'>
+        <h2 style='color:#ff6b35'>Invalid or expired link</h2>
+        <a href='/forgot-password' style='color:#4a9eff'>Try again</a>
+        </body></html>""")
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        if len(password) < 8:
+            flash('Password must be at least 8 characters')
+            return redirect(f'/reset-password/{token}')
+        user.set_password(password)
+        user.reset_token = None
+        user.reset_token_expires = None
+        db.session.commit()
+        return render_template_string("""
+        <html><body style='font-family:sans-serif;text-align:center;padding:80px;background:#0d0d1a;color:white'>
+        <h2 style='color:#4caf50'>✓ Password updated!</h2>
+        <a href='/login' style='background:#ff6b35;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600'>Log in</a>
+        </body></html>""")
+    return render_template_string("""
+    <html><body style='font-family:sans-serif;text-align:center;padding:80px;background:#0d0d1a;color:white'>
+    <h2>Choose new password</h2>
+    <form method='POST' style='margin-top:24px'>
+        <input type='password' name='password' placeholder='New password (min 8 characters)' required
+            style='padding:12px 16px;border:1px solid #333;border-radius:8px;background:#1a1a2e;color:white;font-size:15px;width:300px'>
+        <br><br>
+        <button type='submit' style='background:#ff6b35;color:white;border:none;padding:14px 28px;border-radius:8px;font-size:16px;cursor:pointer;font-weight:600'>
+            Save new password
+        </button>
+    </form>
+    </body></html>""")

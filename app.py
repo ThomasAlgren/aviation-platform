@@ -224,6 +224,7 @@ PARTS_HTML = """
             <a class="part-card" href="/part/{{ p.id }}" style="text-decoration:none;color:inherit">
                 <div class="part-info">
                     <h3>{{ p.part_number or 'Unknown part' }}</h3>
+                    {% if p.fits_manufacturer %}<p style="color:#ff6b35;font-size:13px">Fits: {{ p.fits_manufacturer }} {{ p.fits_model }}</p>{% endif %}
                     <p>{{ p.description[:80] if p.description else 'No description' }}</p>
                     <p>{{ p.contact_name }} &bull; {{ p.location }}</p>
                     <span class="badge {% if p.ai_recommendation != 'Approved for listing' %}badge-warn{% endif %}">
@@ -1431,6 +1432,7 @@ PART_DETAIL_HTML = """<!DOCTYPE html>
 
         <div class="card">
             <h3>Part details</h3>
+            {% if part.fits_manufacturer %}<div class="field"><span class="field-label">Fits aircraft</span><span style="color:#ff6b35">{{ part.fits_manufacturer }} {{ part.fits_model }}</span></div>{% endif %}
             <div class="field"><span class="field-label">Part number</span><span>{{ part.part_number or '—' }}</span></div>
             <div class="field"><span class="field-label">Serial number</span><span>{{ part.serial_number or '—' }}</span></div>
             <div class="field"><span class="field-label">Condition</span><span>{{ part.part_condition or '—' }}</span></div>

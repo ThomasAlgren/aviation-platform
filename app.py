@@ -87,6 +87,9 @@ class Part(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     part_image = db.Column(db.Text)
     doc_image = db.Column(db.Text)
+    fits_manufacturer = db.Column(db.String(200))
+    fits_model = db.Column(db.String(200))
+    fits_aircraft = db.Column(db.Text)
 
 with app.app_context():
     db.create_all()

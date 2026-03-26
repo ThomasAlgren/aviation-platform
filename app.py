@@ -622,6 +622,12 @@ SEARCH_HTML = """
             {% endif %}
         </div>
     </div>
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="verify-banner">
+        ⚠ Please verify your email address. 
+        <a href="/resend-verification">Resend verification email</a>
+    </div>
+    {% endif %}
     {% if not results %}
     <div class="hero">
         <h1>Find <span>any aviation part</span><br>anywhere in the world</h1>

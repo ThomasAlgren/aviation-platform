@@ -1,4 +1,4 @@
-# PanPanParts — Status 26. marts 2026 (sen eftermiddag)
+# PanPanParts — Status 26. marts 2026 (aften)
 
 ## Live
 - panpanparts.com — HTTPS ✅ Let's Encrypt certifikat
@@ -9,25 +9,28 @@
 ## Database (PostgreSQL)
 - 526.081 fly fra USA, Danmark, Norge, Schweiz, Australien, Canada, Østrig, UK, Tyskland, Frankrig + flere
 - 93.596 flytyper i aircraft_type tabel (FAA)
-- Alle tabeller i PostgreSQL — SQLite ikke længere i brug
 - Daglig backup til AWS S3 (panpanparts-backup, eu-north-1) kl. 02:00
 
 ## Features
-- ✅ Hurtig opstart — ingen loading ventetid
+- ✅ Hurtig opstart
 - ✅ Tail# søgning → fly profil
 - ✅ Flytype søgning → AI beskrivelse + listings + parts
 - ✅ Søgebar på alle sider
 - ✅ Login / Register
+- ✅ Email verificering ved oprettelse
+- ✅ Glemt password → reset via email
 - ✅ Claim aircraft
 - ✅ ARC upload og AI verificering
 - ✅ Parts marketplace med AI analyse
-- ✅ fits_manufacturer + fits_model på parts
 - ✅ Aircraft for sale listings
 - ✅ My aircraft cockpit (ARC, CoA, forsikring, timer, dokumenter)
 - ✅ My profile (licens, medical, flyvetimer)
-- ✅ My listings
-- ✅ Register aircraft manuelt
 - ✅ Sitemap, About, TOS, robots.txt
+
+## Email
+- Resend.com — noreply@panpanparts.com
+- Verificerings-email ved registrering
+- Password reset email
 
 ## Næste skridt
 - Email notifikationer (ARC/medical udløb)
@@ -35,13 +38,11 @@
 - Sverige fra officielt register
 - Protest claim funktion
 - Betalingssystem (Stripe)
-- Slet cron job service på Railway
 - Manufacturer normalisering (Textron→Cessna etc.)
 
 ## Stack
-- Python Flask, PostgreSQL, Anthropic AI
+- Python Flask, PostgreSQL, Anthropic AI, Resend
 - GitHub: ThomasAlgren/aviation-platform
 - Railway: aviation-platform-production-cf8f.up.railway.app
 - Domain: panpanparts.com (GoDaddy)
 - AWS S3: panpanparts-backup (eu-north-1)
-- Anthropic API: aktiv

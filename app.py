@@ -1138,12 +1138,12 @@ a{background:#ff6b35;color:white;padding:14px 28px;border-radius:8px;text-decora
     # Statistik for flytype
     model_query = aircraft["model"] if aircraft["model"] else ""
     if model_query:
-        import psycopg2.extras
         conn_stat = get_pg_conn()
         cur_stat = conn_stat.cursor()
-        cur_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model = %s", (model_query,))
+        model_clean = model_query.replace("-", "")
+        cur_stat.execute("SELECT COUNT(*) FROM aircraft WHERE REPLACE(model, '-', '') ILIKE %s", (model_clean,))
         total = cur_stat.fetchone()[0]
-        cur_stat.execute("SELECT COUNT(*) FROM aircraft WHERE model = %s AND country = %s", (model_query, "DK"))
+        cur_stat.execute("SELECT COUNT(*) FROM aircraft WHERE REPLACE(model, '-', '') ILIKE %s AND country = %s", (model_clean, "DK"))
         in_country = cur_stat.fetchone()[0]
         conn_stat.close()
     else:

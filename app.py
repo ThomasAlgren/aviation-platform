@@ -1576,7 +1576,18 @@ def claim(tail):
         claimed.append(tail.upper())
         user.claimed_aircraft = json.dumps(claimed)
         db.session.commit()
-    return redirect('/aircraft/' + tail + '?claimed=1')
+    
+    # Opret ClaimedAircraft record hvis den ikke findes
+    existing = ClaimedAircraft.query.filter_by(tail=tail.upper()).first()
+    if not existing:
+        ca = ClaimedAircraft(
+            user_id=current_user.id,
+            tail=tail.upper()
+        )
+        db.session.add(ca)
+        db.session.commit()
+    
+    return redirect('/my-aircraft/' + tail.upper())
 
 @app.route('/my-aircraft')
 @login_required

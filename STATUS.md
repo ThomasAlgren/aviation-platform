@@ -9,6 +9,8 @@
 ## Database (PostgreSQL)
 - 526.081 fly fra USA, Danmark, Norge, Schweiz, Australien, Canada, Østrig, UK, Tyskland, Frankrig + flere
 - 93.596 flytyper i aircraft_type tabel (FAA)
+- pilot_certificate tabel — AI læser certifikater automatisk
+- claim_protest tabel — disputed claims
 - Daglig backup til AWS S3 (panpanparts-backup, eu-north-1) kl. 02:00
 
 ## Features
@@ -27,6 +29,9 @@
 - ✅ Aircraft for sale listings
 - ✅ My aircraft cockpit (ARC, CoA, forsikring, timer, dokumenter)
 - ✅ My profile (licens, medical, flyvetimer)
+- ✅ Pilot certifikater — komplet EASA/FAA liste
+- ✅ Certifikat foto upload — AI læser udløbsdato automatisk
+- ✅ Certifikat detalje modal med billede
 - ✅ Sitemap, About, TOS, robots.txt
 
 ## Email
@@ -37,7 +42,9 @@
 - Password reset email
 
 ## Næste skridt
-- Email notifikationer (ARC/medical udløb)
+- OpenSky live tracking på fly profil siden
+- Logbog — foto upload → AI udfylder flyvninger
+- Email notifikationer (ARC/medical/certifikat udløb)
 - ARC status på My aircraft siden
 - Sverige fra officielt register
 - Betalingssystem (Stripe)

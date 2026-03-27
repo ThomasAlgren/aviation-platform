@@ -1,54 +1,42 @@
-# PanPanParts — Status 27. marts 2026
+# PanPanParts — Status 27. marts 2026 (aften)
 
 ## Live
-- panpanparts.com — HTTPS ✅ Let's Encrypt certifikat
+- panpanparts.com — HTTPS ✅
 - Railway Hobby ($5/md)
-- UptimeRobot — overvåger siden
-- Google Search Console — verificeret, sitemap indsendt
+- UptimeRobot, Google Search Console
 
 ## Database (PostgreSQL)
-- 526.081 fly fra USA, Danmark, Norge, Schweiz, Australien, Canada, Østrig, UK, Tyskland, Frankrig + flere
-- 93.596 flytyper i aircraft_type tabel (FAA)
-- pilot_certificate tabel — AI læser certifikater automatisk
-- claim_protest tabel — disputed claims
-- Daglig backup til AWS S3 (panpanparts-backup, eu-north-1) kl. 02:00
+- 526.081 fly
+- 93.596 flytyper
+- pilot_certificate, logbook_entry, claim_protest tabeller
+- Daglig S3 backup
 
 ## Features
-- ✅ Hurtig opstart
 - ✅ Tail# søgning → fly profil
-- ✅ Flytype søgning → AI beskrivelse + listings + parts
-- ✅ Søgebar på alle sider
-- ✅ Login / Register
-- ✅ Email verificering ved oprettelse
-- ✅ Glemt password → reset via email
-- ✅ Claim aircraft
-- ✅ Ejer kan rette forkert flydata
-- ✅ Protest claim funktion (disputed badge)
-- ✅ ARC upload og AI verificering
-- ✅ Parts marketplace med AI analyse
+- ✅ Flytype søgning → AI beskrivelse
+- ✅ Login/Register med email verificering
+- ✅ Glemt password
+- ✅ Claim aircraft + protest claim
+- ✅ Ejer kan rette flydata
+- ✅ ARC upload med AI verificering
+- ✅ Parts marketplace med AI
 - ✅ Aircraft for sale listings
-- ✅ My aircraft cockpit (ARC, CoA, forsikring, timer, dokumenter)
+- ✅ My aircraft cockpit
 - ✅ My profile (licens, medical, flyvetimer)
-- ✅ Pilot certifikater — komplet EASA/FAA liste
-- ✅ Certifikat foto upload — AI læser udløbsdato automatisk
-- ✅ Certifikat detalje modal med billede
-- ✅ Sitemap, About, TOS, robots.txt
+- ✅ Pilot certifikater — AI læser foto automatisk
+- ✅ Pilot logbog — AI scanner sider
+- ✅ Logbog: desktop fuld EASA tabel / mobil kompakt
+- ✅ Logbog: total timer, validering mod sidetotaler
+- ✅ Logbog: edit entries, bevar rækkefølge
+- ✅ Email: info@, support@, thomas@panpanparts.com
 
-## Email
-- Resend.com — noreply@panpanparts.com
-- ImprovMX — info@, support@, thomas@ videresendes til Gmail
-- Gmail kan sende fra thomas@panpanparts.com
-- Verificerings-email ved registrering
-- Password reset email
-
-## Næste skridt
-- OpenSky live tracking på fly profil siden
-- Logbog — foto upload → AI udfylder flyvninger
-- Email notifikationer (ARC/medical/certifikat udløb)
-- ARC status på My aircraft siden
-- Sverige fra officielt register
-- Betalingssystem (Stripe)
-- Manufacturer normalisering (Textron→Cessna etc.)
+## Næste skridt (prioriteret)
+- 🔲 Logbog: linje-for-linje review flow med AI læringsloop
+- 🔲 Logbog: aircraft logbog (teknisk/vedligehold)
+- 🔲 OpenSky live tracking på fly profil
+- 🔲 Email notifikationer (ARC/medical/certifikat udløb)
+- 🔲 Sverige register
+- 🔲 Stripe betalingssystem
 
 ## Stack
 - Python Flask, PostgreSQL, Anthropic AI, Resend

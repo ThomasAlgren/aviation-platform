@@ -379,6 +379,17 @@ class ClaimedAircraft(db.Model):
     notes = db.Column(db.Text)
     disputed = db.Column(db.Boolean, default=False)
 
+class PilotCertificate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    cert_type = db.Column(db.String(100))
+    cert_number = db.Column(db.String(100))
+    issued_by = db.Column(db.String(200))
+    issued_date = db.Column(db.String(50))
+    valid_until = db.Column(db.String(50))
+    document = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class ClaimProtest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tail = db.Column(db.String(20))
@@ -2871,10 +2882,32 @@ def my_profile():
         except:
             pass
 
+    # Hent certifikater med dage til udløb
+    from datetime import date
+    raw_certs = PilotCertificate.query.filter_by(user_id=current_user.id).order_by(PilotCertificate.created_at).all()
+    certificates = []
+    for cert in raw_certs:
+        days_left = None
+        if cert.valid_until:
+            try:
+                exp = datetime.strptime(cert.valid_until, '%Y-%m-%d').date()
+                days_left = (exp - date.today()).days
+            except:
+                pass
+        certificates.append({
+            'id': cert.id,
+            'cert_type': cert.cert_type,
+            'cert_number': cert.cert_number,
+            'issued_by': cert.issued_by,
+            'valid_until': cert.valid_until,
+            'days_left': days_left
+        })
+
     return render_template_string(MY_PROFILE_HTML,
         current_user=current_user,
         medical_days=medical_days,
-        license_days=license_days)
+        license_days=license_days,
+        certificates=certificates)
 
 MY_PROFILE_HTML = """<!DOCTYPE html>
 <html>
@@ -3055,6 +3088,72 @@ MY_PROFILE_HTML = """<!DOCTYPE html>
                     <input type="number" name="total_flight_hours" placeholder="Total hours in logbook" value="{{ current_user.total_flight_hours or '' }}" step="0.1">
                     <button type="submit" class="save-btn">Save hours</button>
                 </form>
+            </div>
+        <!-- Certifikater -->
+        <div class="card">
+            <h3>Certificates & Ratings</h3>
+            {% if certificates %}
+            {% for cert in certificates %}
+            <div class="date-item">
+                <div>
+                    <div style="font-size:14px;font-weight:600">{{ cert.cert_type }}</div>
+                    {% if cert.cert_number %}<div style="font-size:12px;color:#666">{{ cert.cert_number }}</div>{% endif %}
+                    {% if cert.issued_by %}<div style="font-size:12px;color:#666">{{ cert.issued_by }}</div>{% endif %}
+                </div>
+                <div style="text-align:right">
+                    {% if cert.valid_until %}
+                    <div class="date-value {% if cert.days_left is not none %}{% if cert.days_left < 0 %}date-alert{% elif cert.days_left < 60 %}date-warn{% else %}date-ok{% endif %}{% endif %}">
+                        {{ cert.valid_until }}
+                        {% if cert.days_left is not none and cert.days_left < 60 %}
+                            {% if cert.days_left < 0 %} — EXPIRED{% else %} — {{ cert.days_left }} days{% endif %}
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div style="color:#444;font-size:13px">No expiry</div>
+                    {% endif %}
+                    <a href="/delete-certificate/{{ cert.id }}" style="color:#444;font-size:11px;text-decoration:none" onclick="return confirm('Delete this certificate?')">remove</a>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="color:#444;font-size:14px;padding:12px 0">No certificates added yet.</p>
+            {% endif %}
+
+            <div style="margin-top:16px;border-top:1px solid #2a2a3e;padding-top:16px">
+                <button class="edit-btn" style="float:none;margin:0 0 12px 0" onclick="document.getElementById('cert-form').classList.toggle('hidden')">+ Add certificate</button>
+                <div id="cert-form" class="hidden">
+                    <form method="POST" action="/add-certificate">
+                        <label>Certificate type</label>
+                        <select name="cert_type">
+                            <option value="">Select type...</option>
+                            <option>PPL Theory</option>
+                            <option>PPL Licence</option>
+                            <option>CPL Licence</option>
+                            <option>ATPL Licence</option>
+                            <option>Medical Class 1</option>
+                            <option>Medical Class 2</option>
+                            <option>LAPL Medical</option>
+                            <option>Radio Certificate — National</option>
+                            <option>Radio Certificate — International (English)</option>
+                            <option>Rating — Night VFR</option>
+                            <option>Rating — IFR</option>
+                            <option>Rating — Tailwheel</option>
+                            <option>Rating — Retractable Gear</option>
+                            <option>Rating — Multi Engine (MEP)</option>
+                            <option>Rating — SEP</option>
+                            <option>Other</option>
+                        </select>
+                        <label>Certificate number (optional)</label>
+                        <input type="text" name="cert_number" placeholder="e.g. DK.FCL.2026.PPL.12345">
+                        <label>Issued by (optional)</label>
+                        <input type="text" name="issued_by" placeholder="e.g. Trafikstyrelsen, FAA, CAA">
+                        <label>Issue date (optional)</label>
+                        <input type="text" name="issued_date" placeholder="YYYY-MM-DD">
+                        <label>Valid until (leave blank if no expiry)</label>
+                        <input type="text" name="valid_until" placeholder="YYYY-MM-DD">
+                        <button type="submit" class="save-btn">Add certificate</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -3258,3 +3357,31 @@ def correct_aircraft(tail):
         conn.close()
     
     return redirect(f'/my-aircraft/{tail}')
+
+@app.route('/add-certificate', methods=['POST'])
+@login_required
+def add_certificate():
+    cert_type = request.form.get('cert_type', '').strip()
+    if not cert_type:
+        return redirect('/my-profile')
+    
+    cert = PilotCertificate(
+        user_id=current_user.id,
+        cert_type=cert_type,
+        cert_number=request.form.get('cert_number', '').strip() or None,
+        issued_by=request.form.get('issued_by', '').strip() or None,
+        issued_date=request.form.get('issued_date', '').strip() or None,
+        valid_until=request.form.get('valid_until', '').strip() or None,
+    )
+    db.session.add(cert)
+    db.session.commit()
+    return redirect('/my-profile')
+
+@app.route('/delete-certificate/<int:cert_id>')
+@login_required
+def delete_certificate(cert_id):
+    cert = PilotCertificate.query.get_or_404(cert_id)
+    if cert.user_id == current_user.id:
+        db.session.delete(cert)
+        db.session.commit()
+    return redirect('/my-profile')

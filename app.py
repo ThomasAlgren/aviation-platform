@@ -3561,7 +3561,7 @@ def get_certificate(cert_id):
 @app.route('/my-logbook')
 @login_required
 def my_logbook():
-    entries = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.flight_date.desc()).all()
+    entries = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.id.asc()).all()
     
     total_minutes = 0
     for e in entries:

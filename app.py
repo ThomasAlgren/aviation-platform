@@ -3571,6 +3571,11 @@ def logbook_scan():
     left_page = data.get('left_page')
     right_page = data.get('right_page')
     
+    # Hent brugerens tidligere registreringer som kontekst
+    prev_entries = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.created_at.desc()).limit(20).all()
+    known_regs = list(set([e.registration for e in prev_entries if e.registration]))
+    known_types = list(set([e.aircraft_type for e in prev_entries if e.aircraft_type]))
+    
     content_parts = []
     if left_page:
         content_parts.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": left_page}})

@@ -1666,7 +1666,7 @@ MY_AIRCRAFT_HTML = """<!DOCTYPE html>
         <p class="sub">Aircraft you have claimed on PanPanParts</p>
         {% if aircraft %}
             {% for a in aircraft %}
-            <a class="aircraft-card" href="/aircraft/{{ a.tail }}">
+            <a class="aircraft-card" href="/my-aircraft/{{ a.tail }}">
                 <div>
                     <div class="tail">{{ a.tail }}</div>
                     <div class="model">{{ a.manufacturer }} {{ a.model }}</div>

@@ -380,6 +380,27 @@ class ClaimedAircraft(db.Model):
     notes = db.Column(db.Text)
     disputed = db.Column(db.Boolean, default=False)
 
+class LogbookEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    flight_date = db.Column(db.String(20))
+    dep_place = db.Column(db.String(10))
+    arr_place = db.Column(db.String(10))
+    off_block = db.Column(db.String(10))
+    on_block = db.Column(db.String(10))
+    aircraft_type = db.Column(db.String(100))
+    registration = db.Column(db.String(20))
+    pilot_in_command = db.Column(db.String(100))
+    total_time = db.Column(db.String(10))
+    night_time = db.Column(db.String(10))
+    sep_vfr = db.Column(db.String(10))
+    sep_ifr = db.Column(db.String(10))
+    dual = db.Column(db.String(10))
+    landings_day = db.Column(db.Integer)
+    landings_night = db.Column(db.Integer)
+    remarks = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class PilotCertificate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
@@ -665,7 +686,7 @@ SEARCH_HTML = """
             <a href="/parts" class="primary">Parts for sale</a>
             <a href="/upload" class="primary">+ List a part</a>
             {% if current_user.is_authenticated %}
-            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} ▾</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-profile">My profile</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
+            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} ▾</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-profile">My profile</a><a href="/my-logbook">My logbook</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
             {% else %}
             <a href="/login" class="primary">Log in</a>
             <a href="/register" class="primary">Sign up</a>
@@ -1670,7 +1691,7 @@ MY_AIRCRAFT_HTML = """<!DOCTYPE html>
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
             <a href="/parts">Parts for sale</a>
-            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} &#9660;</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-profile">My profile</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
+            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} &#9660;</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-profile">My profile</a><a href="/my-logbook">My logbook</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
         </div>
     </div>
     <div class="container">
@@ -1749,7 +1770,7 @@ MY_LISTINGS_HTML = """<!DOCTYPE html>
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
             <a href="/upload" class="btn">+ List a part</a>
-            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} &#9660;</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-profile">My profile</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
+            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} &#9660;</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-profile">My profile</a><a href="/my-logbook">My logbook</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
         </div>
     </div>
     <div class="container">
@@ -3534,3 +3555,276 @@ def get_certificate(cert_id):
         'valid_until': cert.valid_until or '',
         'document': cert.document or ''
     })
+
+@app.route('/my-logbook')
+@login_required
+def my_logbook():
+    entries = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.flight_date.desc()).all()
+    return render_template_string(LOGBOOK_HTML, entries=entries, current_user=current_user)
+
+@app.route('/logbook-scan', methods=['POST'])
+@login_required
+def logbook_scan():
+    import anthropic as ac
+    import json
+    data = request.get_json()
+    left_page = data.get('left_page')
+    right_page = data.get('right_page')
+    
+    content_parts = []
+    if left_page:
+        content_parts.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": left_page}})
+    if right_page:
+        content_parts.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": right_page}})
+    
+    content_parts.append({"type": "text", "text": """These are pages from a pilot logbook. Extract all flight entries.
+Respond ONLY with a JSON array of flights:
+[{
+  "flight_date": "DD/MM/YY format as written",
+  "dep_place": "departure ICAO or place",
+  "arr_place": "arrival ICAO or place",
+  "off_block": "HH:MM or null",
+  "on_block": "HH:MM or null",
+  "aircraft_type": "type as written",
+  "registration": "registration as written",
+  "pilot_in_command": "name or null",
+  "total_time": "H:MM format",
+  "night_time": "H:MM or null",
+  "sep_vfr": "H:MM or null",
+  "dual": "H:MM or null",
+  "landings_day": number or null,
+  "landings_night": number or null,
+  "remarks": "any remarks or null"
+}]"""})
+
+    client = ac.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=2000,
+        messages=[{"role": "user", "content": content_parts}]
+    )
+    
+    text = response.content[0].text
+    clean = text.replace("```json", "").replace("```", "").strip()
+    flights = json.loads(clean)
+    
+    # Gem flyvninger
+    saved = 0
+    for f in flights:
+        entry = LogbookEntry(
+            user_id=current_user.id,
+            flight_date=f.get('flight_date'),
+            dep_place=f.get('dep_place'),
+            arr_place=f.get('arr_place'),
+            off_block=f.get('off_block'),
+            on_block=f.get('on_block'),
+            aircraft_type=f.get('aircraft_type'),
+            registration=f.get('registration'),
+            pilot_in_command=f.get('pilot_in_command'),
+            total_time=f.get('total_time'),
+            night_time=f.get('night_time'),
+            sep_vfr=f.get('sep_vfr'),
+            dual=f.get('dual'),
+            landings_day=f.get('landings_day'),
+            landings_night=f.get('landings_night'),
+            remarks=f.get('remarks'),
+        )
+        db.session.add(entry)
+        saved += 1
+    
+    db.session.commit()
+    return json.dumps({'ok': True, 'saved': saved, 'flights': flights})
+
+@app.route('/delete-logbook-entry/<int:entry_id>')
+@login_required
+def delete_logbook_entry(entry_id):
+    entry = LogbookEntry.query.get_or_404(entry_id)
+    if entry.user_id == current_user.id:
+        db.session.delete(entry)
+        db.session.commit()
+    return redirect('/my-logbook')
+
+LOGBOOK_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>My Logbook - PanPanParts</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a2e; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .back { color: #666; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 24px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; border: 1px solid #2a2a3e; margin-bottom: 16px; }
+        .card h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 16px; }
+        .upload-row { display: flex; gap: 12px; margin-bottom: 16px; }
+        .upload-box { flex: 1; border: 2px dashed #333; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; color: #666; font-size: 13px; position: relative; }
+        .upload-box:hover { border-color: #ff6b35; color: #ff6b35; }
+        .upload-box img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; display: none; }
+        input[type=file] { display: none; }
+        .scan-btn { background: #ff6b35; color: white; border: none; padding: 14px 28px; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: 600; width: 100%; }
+        .scan-btn:disabled { background: #444; cursor: not-allowed; }
+        .status { background: #0d0d1a; border-radius: 8px; padding: 16px; margin-top: 12px; color: #aaa; font-size: 14px; display: none; border: 1px solid #2a2a3e; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 10px 8px; color: #666; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #2a2a3e; }
+        td { padding: 10px 8px; border-bottom: 1px solid #1a1a2e; }
+        tr:hover td { background: #1a1a2e; }
+        .total-row { color: #ff6b35; font-weight: 600; }
+        .delete-btn { color: #444; text-decoration: none; font-size: 11px; }
+        .delete-btn:hover { color: #ff6b35; }
+        .user-menu { position: relative; margin-left: 8px; }
+        .user-btn { background: #1a1a2e; color: #aaa; border: 1px solid #333; padding: 8px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        .dropdown { display: none; position: absolute; right: 0; top: 44px; background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 8px; min-width: 140px; z-index: 100; }
+        .dropdown a { display: block; padding: 12px 16px; color: #aaa; text-decoration: none; font-size: 14px; }
+        .dropdown a:hover { color: white; background: #2a2a3e; }
+        .dropdown.open { display: block; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+        <div class="nav">
+            <a href="/parts">Parts</a>
+            <div class="user-menu">
+                <button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} ▾</button>
+                <div class="dropdown">
+                    <a href="/my-aircraft">My aircraft</a>
+                    <a href="/my-profile">My profile</a>
+                    <a href="/my-logbook">My logbook</a>
+                    <a href="/my-listings">My listings</a>
+                    <a href="/logout">Log out</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <a href="/my-profile" class="back">← My profile</a>
+        <h1 style="font-size:32px;margin-bottom:24px">My <span style="color:#ff6b35">Logbook</span></h1>
+
+        <!-- Scan side -->
+        <div class="card">
+            <h3>Scan logbook pages with AI</h3>
+            <p style="color:#666;font-size:14px;margin-bottom:16px">Upload photos of left and right page — AI reads all flights automatically</p>
+            <div class="upload-row">
+                <div class="upload-box" onclick="document.getElementById('left-page').click()">
+                    <img id="left-preview">
+                    <span id="left-label">📷 Left page</span>
+                    <input type="file" id="left-page" accept="image/*" onchange="loadPage(this,'left')">
+                </div>
+                <div class="upload-box" onclick="document.getElementById('right-page').click()">
+                    <img id="right-preview">
+                    <span id="right-label">📷 Right page</span>
+                    <input type="file" id="right-page" accept="image/*" onchange="loadPage(this,'right')">
+                </div>
+            </div>
+            <button class="scan-btn" id="scan-btn" onclick="scanPages()" disabled>Scan with AI</button>
+            <div class="status" id="status"></div>
+        </div>
+
+        <!-- Logbog entries -->
+        <div class="card">
+            <h3>Flight entries ({{ entries|length }} total)</h3>
+            {% if entries %}
+            <table>
+                <tr>
+                    <th>Date</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Aircraft</th>
+                    <th>Reg</th>
+                    <th>Total</th>
+                    <th>Dual</th>
+                    <th>Ldg</th>
+                    <th></th>
+                </tr>
+                {% for e in entries %}
+                <tr>
+                    <td>{{ e.flight_date or '—' }}</td>
+                    <td>{{ e.dep_place or '—' }}</td>
+                    <td>{{ e.arr_place or '—' }}</td>
+                    <td>{{ e.aircraft_type or '—' }}</td>
+                    <td style="color:#ff6b35">{{ e.registration or '—' }}</td>
+                    <td>{{ e.total_time or '—' }}</td>
+                    <td>{{ e.dual or '—' }}</td>
+                    <td>{{ e.landings_day or '—' }}</td>
+                    <td><a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="return confirm('Delete?')">✕</a></td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p style="color:#444;font-size:14px;padding:16px 0">No flights yet — scan your logbook pages above!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        var pages = {left: null, right: null};
+
+        function loadPage(input, side) {
+            var file = input.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = new Image();
+                img.onload = function() {
+                    var canvas = document.createElement("canvas");
+                    var maxSize = 1600;
+                    var w = img.width, h = img.height;
+                    if (w > maxSize || h > maxSize) {
+                        if (w > h) { h = h * maxSize / w; w = maxSize; }
+                        else { w = w * maxSize / h; h = maxSize; }
+                    }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                    var compressed = canvas.toDataURL("image/jpeg", 0.8);
+                    pages[side] = compressed.split(",")[1];
+                    document.getElementById(side+"-preview").src = compressed;
+                    document.getElementById(side+"-preview").style.display = "block";
+                    document.getElementById(side+"-label").style.display = "none";
+                    if (pages.left || pages.right) {
+                        document.getElementById("scan-btn").disabled = false;
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function scanPages() {
+            var btn = document.getElementById("scan-btn");
+            var status = document.getElementById("status");
+            btn.disabled = true;
+            btn.textContent = "Scanning...";
+            status.style.display = "block";
+            status.textContent = "AI is reading your logbook pages...";
+
+            fetch("/logbook-scan", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({left_page: pages.left, right_page: pages.right})
+            })
+            .then(r => r.json())
+            .then(result => {
+                if (result.ok) {
+                    status.textContent = "✓ " + result.saved + " flights saved!";
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    status.textContent = "Error: " + (result.error || "Something went wrong");
+                    btn.disabled = false;
+                    btn.textContent = "Scan with AI";
+                }
+            })
+            .catch(err => {
+                status.textContent = "Error: " + err;
+                btn.disabled = false;
+                btn.textContent = "Scan with AI";
+            });
+        }
+    </script>
+</body>
+</html>"""

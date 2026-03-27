@@ -400,6 +400,12 @@ class LogbookEntry(db.Model):
     landings_day = db.Column(db.Integer)
     landings_night = db.Column(db.Integer)
     remarks = db.Column(db.Text)
+    mep_vfr = db.Column(db.String(10))
+    mep_ifr = db.Column(db.String(10))
+    pic_time = db.Column(db.String(10))
+    copilot_time = db.Column(db.String(10))
+    instructor_time = db.Column(db.String(10))
+    multipilot_time = db.Column(db.String(10))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class PilotCertificate(db.Model):
@@ -3723,20 +3729,19 @@ LOGBOOK_HTML = """<!DOCTYPE html>
         .scan-btn:disabled { background: #444; cursor: not-allowed; }
         .status { background: #0d0d1a; border-radius: 8px; padding: 16px; margin-top: 12px; color: #aaa; font-size: 14px; display: none; border: 1px solid #2a2a3e; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        @media (max-width: 600px) {
-            table { font-size: 11px; }
-            th, td { padding: 6px 4px; }
-            .container { padding: 0 10px; }
-            .header { padding: 16px 20px; }
-            th:nth-child(4), td:nth-child(4) { display: none; }
-            th:nth-child(7), td:nth-child(7) { display: none; }
-        }
-        th { text-align: left; padding: 10px 8px; color: #666; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #2a2a3e; }
-        td { padding: 10px 8px; border-bottom: 1px solid #1a1a2e; }
-        tr:hover td { background: #1a1a2e; }
-        .total-row { color: #ff6b35; font-weight: 600; }
+        th { text-align: left; padding: 8px 6px; color: #666; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #2a2a3e; white-space: nowrap; }
+        td { padding: 8px 6px; border-bottom: 1px solid #1a1a2e; white-space: nowrap; }
+        tr:hover td { background: #1a1a2e; cursor: pointer; }
+        .total-row td { color: #ff6b35; font-weight: 600; border-top: 2px solid #2a2a3e; }
         .delete-btn { color: #444; text-decoration: none; font-size: 11px; }
         .delete-btn:hover { color: #ff6b35; }
+        .desktop-col { display: table-cell; }
+        @media (max-width: 768px) {
+            .desktop-col { display: none; }
+            .container { padding: 0 10px; }
+            .header { padding: 16px 20px; }
+            table { font-size: 12px; }
+        }
         .user-menu { position: relative; margin-left: 8px; }
         .user-btn { background: #1a1a2e; color: #aaa; border: 1px solid #333; padding: 8px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
         .dropdown { display: none; position: absolute; right: 0; top: 44px; background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 8px; min-width: 140px; z-index: 100; }
@@ -3803,23 +3808,45 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <th>Date</th>
                     <th>From</th>
                     <th>To</th>
-                    <th>Aircraft</th>
+                    <th class="desktop-col">Off</th>
+                    <th class="desktop-col">On</th>
+                    <th class="desktop-col">Type</th>
                     <th>Reg</th>
                     <th>Total</th>
-                    <th>Dual</th>
-                    <th>Ldg</th>
+                    <th class="desktop-col">Night</th>
+                    <th class="desktop-col">SEP VFR</th>
+                    <th class="desktop-col">SEP IFR</th>
+                    <th class="desktop-col">MEP VFR</th>
+                    <th class="desktop-col">MEP IFR</th>
+                    <th class="desktop-col">PIC</th>
+                    <th class="desktop-col">Dual</th>
+                    <th class="desktop-col">FI</th>
+                    <th>Ldg D</th>
+                    <th class="desktop-col">Ldg N</th>
+                    <th class="desktop-col">Remarks</th>
                     <th></th>
                 </tr>
                 {% for e in entries %}
-                <tr onclick="editEntry({{ e.id }}, '{{ e.flight_date or '' }}', '{{ e.dep_place or '' }}', '{{ e.arr_place or '' }}', '{{ e.aircraft_type or '' }}', '{{ e.registration or '' }}', '{{ e.total_time or '' }}', '{{ e.dual or '' }}', '{{ e.landings_day or '' }}')" style="cursor:pointer">
+                <tr onclick="editEntry({{ e.id }}, '{{ e.flight_date or '' }}', '{{ e.dep_place or '' }}', '{{ e.arr_place or '' }}', '{{ e.aircraft_type or '' }}', '{{ e.registration or '' }}', '{{ e.total_time or '' }}', '{{ e.dual or '' }}', '{{ e.landings_day or '' }}')">
                     <td>{{ e.flight_date or '—' }}</td>
                     <td>{{ e.dep_place or '—' }}</td>
                     <td>{{ e.arr_place or '—' }}</td>
-                    <td>{{ e.aircraft_type or '—' }}</td>
+                    <td class="desktop-col">{{ e.off_block or '—' }}</td>
+                    <td class="desktop-col">{{ e.on_block or '—' }}</td>
+                    <td class="desktop-col">{{ e.aircraft_type or '—' }}</td>
                     <td style="color:#ff6b35">{{ e.registration or '—' }}</td>
                     <td>{{ e.total_time or '—' }}</td>
-                    <td>{{ e.dual or '—' }}</td>
+                    <td class="desktop-col">{{ e.night_time or '—' }}</td>
+                    <td class="desktop-col">{{ e.sep_vfr or '—' }}</td>
+                    <td class="desktop-col">{{ e.sep_ifr or '—' }}</td>
+                    <td class="desktop-col">{{ e.mep_vfr or '—' }}</td>
+                    <td class="desktop-col">{{ e.mep_ifr or '—' }}</td>
+                    <td class="desktop-col">{{ e.pic_time or '—' }}</td>
+                    <td class="desktop-col">{{ e.dual or '—' }}</td>
+                    <td class="desktop-col">{{ e.instructor_time or '—' }}</td>
                     <td>{{ e.landings_day or '—' }}</td>
+                    <td class="desktop-col">{{ e.landings_night or '—' }}</td>
+                    <td class="desktop-col" style="color:#666;font-size:12px">{{ e.remarks or '' }}</td>
                     <td><a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="event.stopPropagation();return confirm('Delete?')">✕</a></td>
                 </tr>
                 {% endfor %}

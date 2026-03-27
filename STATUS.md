@@ -44,3 +44,18 @@
 - Railway: aviation-platform-production-cf8f.up.railway.app
 - Domain: panpanparts.com (GoDaddy)
 - AWS S3: panpanparts-backup (eu-north-1)
+
+## Logbog review flow — plan
+Bygge linje-for-linje review flow:
+1. Bruger uploader logbogsside foto
+2. AI læser ALLE rækker på én gang men præsenterer dem én ad gangen
+3. Bruger ser linje 1 → godkender eller retter felter
+4. Godkendt linje gemmes i DB + sendes til AI som kontekst
+5. AI bruger godkendte linjer som reference til næste linje
+6. Gentages til alle linjer er godkendt
+
+Teknisk:
+- Ny route: /logbook-review
+- Session storage til midlertidige rækker
+- Step-by-step UI med Approve/Edit knapper
+- AI kontekst bygges op linje for linje

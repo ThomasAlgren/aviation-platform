@@ -3611,7 +3611,10 @@ IMPORTANT:
 - Aircraft registrations: OY-XXX (Denmark), LN-XXX (Norway), N12345 (USA). 
 - Danish registrations are always OY- followed by 3 letters. Read each letter carefully.
 - Times are H:MM format. A space between digits means colon e.g. "1 55" = 1:55.
-- Only extract rows with actual flight data — skip empty rows.{context_hint}
+- Only extract rows with actual flight data — skip empty rows.
+- CRITICAL: Preserve the EXACT order of rows as they appear on the page. Do NOT sort or reorder entries.
+- Read rows strictly from top to bottom. Row 1 in the logbook must be row 1 in your output.
+- Each row belongs to a specific line — do not mix data between rows.{context_hint}
 
 Respond ONLY with a JSON array:
 [{{

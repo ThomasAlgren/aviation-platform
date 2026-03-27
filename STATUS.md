@@ -1,4 +1,4 @@
-# PanPanParts — Status 26. marts 2026 (aften)
+# PanPanParts — Status 27. marts 2026
 
 ## Live
 - panpanparts.com — HTTPS ✅ Let's Encrypt certifikat
@@ -20,6 +20,8 @@
 - ✅ Email verificering ved oprettelse
 - ✅ Glemt password → reset via email
 - ✅ Claim aircraft
+- ✅ Ejer kan rette forkert flydata
+- ✅ Protest claim funktion (disputed badge)
 - ✅ ARC upload og AI verificering
 - ✅ Parts marketplace med AI analyse
 - ✅ Aircraft for sale listings
@@ -29,6 +31,8 @@
 
 ## Email
 - Resend.com — noreply@panpanparts.com
+- ImprovMX — info@, support@, thomas@ videresendes til Gmail
+- Gmail kan sende fra thomas@panpanparts.com
 - Verificerings-email ved registrering
 - Password reset email
 
@@ -36,7 +40,6 @@
 - Email notifikationer (ARC/medical udløb)
 - ARC status på My aircraft siden
 - Sverige fra officielt register
-- Protest claim funktion
 - Betalingssystem (Stripe)
 - Manufacturer normalisering (Textron→Cessna etc.)
 

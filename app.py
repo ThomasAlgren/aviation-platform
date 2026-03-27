@@ -3179,7 +3179,7 @@ MY_PROFILE_HTML = """<!DOCTYPE html>
                         <label>Valid until (leave blank if no expiry)</label>
                         <input type="text" name="valid_until" placeholder="YYYY-MM-DD">
                         <label>Upload certificate photo (optional — AI will read dates automatically)</label>
-                        <input type="file" id="cert-photo" accept="image/*" onchange="loadCertPhoto(this)" style="margin-bottom:10px">
+                        <input type="file" id="cert-photo" accept="image/*" capture="environment" onchange="loadCertPhoto(this)" style="margin-bottom:10px">
                         <input type="hidden" name="document" id="cert-doc-data">
                         <img id="cert-preview" style="max-width:100%;border-radius:8px;margin-bottom:10px;display:none">
                         <button type="submit" class="save-btn">Add certificate</button>

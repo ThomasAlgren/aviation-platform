@@ -3774,7 +3774,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <th></th>
                 </tr>
                 {% for e in entries %}
-                <tr>
+                <tr onclick="editEntry({{ e.id }}, '{{ e.flight_date or '' }}', '{{ e.dep_place or '' }}', '{{ e.arr_place or '' }}', '{{ e.aircraft_type or '' }}', '{{ e.registration or '' }}', '{{ e.total_time or '' }}', '{{ e.dual or '' }}', '{{ e.landings_day or '' }}')" style="cursor:pointer">
                     <td>{{ e.flight_date or '—' }}</td>
                     <td>{{ e.dep_place or '—' }}</td>
                     <td>{{ e.arr_place or '—' }}</td>
@@ -3783,13 +3783,64 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <td>{{ e.total_time or '—' }}</td>
                     <td>{{ e.dual or '—' }}</td>
                     <td>{{ e.landings_day or '—' }}</td>
-                    <td><a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="return confirm('Delete?')">✕</a></td>
+                    <td><a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="event.stopPropagation();return confirm('Delete?')">✕</a></td>
                 </tr>
                 {% endfor %}
             </table>
             {% else %}
             <p style="color:#444;font-size:14px;padding:16px 0">No flights yet — scan your logbook pages above!</p>
             {% endif %}
+        </div>
+    </div>
+
+    <!-- Edit modal -->
+    <div id="edit-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;overflow-y:auto">
+        <div style="max-width:500px;margin:40px auto;background:#1a1a2e;border-radius:12px;padding:28px;position:relative">
+            <button onclick="document.getElementById('edit-modal').style.display='none'" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#aaa;font-size:20px;cursor:pointer">✕</button>
+            <h3 style="margin-bottom:16px">Edit flight entry</h3>
+            <form id="edit-form" method="POST">
+                <label style="font-size:12px;color:#666">Date (DD/MM/YYYY)</label>
+                <input type="text" name="flight_date" id="edit-date" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:#0d0d1a;color:white;margin-bottom:10px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div>
+                        <label style="font-size:12px;color:#666">From</label>
+                        <input type="text" name="dep_place" id="edit-dep" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:#0d0d1a;color:white">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:#666">To</label>
+                        <input type="text" name="arr_place" id="edit-arr" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:#0d0d1a;color:white">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+                    <div>
+                        <label style="font-size:12px;color:#666">Aircraft type</label>
+                        <input type="text" name="aircraft_type" id="edit-type" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:#0d0d1a;color:white">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:#666">Registration</label>
+                        <input type="text" name="registration" id="edit-reg" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:#0d0d1a;color:white">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
+                    <div>
+                        <label style="font-size:12px;color:#666">Total time</label>
+                        <input type="text" name="total_time" id="edit-total" placeholder="H:MM" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:#0d0d1a;color:white">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:#666">Dual</label>
+                        <input type="text" name="dual" id="edit-dual" placeholder="H:MM" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:#0d0d1a;color:white">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:#666">Landings</label>
+                        <input type="number" name="landings_day" id="edit-ldg" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:#0d0d1a;color:white">
+                    </div>
+                </div>
+                <div style="margin-top:10px">
+                    <label style="font-size:12px;color:#666">Remarks</label>
+                    <input type="text" name="remarks" id="edit-remarks" style="width:100%;padding:10px;border:1px solid #333;border-radius:8px;background:#0d0d1a;color:white">
+                </div>
+                <button type="submit" style="background:#ff6b35;color:white;border:none;padding:14px;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600;width:100%;margin-top:16px">Save changes</button>
+            </form>
         </div>
     </div>
 
@@ -3826,6 +3877,19 @@ LOGBOOK_HTML = """<!DOCTYPE html>
             reader.readAsDataURL(file);
         }
 
+        function editEntry(id, date, dep, arr, type, reg, total, dual, ldg) {
+            document.getElementById('edit-form').action = '/edit-logbook-entry/' + id;
+            document.getElementById('edit-date').value = date;
+            document.getElementById('edit-dep').value = dep;
+            document.getElementById('edit-arr').value = arr;
+            document.getElementById('edit-type').value = type;
+            document.getElementById('edit-reg').value = reg;
+            document.getElementById('edit-total').value = total;
+            document.getElementById('edit-dual').value = dual;
+            document.getElementById('edit-ldg').value = ldg;
+            document.getElementById('edit-modal').style.display = 'block';
+        }
+
         function scanPages() {
             var btn = document.getElementById("scan-btn");
             var status = document.getElementById("status");
@@ -3859,3 +3923,22 @@ LOGBOOK_HTML = """<!DOCTYPE html>
     </script>
 </body>
 </html>"""
+
+@app.route('/edit-logbook-entry/<int:entry_id>', methods=['POST'])
+@login_required
+def edit_logbook_entry(entry_id):
+    entry = LogbookEntry.query.get_or_404(entry_id)
+    if entry.user_id != current_user.id:
+        return redirect('/my-logbook')
+    
+    entry.flight_date = request.form.get('flight_date', '').strip() or None
+    entry.dep_place = request.form.get('dep_place', '').strip() or None
+    entry.arr_place = request.form.get('arr_place', '').strip() or None
+    entry.aircraft_type = request.form.get('aircraft_type', '').strip() or None
+    entry.registration = request.form.get('registration', '').strip() or None
+    entry.total_time = request.form.get('total_time', '').strip() or None
+    entry.dual = request.form.get('dual', '').strip() or None
+    entry.landings_day = int(request.form.get('landings_day', 0) or 0) or None
+    entry.remarks = request.form.get('remarks', '').strip() or None
+    db.session.commit()
+    return redirect('/my-logbook')

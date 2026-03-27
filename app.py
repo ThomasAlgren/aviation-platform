@@ -3614,10 +3614,15 @@ IMPORTANT:
 - Only extract rows with actual flight data — skip empty rows.
 - CRITICAL: Preserve the EXACT order of rows as they appear on the page. Do NOT sort or reorder entries.
 - Read rows strictly from top to bottom. Row 1 in the logbook must be row 1 in your output.
-- Each row belongs to a specific line — do not mix data between rows.{context_hint}
+- Each row belongs to a specific line — do not mix data between rows.
+- At the bottom of the page there are totals: "Total This Page", "Total Previous Pages", "Total".
+- Read these totals and include them in a "page_totals" field in your response.
+- Calculate your own total of all flight times and compare with "Total This Page".
+- If they differ, add a "validation_warning" field explaining the discrepancy.{context_hint}
 
-Respond ONLY with a JSON array:
-[{{
+Respond ONLY with a JSON object:
+{{
+  "flights": [{{
   "flight_date": "DD/MM/YYYY",
   "dep_place": "ICAO code",
   "arr_place": "ICAO code",
@@ -3644,7 +3649,17 @@ Respond ONLY with a JSON array:
     
     text = response.content[0].text
     clean = text.replace("```json", "").replace("```", "").strip()
-    flights = json.loads(clean)
+    parsed = json.loads(clean)
+    
+    # Håndter både gammelt array format og nyt objekt format
+    if isinstance(parsed, list):
+        flights = parsed
+        validation_warning = None
+        page_totals = None
+    else:
+        flights = parsed.get("flights", [])
+        validation_warning = parsed.get("validation_warning")
+        page_totals = parsed.get("page_totals")
     
     # Gem flyvninger
     saved = 0
@@ -3671,7 +3686,7 @@ Respond ONLY with a JSON array:
         saved += 1
     
     db.session.commit()
-    return json.dumps({'ok': True, 'saved': saved, 'flights': flights})
+    return json.dumps({'ok': True, 'saved': saved, 'flights': flights, 'validation_warning': validation_warning, 'page_totals': page_totals})
 
 @app.route('/delete-logbook-entry/<int:entry_id>')
 @login_required
@@ -3928,8 +3943,16 @@ LOGBOOK_HTML = """<!DOCTYPE html>
             .then(r => r.json())
             .then(result => {
                 if (result.ok) {
-                    status.textContent = "✓ " + result.saved + " flights saved!";
-                    setTimeout(() => location.reload(), 1500);
+                    var msg = "✓ " + result.saved + " flights saved!";
+                    if (result.validation_warning) {
+                        msg += "\n⚠ " + result.validation_warning;
+                        status.style.color = "#ffc107";
+                    }
+                    if (result.page_totals) {
+                        msg += "\nPage totals: " + JSON.stringify(result.page_totals);
+                    }
+                    status.textContent = msg;
+                    setTimeout(() => location.reload(), 3000);
                 } else {
                     status.textContent = "Error: " + (result.error || "Something went wrong");
                     btn.disabled = false;

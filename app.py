@@ -664,7 +664,7 @@ SEARCH_HTML = """
             <a href="/parts" class="primary">Parts for sale</a>
             <a href="/upload" class="primary">+ List a part</a>
             {% if current_user.is_authenticated %}
-            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} ▾</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
+            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} ▾</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-profile">My profile</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
             {% else %}
             <a href="/login" class="primary">Log in</a>
             <a href="/register" class="primary">Sign up</a>
@@ -1669,7 +1669,7 @@ MY_AIRCRAFT_HTML = """<!DOCTYPE html>
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
             <a href="/parts">Parts for sale</a>
-            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} &#9660;</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
+            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} &#9660;</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-profile">My profile</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
         </div>
     </div>
     <div class="container">
@@ -1748,7 +1748,7 @@ MY_LISTINGS_HTML = """<!DOCTYPE html>
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
             <a href="/upload" class="btn">+ List a part</a>
-            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} &#9660;</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
+            <div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} &#9660;</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-profile">My profile</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div>
         </div>
     </div>
     <div class="container">

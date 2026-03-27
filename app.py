@@ -91,6 +91,7 @@ AIRCRAFT_COCKPIT_HTML = """<!DOCTYPE html>
                 <div class="dropdown">
                     <a href="/my-aircraft">My aircraft</a>
                     <a href="/my-profile">My profile</a>
+                    <a href="/my-logbook">My logbook</a>
                     <a href="/my-listings">My listings</a>
                     <a href="/logout">Log out</a>
                 </div>
@@ -1973,7 +1974,7 @@ SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
     {% endif %}
     <div class="header">
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
-        <div class="nav"><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div>
+        <div class="nav"><div class="user-menu"><button class="user-btn" onclick="this.nextElementSibling.classList.toggle('open')">{{ current_user.name }} ▾</button><div class="dropdown"><a href="/my-aircraft">My aircraft</a><a href="/my-profile">My profile</a><a href="/my-logbook">My logbook</a><a href="/my-listings">My listings</a><a href="/logout">Log out</a></div></div></div>
     </div>
     <div class="container">
         <h1>List <span>{{ aircraft.tail }}</span> for sale</h1>
@@ -2995,6 +2996,7 @@ MY_PROFILE_HTML = """<!DOCTYPE html>
                 <div class="dropdown">
                     <a href="/my-aircraft">My aircraft</a>
                     <a href="/my-profile">My profile</a>
+                    <a href="/my-logbook">My logbook</a>
                     <a href="/my-listings">My listings</a>
                     <a href="/logout">Log out</a>
                 </div>

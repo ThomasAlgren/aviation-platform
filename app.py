@@ -236,6 +236,34 @@ AIRCRAFT_COCKPIT_HTML = """<!DOCTYPE html>
             <p style="color:#444;font-size:12px;margin-top:12px">Click a document to upload a photo or PDF</p>
         </div>
 
+        <!-- Ret flydata -->
+        <div class="card">
+            <h3>Correct aircraft data
+                <button class="edit-btn" onclick="document.getElementById('correct-form').classList.toggle('hidden')">Edit</button>
+            </h3>
+            <div class="date-item">
+                <span class="date-label">Manufacturer</span>
+                <span class="date-value">{{ aircraft.manufacturer or '—' }}</span>
+            </div>
+            <div class="date-item">
+                <span class="date-label">Model</span>
+                <span class="date-value">{{ aircraft.model or '—' }}</span>
+            </div>
+            <div class="date-item">
+                <span class="date-label">Year</span>
+                <span class="date-value">{{ aircraft.year or '—' }}</span>
+            </div>
+            <div id="correct-form" class="hidden" style="margin-top:16px">
+                <p style="color:#666;font-size:13px;margin-bottom:12px">As the owner, you can correct incorrect data in our registry.</p>
+                <form method="POST" action="/correct-aircraft/{{ aircraft.tail }}">
+                    <input type="text" name="manufacturer" placeholder="Manufacturer (e.g. Cessna)" value="{{ aircraft.manufacturer or '' }}">
+                    <input type="text" name="model" placeholder="Model (e.g. 172S Skyhawk)" value="{{ aircraft.model or '' }}">
+                    <input type="text" name="year" placeholder="Year built" value="{{ aircraft.year or '' }}">
+                    <button type="submit" class="save-btn">Save corrections</button>
+                </form>
+            </div>
+        </div>
+
         <!-- Actions -->
         <div class="card">
             <h3>Actions</h3>
@@ -349,6 +377,16 @@ class ClaimedAircraft(db.Model):
     last_service_date = db.Column(db.String(50))
     next_service_date = db.Column(db.String(50))
     notes = db.Column(db.Text)
+    disputed = db.Column(db.Boolean, default=False)
+
+class ClaimProtest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    tail = db.Column(db.String(20))
+    protester_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    protester_email = db.Column(db.String(200))
+    reason = db.Column(db.Text)
+    status = db.Column(db.String(20), default='pending')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class AircraftListing(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -792,6 +830,14 @@ OY_DETAIL_HTML = """
             <a href="/claim/{{ aircraft.tail }}" class="sell-btn" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">Claim {{ aircraft.tail }} — it's free</a>
             <a href="/upload-arc/{{ aircraft.tail }}" class="sell-btn" style="display:block;text-align:center;text-decoration:none;background:#2d7a3a;margin-bottom:10px">✓ Upload ARC — verify airworthiness</a>
             <a href="/upload-aircraft?tail={{ aircraft.tail }}" class="sell-btn" style="display:block;text-align:center;text-decoration:none;background:#2a2a3e">List {{ aircraft.tail }} for sale</a>
+            {% if arc_info and arc_info.disputed %}
+            <div style="background:rgba(255,193,7,0.15);border:1px solid rgba(255,193,7,0.3);border-radius:8px;padding:12px;margin-top:10px;color:#ffc107;font-size:13px">
+                ⚠ This claim is disputed and under review
+            </div>
+            {% endif %}
+            <a href="/protest-claim/{{ aircraft.tail }}" style="display:block;text-align:center;text-decoration:none;color:#666;font-size:13px;margin-top:12px">
+                Report incorrect claim
+            </a>
         </div>
 
     </div>
@@ -3114,3 +3160,90 @@ def resend_verification():
         print("Email fejl:", e)
         flash("Could not send email. Please try again.", "error")
     return redirect('/')
+
+@app.route('/protest-claim/<tail>', methods=['GET', 'POST'])
+@login_required
+def protest_claim(tail):
+    claimed = ClaimedAircraft.query.filter_by(tail=tail).first()
+    if not claimed:
+        return redirect(f'/aircraft/{tail}')
+    
+    if request.method == 'POST':
+        reason = request.form.get('reason', '').strip()
+        if reason:
+            protest = ClaimProtest(
+                tail=tail,
+                protester_id=current_user.id,
+                protester_email=current_user.email,
+                reason=reason
+            )
+            db.session.add(protest)
+            claimed.disputed = True
+            db.session.commit()
+            
+            # Send email til thomas
+            try:
+                import resend
+                resend.api_key = os.environ.get("RESEND_API_KEY")
+                resend.Emails.send({
+                    "from": "PanPanParts <noreply@panpanparts.com>",
+                    "to": "thomas@panpanparts.com",
+                    "subject": f"Claim protest: {tail}",
+                    "html": f"""
+                    <h2>Claim protest received</h2>
+                    <p><strong>Tail:</strong> {tail}</p>
+                    <p><strong>Protester:</strong> {current_user.name} ({current_user.email})</p>
+                    <p><strong>Reason:</strong> {reason}</p>
+                    """
+                })
+            except Exception as e:
+                print("Email fejl:", e)
+            
+            return render_template_string("""
+            <html><body style='font-family:sans-serif;text-align:center;padding:80px;background:#0d0d1a;color:white'>
+            <h2 style='color:#ffc107'>⚠ Protest received</h2>
+            <p style='color:#aaa;margin:16px 0'>We have received your protest for {{ tail }}.<br>We will review it and contact you within 48 hours.</p>
+            <a href='/' style='color:#ff6b35'>Back to PanPanParts</a>
+            </body></html>""", tail=tail)
+    
+    return render_template_string("""
+    <html><body style='font-family:sans-serif;background:#0d0d1a;color:white;padding:40px'>
+    <div style='max-width:500px;margin:0 auto'>
+        <h2>Protest claim for {{ tail }}</h2>
+        <p style='color:#aaa;margin:16px 0'>If you believe this aircraft is incorrectly claimed, please explain why.</p>
+        <form method='POST'>
+            <textarea name='reason' required placeholder='Explain why you believe this claim is incorrect...'
+                style='width:100%;height:120px;padding:12px;border:1px solid #333;border-radius:8px;background:#1a1a2e;color:white;font-size:14px;margin-bottom:16px'></textarea>
+            <button type='submit' style='background:#ff6b35;color:white;border:none;padding:14px 28px;border-radius:8px;font-size:16px;cursor:pointer;font-weight:600;width:100%'>
+                Submit protest
+            </button>
+        </form>
+        <br><a href='/' style='color:#aaa;font-size:14px'>Cancel</a>
+    </div>
+    </body></html>""", tail=tail)
+
+@app.route('/correct-aircraft/<tail>', methods=['POST'])
+@login_required  
+def correct_aircraft(tail):
+    import json
+    claimed_list = json.loads(current_user.claimed_aircraft or '[]')
+    if tail not in claimed_list:
+        return redirect('/')
+    
+    manufacturer = request.form.get('manufacturer', '').strip()
+    model = request.form.get('model', '').strip()
+    year = request.form.get('year', '').strip()
+    
+    if any([manufacturer, model, year]):
+        conn = get_pg_conn()
+        cur = conn.cursor()
+        if manufacturer:
+            cur.execute("UPDATE aircraft SET manufacturer = %s WHERE registration = %s", (manufacturer, tail))
+        if model:
+            cur.execute("UPDATE aircraft SET model = %s WHERE registration = %s", (model, tail))
+        if year:
+            cur.execute("UPDATE aircraft SET year = %s WHERE registration = %s", (year, tail))
+        conn.commit()
+        conn.close()
+    
+    return redirect(f'/my-aircraft/{tail}')

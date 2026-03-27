@@ -3670,6 +3670,14 @@ LOGBOOK_HTML = """<!DOCTYPE html>
         .scan-btn:disabled { background: #444; cursor: not-allowed; }
         .status { background: #0d0d1a; border-radius: 8px; padding: 16px; margin-top: 12px; color: #aaa; font-size: 14px; display: none; border: 1px solid #2a2a3e; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        @media (max-width: 600px) {
+            table { font-size: 11px; }
+            th, td { padding: 6px 4px; }
+            .container { padding: 0 10px; }
+            .header { padding: 16px 20px; }
+            th:nth-child(4), td:nth-child(4) { display: none; }
+            th:nth-child(7), td:nth-child(7) { display: none; }
+        }
         th { text-align: left; padding: 10px 8px; color: #666; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #2a2a3e; }
         td { padding: 10px 8px; border-bottom: 1px solid #1a1a2e; }
         tr:hover td { background: #1a1a2e; }

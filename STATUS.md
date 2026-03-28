@@ -130,3 +130,33 @@ Aviation platform for piloter og flyejere. Tre dele:
 - Næste service beregnes automatisk baseret på timer
 - Ejer ser hvem der har fløjet flyet og hvornår
 - IKKE skole-fakturering (myweblog.se's marked) — fokus på privat flyejer
+
+## Udført 28. marts 2026 (eftermiddag)
+- Logbog: My flight history sektion med fly-historik og tilføj nyt fly
+- Logbog: Flight Currency barometer (grøn/gul/rød) baseret på 6 måneder
+- Logbog: +/- knapper til justering af landinger
+- Logbog: adjustLandings defineret i head — fix undefined fejl
+- Logbog: JS syntaxfejl i editEntry onclick fixet
+- Logbog: scan opdateret med licens-regler og preferred aircraft
+- Logbog: tomme linjer filtreres fra ved scanning
+- US flyregister: genskabt — 310.823 fly importeret fra lokale FAA filer
+- US flyregister: sikker import med temp-tabel — gamle data bevares ved fejl
+- Forside: "Earn on your parts" som hero-tekst
+- Forside: 0-tællere for dele og fly skjult
+- Forside: markeder opdateret til USA, EU, UK, Australia, Canada, Switzerland
+- Total flyregister: 525.692 fly
+
+## To Do (opdateret)
+- Logbog: edit modal Update-knap virker ikke
+- Logbog: Flight Currency opdateres ikke live ved landing-ændring
+- Logbog: tabel har 19 kolonner — reducer til de vigtigste
+- Logbog: Manuel entry — ny flyvning direkte uden scanning
+- Logbog: Preferred aircraft — vis og brug i AI-prompt
+- Logbog: Tacho/Hobbs time felt
+- Logbog: Flere logbøger (Logbog 1, 2, 3) — historisk scanning
+- US flyregister: automatiser månedlig opdatering på Railway-siden
+- AU flyregister: CASA server timeout — prøv igen
+- DK flyregister: find bedre kilde til aktive OY-fly
+- Holland (PH-): tilføj til månedlig opdatering
+- Stripe betalingssystem
+- Community funktion (når 20-30 brugere)

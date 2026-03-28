@@ -2171,6 +2171,41 @@ PART_DETAIL_HTML = """<!DOCTYPE html>
 </body>
 </html>"""
 
+@app.route('/upload-image', methods=['POST'])
+@login_required
+def upload_image():
+    import boto3, base64, uuid, json as _json
+    data = request.get_json()
+    image_data = data.get('image', '')
+    
+    # Fjern data URL prefix
+    if ',' in image_data:
+        image_data = image_data.split(',')[1]
+    
+    try:
+        image_bytes = base64.b64decode(image_data)
+        filename = f"listings/{current_user.id}/{uuid.uuid4().hex}.jpg"
+        
+        s3 = boto3.client('s3',
+            aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
+            region_name=os.environ.get('AWS_REGION', 'eu-north-1')
+        )
+        bucket = os.environ.get('AWS_S3_BUCKET', 'panpanparts-backup')
+        
+        s3.put_object(
+            Bucket=bucket,
+            Key=filename,
+            Body=image_bytes,
+            ContentType='image/jpeg',
+            ACL='public-read'
+        )
+        
+        url = f"https://{bucket}.s3.{os.environ.get('AWS_REGION', 'eu-north-1')}.amazonaws.com/{filename}"
+        return _json.dumps({'ok': True, 'url': url})
+    except Exception as e:
+        return _json.dumps({'ok': False, 'error': str(e)})
+
 @app.route('/sell-aircraft/ai-analyze', methods=['POST'])
 @login_required
 def sell_aircraft_ai_analyze():
@@ -2452,9 +2487,23 @@ SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
                         canvas.width = w; canvas.height = h;
                         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                         var compressed = canvas.toDataURL('image/jpeg', 0.75);
-                        uploadedImages.push(compressed);
-                        document.getElementById('images_data').value = uploadedImages.join('|||');
-                        renderThumbs();
+                        
+                        // Upload til S3
+                        fetch('/upload-image', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({image: compressed})
+                        })
+                        .then(r => r.json())
+                        .then(result => {
+                            if (result.ok) {
+                                uploadedImages.push(result.url);
+                                document.getElementById('images_data').value = uploadedImages.join('|||');
+                                renderThumbs();
+                            } else {
+                                console.error('Upload fejl:', result.error);
+                            }
+                        });
                     };
                     img.src = e.target.result;
                 };

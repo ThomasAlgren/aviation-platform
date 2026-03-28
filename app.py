@@ -3796,6 +3796,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                 </div>
             </div>
             <button class="scan-btn" id="scan-btn" onclick="scanPages()" disabled>Scan with AI</button>
+            <a href="/logbook-review" style="display:block;text-align:center;margin-top:10px;color:#ff6b35;font-size:14px">Or use step-by-step review →</a>
             <div class="status" id="status"></div>
         </div>
 
@@ -4014,3 +4015,406 @@ def edit_logbook_entry(entry_id):
     entry.remarks = request.form.get('remarks', '').strip() or None
     db.session.commit()
     return redirect('/my-logbook')
+
+@app.route('/logbook-review', methods=['GET', 'POST'])
+@login_required
+def logbook_review():
+    from flask import session
+    import anthropic as ac
+    import json
+
+    if request.method == 'POST':
+        data = request.get_json()
+        
+        if data.get('action') == 'scan':
+            # Scan siden og gem alle rækker i session
+            image_data = data.get('image')
+            
+            # Hent tidligere godkendte entries som kontekst
+            prev_entries = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.id.desc()).limit(5).all()
+            known_regs = list(set([e.registration for e in prev_entries if e.registration]))
+            
+            context = ""
+            if known_regs:
+                context = f"\nThis pilot flies: {', '.join(known_regs)}. Use as reference."
+            
+            if prev_entries:
+                last = prev_entries[0]
+                context += f"\nLast approved entry: {last.flight_date}, {last.registration}, {last.total_time}"
+
+            client = ac.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+            response = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=3000,
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image_data}},
+                        {"type": "text", "text": f"""This is a page from a pilot logbook. Extract ALL flight rows carefully.
+
+RULES:
+- Dates are DD/MM/YY (European). 25=2025, 26=2026. NEVER MM/DD.
+- Off Block and On Block are UTC times HH:MM. Total = On Block - Off Block.
+- Calculate total_time yourself from off_block and on_block as validation.
+- Aircraft registrations: OY-XXX (Denmark). Read each letter carefully.
+- Preserve EXACT row order — do NOT sort.
+- Only rows with actual flight data.{context}
+
+Respond ONLY with JSON array:
+[{{
+  "flight_date": "DD/MM/YYYY",
+  "dep_place": "ICAO",
+  "arr_place": "ICAO", 
+  "off_block": "HH:MM",
+  "on_block": "HH:MM",
+  "aircraft_type": "type",
+  "registration": "OY-XXX",
+  "total_time": "H:MM",
+  "night_time": "H:MM or null",
+  "sep_vfr": "H:MM or null",
+  "sep_ifr": "H:MM or null",
+  "pic_time": "H:MM or null",
+  "dual": "H:MM or null",
+  "landings_day": number or null,
+  "landings_night": number or null,
+  "remarks": "text or null"
+}}]"""}
+                    ]
+                }]
+            )
+            
+            text = response.content[0].text
+            clean = text.replace("```json", "").replace("```", "").strip()
+            flights = json.loads(clean)
+            
+            # Gem i session
+            session['review_flights'] = flights
+            session['review_index'] = 0
+            session['review_approved'] = []
+            
+            return json.dumps({'ok': True, 'total': len(flights), 'first': flights[0] if flights else None})
+        
+        elif data.get('action') == 'approve':
+            # Godkend nuværende linje (med eventuelle rettelser)
+            flight_data = data.get('flight')
+            flights = session.get('review_flights', [])
+            index = session.get('review_index', 0)
+            approved = session.get('review_approved', [])
+            
+            # Gem i database
+            entry = LogbookEntry(
+                user_id=current_user.id,
+                flight_date=flight_data.get('flight_date'),
+                dep_place=flight_data.get('dep_place'),
+                arr_place=flight_data.get('arr_place'),
+                off_block=flight_data.get('off_block'),
+                on_block=flight_data.get('on_block'),
+                aircraft_type=flight_data.get('aircraft_type'),
+                registration=flight_data.get('registration'),
+                total_time=flight_data.get('total_time'),
+                night_time=flight_data.get('night_time'),
+                sep_vfr=flight_data.get('sep_vfr'),
+                sep_ifr=flight_data.get('sep_ifr'),
+                pic_time=flight_data.get('pic_time'),
+                dual=flight_data.get('dual'),
+                landings_day=flight_data.get('landings_day'),
+                landings_night=flight_data.get('landings_night'),
+                remarks=flight_data.get('remarks'),
+            )
+            db.session.add(entry)
+            db.session.commit()
+            
+            approved.append(flight_data)
+            index += 1
+            session['review_index'] = index
+            session['review_approved'] = approved
+            
+            if index < len(flights):
+                return json.dumps({'ok': True, 'done': False, 'next': flights[index], 'index': index, 'total': len(flights)})
+            else:
+                session.pop('review_flights', None)
+                session.pop('review_index', None)
+                session.pop('review_approved', None)
+                return json.dumps({'ok': True, 'done': True, 'saved': len(approved)})
+    
+    return render_template_string(LOGBOOK_REVIEW_HTML, current_user=current_user)
+
+LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Logbook Review - PanPanParts</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a2e; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .container { max-width: 700px; margin: 40px auto; padding: 0 20px; }
+        .back { color: #666; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 24px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; border: 1px solid #2a2a3e; margin-bottom: 16px; }
+        .card h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 16px; }
+        .upload-box { border: 2px dashed #333; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; color: #666; font-size: 14px; }
+        .upload-box:hover { border-color: #ff6b35; color: #ff6b35; }
+        .upload-box img { max-width: 100%; border-radius: 8px; display: none; margin-top: 12px; }
+        input[type=file] { display: none; }
+        .scan-btn { background: #ff6b35; color: white; border: none; padding: 14px 28px; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 12px; }
+        .scan-btn:disabled { background: #444; cursor: not-allowed; }
+        .progress { background: #0d0d1a; border-radius: 8px; padding: 8px; margin-bottom: 16px; }
+        .progress-bar { background: #ff6b35; height: 6px; border-radius: 3px; transition: width 0.3s; }
+        .progress-text { font-size: 12px; color: #666; margin-top: 6px; text-align: center; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+        input[type=text], input[type=number] { width: 100%; padding: 10px 12px; border: 1px solid #333; border-radius: 8px; font-size: 14px; background: #0d0d1a; color: white; }
+        input[type=text]:focus, input[type=number]:focus { border-color: #ff6b35; outline: none; }
+        .warning { background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px; color: #ffc107; font-size: 13px; }
+        .btn-row { display: flex; gap: 12px; margin-top: 16px; }
+        .approve-btn { flex: 1; background: #2d7a3a; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: 600; }
+        .approve-btn:hover { background: #3d9a4a; }
+        .skip-btn { background: #1a1a2e; color: #aaa; border: 1px solid #333; padding: 14px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        .done-card { text-align: center; padding: 40px; }
+        .done-card h2 { font-size: 28px; color: #4caf50; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+    </div>
+    <div class="container">
+        <a href="/my-logbook" class="back">← My logbook</a>
+        <h1 style="font-size:28px;margin-bottom:24px">Scan <span style="color:#ff6b35">Logbook Page</span></h1>
+
+        <!-- Upload -->
+        <div class="card" id="upload-card">
+            <h3>Step 1 — Upload logbook page</h3>
+            <div class="upload-box" onclick="document.getElementById('page-input').click()">
+                <div id="upload-label">📷 Tap to photograph or upload logbook page</div>
+                <img id="page-preview">
+                <input type="file" id="page-input" accept="image/*" onchange="loadPage(this)">
+            </div>
+            <button class="scan-btn" id="scan-btn" onclick="startScan()" disabled>Scan with AI →</button>
+        </div>
+
+        <!-- Progress -->
+        <div id="progress-card" style="display:none" class="card">
+            <h3>Progress</h3>
+            <div class="progress">
+                <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+            </div>
+            <div class="progress-text" id="progress-text">Scanning...</div>
+        </div>
+
+        <!-- Review -->
+        <div id="review-card" style="display:none" class="card">
+            <h3 id="review-title">Review flight entry</h3>
+            
+            <div id="time-warning" class="warning" style="display:none">
+                ⚠ Calculated time from Off/On Block differs from Total Time
+            </div>
+
+            <div class="field-row">
+                <div><label>Date (DD/MM/YYYY)</label><input type="text" id="f-date"></div>
+                <div><label>Registration</label><input type="text" id="f-reg"></div>
+            </div>
+            <div class="field-row">
+                <div><label>From</label><input type="text" id="f-dep"></div>
+                <div><label>To</label><input type="text" id="f-arr"></div>
+            </div>
+            <div class="field-row">
+                <div><label>Off Block (UTC)</label><input type="text" id="f-off" oninput="validateTime()"></div>
+                <div><label>On Block (UTC)</label><input type="text" id="f-on" oninput="validateTime()"></div>
+            </div>
+            <div class="field-row-3">
+                <div><label>Total time</label><input type="text" id="f-total"></div>
+                <div><label>SEP VFR</label><input type="text" id="f-sepvfr"></div>
+                <div><label>Dual</label><input type="text" id="f-dual"></div>
+            </div>
+            <div class="field-row-3">
+                <div><label>PIC</label><input type="text" id="f-pic"></div>
+                <div><label>Night</label><input type="text" id="f-night"></div>
+                <div><label>Landings</label><input type="number" id="f-ldg"></div>
+            </div>
+            <div><label>Remarks</label><input type="text" id="f-remarks"></div>
+
+            <div class="btn-row">
+                <button class="approve-btn" onclick="approveFlight()">✓ Approve & next</button>
+                <button class="skip-btn" onclick="skipFlight()">Skip</button>
+            </div>
+        </div>
+
+        <!-- Done -->
+        <div id="done-card" style="display:none" class="done-card">
+            <h2>✓ All done!</h2>
+            <p style="color:#aaa;margin-bottom:24px" id="done-text">Flights saved to your logbook.</p>
+            <a href="/my-logbook" style="background:#ff6b35;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600">View logbook →</a>
+        </div>
+    </div>
+
+    <script>
+        var imageData = null;
+        var currentFlight = null;
+        var currentIndex = 0;
+        var totalFlights = 0;
+
+        function loadPage(input) {
+            var file = input.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = new Image();
+                img.onload = function() {
+                    var canvas = document.createElement("canvas");
+                    var maxSize = 1800;
+                    var w = img.width, h = img.height;
+                    if (w > maxSize || h > maxSize) {
+                        if (w > h) { h = h * maxSize / w; w = maxSize; }
+                        else { w = w * maxSize / h; h = maxSize; }
+                    }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                    var compressed = canvas.toDataURL("image/jpeg", 0.85);
+                    imageData = compressed.split(",")[1];
+                    document.getElementById("page-preview").src = compressed;
+                    document.getElementById("page-preview").style.display = "block";
+                    document.getElementById("upload-label").style.display = "none";
+                    document.getElementById("scan-btn").disabled = false;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function startScan() {
+            document.getElementById("scan-btn").disabled = true;
+            document.getElementById("scan-btn").textContent = "Scanning...";
+            document.getElementById("progress-card").style.display = "block";
+            document.getElementById("progress-text").textContent = "AI is reading your logbook page...";
+
+            fetch("/logbook-review", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({action: "scan", image: imageData})
+            })
+            .then(r => r.json())
+            .then(result => {
+                if (result.ok) {
+                    totalFlights = result.total;
+                    currentIndex = 0;
+                    showFlight(result.first, 0, totalFlights);
+                }
+            });
+        }
+
+        function showFlight(flight, index, total) {
+            currentFlight = flight;
+            currentIndex = index;
+            document.getElementById("upload-card").style.display = "none";
+            document.getElementById("review-card").style.display = "block";
+            document.getElementById("review-title").textContent = 
+                "Flight " + (index + 1) + " of " + total + " — Review & approve";
+            
+            var pct = Math.round((index / total) * 100);
+            document.getElementById("progress-bar").style.width = pct + "%";
+            document.getElementById("progress-text").textContent = 
+                (index + 1) + " of " + total + " flights";
+
+            document.getElementById("f-date").value = flight.flight_date || "";
+            document.getElementById("f-reg").value = flight.registration || "";
+            document.getElementById("f-dep").value = flight.dep_place || "";
+            document.getElementById("f-arr").value = flight.arr_place || "";
+            document.getElementById("f-off").value = flight.off_block || "";
+            document.getElementById("f-on").value = flight.on_block || "";
+            document.getElementById("f-total").value = flight.total_time || "";
+            document.getElementById("f-sepvfr").value = flight.sep_vfr || "";
+            document.getElementById("f-dual").value = flight.dual || "";
+            document.getElementById("f-pic").value = flight.pic_time || "";
+            document.getElementById("f-night").value = flight.night_time || "";
+            document.getElementById("f-ldg").value = flight.landings_day || "";
+            document.getElementById("f-remarks").value = flight.remarks || "";
+            
+            validateTime();
+        }
+
+        function validateTime() {
+            var off = document.getElementById("f-off").value;
+            var on = document.getElementById("f-on").value;
+            var total = document.getElementById("f-total").value;
+            
+            if (off && on && total) {
+                var offParts = off.split(":");
+                var onParts = on.split(":");
+                if (offParts.length == 2 && onParts.length == 2) {
+                    var offMin = parseInt(offParts[0]) * 60 + parseInt(offParts[1]);
+                    var onMin = parseInt(onParts[0]) * 60 + parseInt(onParts[1]);
+                    var diffMin = onMin - offMin;
+                    if (diffMin < 0) diffMin += 24 * 60;
+                    var calcH = Math.floor(diffMin / 60);
+                    var calcM = diffMin % 60;
+                    var calcStr = calcH + ":" + (calcM < 10 ? "0" : "") + calcM;
+                    
+                    document.getElementById("f-total").value = calcStr;
+                    document.getElementById("time-warning").style.display = 
+                        (calcStr !== total) ? "block" : "none";
+                }
+            }
+        }
+
+        function getFlight() {
+            return {
+                flight_date: document.getElementById("f-date").value,
+                registration: document.getElementById("f-reg").value,
+                dep_place: document.getElementById("f-dep").value,
+                arr_place: document.getElementById("f-arr").value,
+                off_block: document.getElementById("f-off").value,
+                on_block: document.getElementById("f-on").value,
+                total_time: document.getElementById("f-total").value,
+                sep_vfr: document.getElementById("f-sepvfr").value,
+                dual: document.getElementById("f-dual").value,
+                pic_time: document.getElementById("f-pic").value,
+                night_time: document.getElementById("f-night").value,
+                landings_day: parseInt(document.getElementById("f-ldg").value) || null,
+                remarks: document.getElementById("f-remarks").value,
+            };
+        }
+
+        function approveFlight() {
+            fetch("/logbook-review", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({action: "approve", flight: getFlight()})
+            })
+            .then(r => r.json())
+            .then(result => {
+                if (result.done) {
+                    document.getElementById("review-card").style.display = "none";
+                    document.getElementById("progress-card").style.display = "none";
+                    document.getElementById("done-card").style.display = "block";
+                    document.getElementById("done-text").textContent = 
+                        result.saved + " flights saved to your logbook!";
+                } else {
+                    showFlight(result.next, result.index, result.total);
+                }
+            });
+        }
+
+        function skipFlight() {
+            fetch("/logbook-review", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({action: "approve", flight: {skip: true}})
+            })
+            .then(r => r.json())
+            .then(result => {
+                if (result.done) {
+                    document.getElementById("review-card").style.display = "none";
+                    document.getElementById("done-card").style.display = "block";
+                } else {
+                    showFlight(result.next, result.index, result.total);
+                }
+            });
+        }
+    </script>
+</body>
+</html>"""

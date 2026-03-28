@@ -1030,7 +1030,7 @@ def index():
         flash("Welcome! Please check your email and verify your account.", "info")
     tail = request.args.get("tail", "")
     # Hvis søgning ikke ligner et tail-nummer, send til type-søgning
-    if tail and not any(tail.upper().startswith(p) for p in ["OY", "LN", "HB", "VH", "N", "C-", "G-", "D-", "F-", "OE"]):
+    if tail and not any(tail.upper().startswith(p) for p in ["OY", "LN", "HB", "VH", "SE", "PH", "OO", "EI", "CS", "EC", "I-", "D-", "F-", "G-", "OE", "C-", "N", "ZK", "ZS"]):
         return redirect("/type/" + tail.strip().replace(" ", "-"))
     model = request.args.get("model", "")
     state = request.args.get("state", "")

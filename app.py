@@ -1456,7 +1456,7 @@ ABOUT_HTML = """
         <p class="lead">A global marketplace for verified aviation parts — built by a pilot, for the aviation community.</p>
         <div class="card"><h3>Why PanPanParts?</h3><p>Finding quality aviation parts has always been fragmented — scattered across forums, emails, and phone calls. PanPanParts brings it all together in one verified marketplace, making it faster and safer to buy and sell aircraft parts anywhere in the world.</p></div>
         <div class="card"><h3>AI-verified documentation</h3><p>Every part listed on PanPanParts goes through AI-powered document verification. Upload a photo of the part and its airworthiness certificate — our system checks it automatically and flags anything that needs a closer look.</p></div>
-        <div class="card"><h3>Aircraft registry</h3><p>Search across 346,000+ registered aircraft from the USA, Denmark, Norway, Switzerland and Australia. More registries are being added continuously.</p></div>
+        <div class="card"><h3>Aircraft registry</h3><p>Search across 525,000+ registered aircraft from USA, EU, UK, Australia, Canada and Switzerland. More registries added continuously.</p></div>
         <div class="card"><h3>Pan Pan</h3><p>In aviation, Pan Pan is an urgency call — the step before Mayday. We chose the name because finding the right part quickly can be exactly that urgent.</p></div>
         <div class="contact">Questions: <a href="mailto:hello@panpanparts.com">hello@panpanparts.com</a></div>
     </div>
@@ -1512,7 +1512,7 @@ ABOUT_HTML = """
         <p class="lead">A global marketplace for verified aviation parts — built by a pilot, for the aviation community.</p>
         <div class="card"><h3>Why PanPanParts?</h3><p>Finding quality aviation parts has always been fragmented — scattered across forums, emails, and phone calls. PanPanParts brings it all together in one verified marketplace, making it faster and safer to buy and sell aircraft parts anywhere in the world.</p></div>
         <div class="card"><h3>AI-verified documentation</h3><p>Every part listed on PanPanParts goes through AI-powered document verification. Upload a photo of the part and its airworthiness certificate — our system checks it automatically and flags anything that needs a closer look.</p></div>
-        <div class="card"><h3>Aircraft registry</h3><p>Search across 346,000+ registered aircraft from the USA, Denmark, Norway, Switzerland and Australia. More registries are being added continuously.</p></div>
+        <div class="card"><h3>Aircraft registry</h3><p>Search across 525,000+ registered aircraft from USA, EU, UK, Australia, Canada and Switzerland. More registries added continuously.</p></div>
         <div class="card"><h3>Pan Pan</h3><p>In aviation, Pan Pan is an urgency call — the step before Mayday. We chose the name because finding the right part quickly can be exactly that urgent.</p></div>
         <div class="contact">Questions: <a href="mailto:hello@panpanparts.com">hello@panpanparts.com</a></div>
     </div>

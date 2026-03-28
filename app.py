@@ -3943,6 +3943,21 @@ LOGBOOK_HTML = """<!DOCTYPE html>
     <title>My Logbook - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+        function adjustLandings(entryId, delta) {
+            var span = document.getElementById("ldg-" + entryId);
+            var current = parseInt(span.textContent) || 0;
+            var newVal = Math.max(0, current + delta);
+            span.textContent = newVal;
+            fetch("/logbook/update-landings", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({entry_id: entryId, landings_day: newVal})
+            })
+            .then(r => r.json())
+            .then(result => { if (!result.ok) span.textContent = current; });
+        }
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }

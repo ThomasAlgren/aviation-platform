@@ -987,7 +987,7 @@ OY_DETAIL_HTML = """
             <p style="color:#666; font-size:14px; margin-bottom:16px">Claim your aircraft profile to add photos, flight hours, avionics and maintenance history.</p>
             <a href="/claim/{{ aircraft.tail }}" class="sell-btn" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">Claim {{ aircraft.tail }} — it's free</a>
             <a href="/upload-arc/{{ aircraft.tail }}" class="sell-btn" style="display:block;text-align:center;text-decoration:none;background:#2d7a3a;margin-bottom:10px">✓ Upload ARC — verify airworthiness</a>
-            <a href="/upload-aircraft?tail={{ aircraft.tail }}" class="sell-btn" style="display:block;text-align:center;text-decoration:none;background:#2a2a3e">List {{ aircraft.tail }} for sale</a>
+            <a href="/sell-aircraft/{{ aircraft.tail }}" class="sell-btn" style="display:block;text-align:center;text-decoration:none;background:#2a2a3e">List {{ aircraft.tail }} for sale</a>
             {% if arc_info and arc_info.disputed %}
             <div style="background:rgba(255,193,7,0.15);border:1px solid rgba(255,193,7,0.3);border-radius:8px;padding:12px;margin-top:10px;color:#ffc107;font-size:13px">
                 ⚠ This claim is disputed and under review
@@ -2205,7 +2205,7 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
         {% else %}
         <div class="empty">
             <p>No aircraft listed yet</p>
-            <p style="margin-top:12px;color:#ff6b35">Be the first to list your aircraft</p>
+            <a href="/sell-aircraft" style="display:inline-block;margin-top:12px;background:#ff6b35;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">+ List your aircraft</a>
         </div>
         {% endif %}
     </div>

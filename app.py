@@ -4024,28 +4024,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
         </div>
 
         <!-- Træningsbarometer -->
-        <div class="card" style="border-left: 4px solid {% if baro_status == 'green' %}#4caf50{% elif baro_status == 'yellow' %}#ffc107{% else %}#f44336{% endif %}">
-            <h3>Training status — last 6 months</h3>
-            <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
-                <div style="font-size:48px">{{ baro_emoji }}</div>
-                <div>
-                    <div style="font-size:20px;font-weight:700;color:{% if baro_status == 'green' %}#4caf50{% elif baro_status == 'yellow' %}#ffc107{% else %}#f44336{% endif %}">
-                        {% if baro_status == 'green' %}GREEN{% elif baro_status == 'yellow' %}YELLOW{% else %}RED{% endif %}
-                    </div>
-                    <div style="font-size:14px;color:#aaa;margin-top:4px">{{ baro_text }}</div>
-                </div>
-            </div>
-            <div style="display:flex;gap:24px">
-                <div style="background:#0d0d1a;border-radius:8px;padding:12px 20px;text-align:center">
-                    <div style="font-size:24px;font-weight:700;font-family:monospace;color:#ff6b35">{{ recent_hours_str }}</div>
-                    <div style="font-size:11px;color:#666;margin-top:2px">Hours (need {% if recent_hours_str < '3:00' %}3:00 for yellow, {% endif %}6:00 for green)</div>
-                </div>
-                <div style="background:#0d0d1a;border-radius:8px;padding:12px 20px;text-align:center">
-                    <div style="font-size:24px;font-weight:700;font-family:monospace;color:#ff6b35">{{ recent_landings }}</div>
-                    <div style="font-size:11px;color:#666;margin-top:2px">Landings (need 6 for yellow, 12 for green)</div>
-                </div>
-            </div>
-        </div>
+
 
         <!-- Scan side -->
         <div class="card">

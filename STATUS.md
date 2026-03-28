@@ -186,3 +186,25 @@ Aviation platform for piloter og flyejere. Tre dele:
 - Holland (PH-): tilføj til månedlig opdatering
 - Stripe betalingssystem
 - Community funktion
+
+## Forretningsmodel (afklaret 28. marts 2026)
+
+### Fly listings
+- Scrape fra Winglist, Controller, Barnstormers mv.
+- "Send message" går direkte til original broker — ikke til PanPanParts
+- Vi tjener på trafik og brugeroprettelser
+- Linker til kilden — juridisk OK i Danmark
+
+### Parts marketplace (kerneforretning)
+- Sælger lister del med certifikat
+- AI verificerer certifikat automatisk
+- Køber betaler via Escrow (Stripe)
+- Vi frigiver til sælger ved bekræftet modtagelse
+- Vi tager margin (5-8%)
+- Certifikat = objektiv validering, ingen diskussion om stand
+- Stripe Escrow er næste store feature
+
+### Næste prioriteter
+1. Parts marketplace med Escrow via Stripe
+2. Scraper til fly listings (Winglist, Controller)
+3. Fly listing: videresend besked til original broker

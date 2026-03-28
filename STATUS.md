@@ -170,3 +170,19 @@ Aviation platform for piloter og flyejere. Tre dele:
 - Forside: placeholder ændret til "Find your aircraft"
 - Forside: tre kort — Sell, Cockpit, Registry
 - Forside: "The aviation platform for pilots and owners"
+
+## Udført 28. marts 2026 (sen aften)
+- Danmark: 7.115 fly importeret fra lokal denmark.csv
+- Total flyregister: 532.805 fly
+- update_registries.py: Danmark bruger nu lokal denmark.csv
+
+## To Do (opdateret)
+- Danmark: genbyg denmark.csv en gang om året via scrape af oy-reg.dk
+- Logbog scanning: forbedre AI kvalitet
+- Logbog: edit modal Update-knap virker ikke
+- Logbog: Manuel entry — ny flyvning direkte uden scanning
+- US flyregister: automatiser månedlig opdatering på Railway
+- AU flyregister: CASA timeout — prøv igen
+- Holland (PH-): tilføj til månedlig opdatering
+- Stripe betalingssystem
+- Community funktion

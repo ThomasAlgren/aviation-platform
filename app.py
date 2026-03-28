@@ -3127,7 +3127,7 @@ MY_PROFILE_HTML = """<!DOCTYPE html>
                 <span class="date-label">Medical valid until</span>
                 <span class="date-value {% if medical_days is not none %}{% if medical_days < 0 %}date-alert{% elif medical_days < 60 %}date-warn{% else %}date-ok{% endif %}{% else %}date-missing{% endif %}">
                     {% if current_user.medical_valid_until %}
-                        {{ current_user.medical_valid_until }}
+                        {{ current_user.medical_valid_until[:10] if current_user.medical_valid_until else "" }}
                         {% if medical_days is not none %}
                             {% if medical_days < 0 %} — EXPIRED{% elif medical_days < 60 %} — {{ medical_days }} days left{% endif %}
                         {% endif %}
@@ -3148,7 +3148,7 @@ MY_PROFILE_HTML = """<!DOCTYPE html>
                 <span class="date-label">License valid until</span>
                 <span class="date-value {% if license_days is not none %}{% if license_days < 0 %}date-alert{% elif license_days < 60 %}date-warn{% else %}date-ok{% endif %}{% else %}date-missing{% endif %}">
                     {% if current_user.license_valid_until %}
-                        {{ current_user.license_valid_until }}
+                        {{ current_user.license_valid_until[:10] if current_user.license_valid_until else "" }}
                         {% if license_days is not none %}
                             {% if license_days < 0 %} — EXPIRED{% elif license_days < 60 %} — {{ license_days }} days left{% endif %}
                         {% endif %}

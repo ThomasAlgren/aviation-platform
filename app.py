@@ -3770,6 +3770,20 @@ def logbook_add_aircraft():
         db.session.commit()
     return _json.dumps({'ok': True})
 
+@app.route('/logbook/update-landings', methods=['POST'])
+@login_required
+def logbook_update_landings():
+    import json as _json
+    data = request.get_json()
+    entry_id = data.get('entry_id')
+    landings = data.get('landings_day', 0)
+    entry = LogbookEntry.query.filter_by(id=entry_id, user_id=current_user.id).first()
+    if not entry:
+        return _json.dumps({'ok': False})
+    entry.landings_day = landings
+    db.session.commit()
+    return _json.dumps({'ok': True})
+
 @app.route('/logbook-scan', methods=['POST'])
 @login_required
 def logbook_scan():
@@ -4001,7 +4015,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
 
         <!-- Træningsbarometer -->
         <div class="card" style="border-left: 4px solid {% if baro_status == 'green' %}#4caf50{% elif baro_status == 'yellow' %}#ffc107{% else %}#f44336{% endif %}">
-            <h3>Training status — last 6 months</h3>
+            <h3>Flight Currency — last 6 months</h3>
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
                 <div style="font-size:48px">{{ baro_emoji }}</div>
                 <div>
@@ -4117,7 +4131,11 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <td class="desktop-col">{{ e.pic_time or '—' }}</td>
                     <td class="desktop-col">{{ e.dual or '—' }}</td>
                     <td class="desktop-col">{{ e.instructor_time or '—' }}</td>
-                    <td>{{ e.landings_day or '—' }}</td>
+                    <td onclick="event.stopPropagation()" style="white-space:nowrap">
+                        <button onclick="adjustLandings({{ e.id }}, -1)" style="background:#1a1a2e;border:1px solid #333;color:#aaa;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1">-</button>
+                        <span id="ldg-{{ e.id }}" style="margin:0 6px;font-family:monospace">{{ e.landings_day or 0 }}</span>
+                        <button onclick="adjustLandings({{ e.id }}, 1)" style="background:#1a1a2e;border:1px solid #333;color:#aaa;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1">+</button>
+                    </td>
                     <td class="desktop-col">{{ e.landings_night or '—' }}</td>
                     <td class="desktop-col" style="color:#666;font-size:12px">{{ e.remarks or '' }}</td>
                     <td><a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="event.stopPropagation();return confirm('Delete?')">✕</a></td>
@@ -4183,6 +4201,22 @@ LOGBOOK_HTML = """<!DOCTYPE html>
 
     <script>
         var pages = {left: null, right: null};
+
+        function adjustLandings(entryId, delta) {
+            var span = document.getElementById("ldg-" + entryId);
+            var current = parseInt(span.textContent) || 0;
+            var newVal = Math.max(0, current + delta);
+            span.textContent = newVal;
+            fetch("/logbook/update-landings", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({entry_id: entryId, landings_day: newVal})
+            })
+            .then(r => r.json())
+            .then(result => {
+                if (!result.ok) span.textContent = current; // Rul tilbage ved fejl
+            });
+        }
 
         function addAircraft() {
             var reg = document.getElementById("new-reg-input").value.trim().toUpperCase();

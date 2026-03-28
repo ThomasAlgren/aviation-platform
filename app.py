@@ -3694,6 +3694,24 @@ def get_certificate(cert_id):
         'document': cert.document or ''
     })
 
+@app.route('/my-logbook/all')
+@login_required
+def my_logbook_all():
+    entries = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.id.asc()).all()
+    total_minutes = 0
+    for e in entries:
+        if e.total_time and e.total_time not in ['—', '-', '']:
+            try:
+                parts = e.total_time.replace(":", " ").replace(".", " ").split()
+                if len(parts) == 2:
+                    total_minutes += int(parts[0]) * 60 + int(parts[1])
+            except:
+                pass
+    total_hours = total_minutes // 60
+    total_mins = total_minutes % 60
+    total_str = f"{total_hours}:{total_mins:02d}" if total_minutes > 0 else "0:00"
+    return render_template_string(LOGBOOK_ALL_HTML, entries=entries, current_user=current_user, total_time=total_str, total_flights=len(entries))
+
 @app.route('/my-logbook')
 @login_required
 def my_logbook():
@@ -4554,6 +4572,100 @@ Respond ONLY with JSON array:
                 return json.dumps({'ok': True, 'done': True, 'saved': len(approved)})
     
     return render_template_string(LOGBOOK_REVIEW_HTML, current_user=current_user)
+
+
+LOGBOOK_ALL_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>All Flights - PanPanParts</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a2e; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        .back { color: #666; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 24px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; border: 1px solid #2a2a3e; margin-bottom: 16px; }
+        .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { text-align: left; padding: 8px 6px; color: #666; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #2a2a3e; white-space: nowrap; }
+        td { padding: 8px 6px; border-bottom: 1px solid #1a1a2e; white-space: nowrap; }
+        tr:hover td { background: #1a1a2e; }
+        .total-row td { color: #ff6b35; font-weight: 600; border-top: 2px solid #2a2a3e; }
+        .delete-btn { color: #444; text-decoration: none; font-size: 11px; }
+        .delete-btn:hover { color: #ff6b35; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+    </div>
+    <div class="container">
+        <a href="/my-logbook" class="back">← My logbook</a>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+            <h1 style="font-size:28px">All <span style="color:#ff6b35">Flights</span></h1>
+            <div style="text-align:right">
+                <div style="font-size:32px;font-weight:700;color:#ff6b35;font-family:monospace">{{ total_time }}</div>
+                <div style="font-size:12px;color:#666">{{ total_flights }} flights total</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="table-scroll">
+            <table>
+                <tr>
+                    <th>Date</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Off</th>
+                    <th>On</th>
+                    <th>Type</th>
+                    <th>Reg</th>
+                    <th>Total</th>
+                    <th>Night</th>
+                    <th>SEP VFR</th>
+                    <th>SEP IFR</th>
+                    <th>PIC</th>
+                    <th>Dual</th>
+                    <th>Ldg D</th>
+                    <th>Ldg N</th>
+                    <th>Remarks</th>
+                    <th></th>
+                </tr>
+                {% for e in entries %}
+                <tr>
+                    <td>{{ e.flight_date or '—' }}</td>
+                    <td>{{ e.dep_place or '—' }}</td>
+                    <td>{{ e.arr_place or '—' }}</td>
+                    <td>{{ e.off_block or '—' }}</td>
+                    <td>{{ e.on_block or '—' }}</td>
+                    <td>{{ e.aircraft_type or '—' }}</td>
+                    <td style="color:#ff6b35">{{ e.registration or '—' }}</td>
+                    <td>{{ e.total_time or '—' }}</td>
+                    <td>{{ e.night_time or '—' }}</td>
+                    <td>{{ e.sep_vfr or '—' }}</td>
+                    <td>{{ e.sep_ifr or '—' }}</td>
+                    <td>{{ e.pic_time or '—' }}</td>
+                    <td>{{ e.dual or '—' }}</td>
+                    <td>{{ e.landings_day or '—' }}</td>
+                    <td>{{ e.landings_night or '—' }}</td>
+                    <td style="color:#666;font-size:11px">{{ e.remarks or '' }}</td>
+                    <td><a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="return confirm('Delete?')">✕</a></td>
+                </tr>
+                {% endfor %}
+                <tr class="total-row">
+                    <td colspan="7">Total</td>
+                    <td>{{ total_time }}</td>
+                    <td colspan="9"></td>
+                </tr>
+            </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>"""
 
 LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
 <html>

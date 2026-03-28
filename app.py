@@ -269,6 +269,7 @@ AIRCRAFT_COCKPIT_HTML = """<!DOCTYPE html>
         <div class="card">
             <h3>Actions</h3>
             <a href="/upload-arc/{{ aircraft.tail }}" class="action-btn">Upload & verify ARC with AI <span>→</span></a>
+            <a href="/my-aircraft/{{ aircraft.tail }}/maintenance" class="action-btn">✦ Maintenance log <span>→</span></a>
             <a href="/parts?q={{ aircraft.manufacturer }}" class="action-btn">Find parts for {{ aircraft.manufacturer }} {{ aircraft.model }} <span>→</span></a>
             <a href="/sell-aircraft/{{ aircraft.tail }}" class="action-btn">List this aircraft for sale <span>→</span></a>
         </div>
@@ -380,6 +381,19 @@ class ClaimedAircraft(db.Model):
     next_service_date = db.Column(db.String(50))
     notes = db.Column(db.Text)
     disputed = db.Column(db.Boolean, default=False)
+
+class AircraftMaintenanceLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    tail = db.Column(db.String(20))
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    entry_date = db.Column(db.String(20))
+    entry_type = db.Column(db.String(50))
+    description = db.Column(db.Text)
+    performed_by = db.Column(db.String(200))
+    approved_by = db.Column(db.String(200))
+    hours_at_entry = db.Column(db.Float)
+    document = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class LogbookEntry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -4489,3 +4503,241 @@ def live_tracking(tail):
     
     except Exception as e:
         return json.dumps({'airborne': False, 'reason': str(e)})
+
+@app.route('/my-aircraft/<tail>/maintenance')
+@login_required
+def aircraft_maintenance(tail):
+    import json
+    claimed_list = json.loads(current_user.claimed_aircraft or '[]')
+    if tail not in claimed_list:
+        return redirect('/my-aircraft')
+    entries = AircraftMaintenanceLog.query.filter_by(tail=tail).order_by(AircraftMaintenanceLog.id.asc()).all()
+    r = get_aircraft(tail)
+    def s(val):
+        v = str(val).strip() if val else ""
+        return "" if v in ["nan", "None"] else v
+    aircraft = {"tail": tail, "model": s(r["model"]) if r else "", "manufacturer": s(r["manufacturer"]) if r else ""}
+    return render_template_string(MAINTENANCE_HTML, entries=entries, aircraft=aircraft, current_user=current_user)
+
+@app.route('/my-aircraft/<tail>/maintenance/add', methods=['POST'])
+@login_required
+def add_maintenance_entry(tail):
+    import json
+    claimed_list = json.loads(current_user.claimed_aircraft or '[]')
+    if tail not in claimed_list:
+        return redirect('/my-aircraft')
+    doc_data = request.form.get('document', '') or None
+    description = request.form.get('description', '').strip()
+    performed_by = request.form.get('performed_by', '').strip() or None
+    approved_by = request.form.get('approved_by', '').strip() or None
+    entry_date = request.form.get('entry_date', '').strip() or None
+    hours = request.form.get('hours_at_entry', '').strip() or None
+    entry_type = request.form.get('entry_type', '').strip() or 'Other'
+    if doc_data and not description:
+        try:
+            import anthropic as ac
+            import json as js
+            client = ac.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+            response = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=500,
+                messages=[{"role": "user", "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": doc_data}},
+                    {"type": "text", "text": 'Extract from this aircraft maintenance document. Respond ONLY with JSON: {"entry_type": "Service/Repair/AD/Inspection/Component/Other", "description": "brief description", "performed_by": "name or null", "approved_by": "name or null", "entry_date": "DD/MM/YYYY or null", "hours_at_entry": number or null}'}
+                ]}]
+            )
+            text = response.content[0].text
+            clean = text.replace("```json", "").replace("```", "").strip()
+            result = js.loads(clean)
+            description = description or result.get("description", "")
+            performed_by = performed_by or result.get("performed_by")
+            approved_by = approved_by or result.get("approved_by")
+            entry_date = entry_date or result.get("entry_date")
+            hours = hours or result.get("hours_at_entry")
+            entry_type = entry_type or result.get("entry_type", "Other")
+        except Exception as e:
+            print("AI fejl:", e)
+    entry = AircraftMaintenanceLog(
+        tail=tail, user_id=current_user.id, entry_date=entry_date,
+        entry_type=entry_type, description=description, performed_by=performed_by,
+        approved_by=approved_by, hours_at_entry=float(hours) if hours else None,
+        document=doc_data[:500] if doc_data else None,
+    )
+    db.session.add(entry)
+    db.session.commit()
+    return redirect(f'/my-aircraft/{tail}/maintenance')
+
+@app.route('/my-aircraft/<tail>/maintenance/delete/<int:entry_id>')
+@login_required
+def delete_maintenance_entry(tail, entry_id):
+    import json
+    claimed_list = json.loads(current_user.claimed_aircraft or '[]')
+    if tail not in claimed_list:
+        return redirect('/my-aircraft')
+    entry = AircraftMaintenanceLog.query.get_or_404(entry_id)
+    if entry.tail == tail:
+        db.session.delete(entry)
+        db.session.commit()
+    return redirect(f'/my-aircraft/{tail}/maintenance')
+
+MAINTENANCE_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ aircraft.tail }} Maintenance - PanPanParts</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a2e; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .back { color: #666; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 24px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; border: 1px solid #2a2a3e; margin-bottom: 16px; }
+        .card h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 16px; }
+        .entry { padding: 16px 0; border-bottom: 1px solid #2a2a3e; display: flex; justify-content: space-between; align-items: flex-start; }
+        .entry:last-child { border-bottom: none; }
+        .entry-type { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-bottom: 6px; }
+        .type-Service { background: rgba(76,175,80,0.2); color: #4caf50; }
+        .type-Inspection { background: rgba(33,150,243,0.2); color: #2196f3; }
+        .type-Repair { background: rgba(255,152,0,0.2); color: #ff9800; }
+        .type-AD { background: rgba(244,67,54,0.2); color: #f44336; }
+        .type-Component { background: rgba(156,39,176,0.2); color: #9c27b0; }
+        .type-Other { background: rgba(158,158,158,0.2); color: #9e9e9e; }
+        .entry-desc { font-size: 14px; margin-bottom: 4px; }
+        .entry-meta { font-size: 12px; color: #666; }
+        .delete-btn { color: #444; text-decoration: none; font-size: 11px; margin-left: 12px; }
+        .delete-btn:hover { color: #ff6b35; }
+        label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; margin-top: 10px; }
+        input[type=text], input[type=number], textarea, select { width: 100%; padding: 10px 12px; border: 1px solid #333; border-radius: 8px; font-size: 14px; background: #0d0d1a; color: white; margin-bottom: 4px; }
+        textarea { height: 80px; resize: vertical; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .add-btn { background: #ff6b35; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 12px; }
+        .upload-box { border: 2px dashed #333; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; color: #666; font-size: 13px; margin-bottom: 8px; }
+        .upload-box:hover { border-color: #ff6b35; }
+        .upload-box img { max-width: 100%; max-height: 150px; border-radius: 6px; display: none; margin-top: 8px; }
+        input[type=file] { display: none; }
+        .edit-btn { background: transparent; border: 1px solid #333; color: #aaa; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; float: right; }
+        .edit-btn:hover { border-color: #ff6b35; color: #ff6b35; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+    </div>
+    <div class="container">
+        <a href="/my-aircraft/{{ aircraft.tail }}" class="back">← {{ aircraft.tail }} cockpit</a>
+        <h1 style="font-size:28px;margin-bottom:8px">{{ aircraft.tail }} <span style="color:#ff6b35">Maintenance Log</span></h1>
+        <p style="color:#666;font-size:14px;margin-bottom:24px">{{ aircraft.manufacturer }} {{ aircraft.model }}</p>
+
+        <!-- Entries -->
+        <div class="card">
+            <h3>Maintenance history ({{ entries|length }} entries)
+                <button class="edit-btn" onclick="document.getElementById('add-form').classList.toggle('hidden')">+ Add entry</button>
+            </h3>
+
+            <!-- Add form -->
+            <div id="add-form" class="hidden" style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #2a2a3e">
+                <form method="POST" action="/my-aircraft/{{ aircraft.tail }}/maintenance/add">
+                    <input type="hidden" name="document" id="doc-data">
+                    
+                    <div class="upload-box" onclick="document.getElementById('doc-input').click()">
+                        <img id="doc-preview">
+                        <span id="doc-label">📷 Upload maintenance document (optional — AI reads automatically)</span>
+                        <input type="file" id="doc-input" accept="image/*" onchange="loadDoc(this)">
+                    </div>
+
+                    <label>Entry type</label>
+                    <select name="entry_type">
+                        <option value="Service">100-hour Service</option>
+                        <option value="Inspection">Annual Inspection</option>
+                        <option value="Repair">Repair</option>
+                        <option value="AD">AD Compliance</option>
+                        <option value="Component">Component Replacement</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+                    <label>Description</label>
+                    <textarea name="description" placeholder="Describe the work performed..."></textarea>
+
+                    <div class="grid-2">
+                        <div>
+                            <label>Date (DD/MM/YYYY)</label>
+                            <input type="text" name="entry_date" placeholder="e.g. 15/03/2026">
+                        </div>
+                        <div>
+                            <label>Aircraft hours</label>
+                            <input type="number" name="hours_at_entry" placeholder="Total hours" step="0.1">
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div>
+                            <label>Performed by</label>
+                            <input type="text" name="performed_by" placeholder="Mechanic / organization">
+                        </div>
+                        <div>
+                            <label>Approved by</label>
+                            <input type="text" name="approved_by" placeholder="Inspector / authority">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="add-btn">Save entry</button>
+                </form>
+            </div>
+
+            {% if entries %}
+                {% for e in entries %}
+                <div class="entry">
+                    <div style="flex:1">
+                        <span class="entry-type type-{{ e.entry_type }}">{{ e.entry_type }}</span>
+                        <div class="entry-desc">{{ e.description or '—' }}</div>
+                        <div class="entry-meta">
+                            {% if e.entry_date %}{{ e.entry_date }}{% endif %}
+                            {% if e.hours_at_entry %} · {{ e.hours_at_entry }}h{% endif %}
+                            {% if e.performed_by %} · {{ e.performed_by }}{% endif %}
+                            {% if e.approved_by %} · Approved: {{ e.approved_by }}{% endif %}
+                        </div>
+                    </div>
+                    <a href="/my-aircraft/{{ aircraft.tail }}/maintenance/delete/{{ e.id }}" 
+                       class="delete-btn" onclick="return confirm('Delete?')">✕</a>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="color:#444;font-size:14px;padding:16px 0">No maintenance entries yet. Add your first entry above.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function loadDoc(input) {
+            var file = input.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = new Image();
+                img.onload = function() {
+                    var canvas = document.createElement("canvas");
+                    var maxSize = 1200;
+                    var w = img.width, h = img.height;
+                    if (w > maxSize || h > maxSize) {
+                        if (w > h) { h = h * maxSize / w; w = maxSize; }
+                        else { w = w * maxSize / h; h = maxSize; }
+                    }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                    var compressed = canvas.toDataURL("image/jpeg", 0.75);
+                    document.getElementById("doc-preview").src = compressed;
+                    document.getElementById("doc-preview").style.display = "block";
+                    document.getElementById("doc-label").style.display = "none";
+                    document.getElementById("doc-data").value = compressed.split(",")[1];
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>"""

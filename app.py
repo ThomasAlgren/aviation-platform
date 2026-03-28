@@ -3970,29 +3970,6 @@ LOGBOOK_HTML = """<!DOCTYPE html>
             </div>
         </div>
 
-        <!-- Mine fly -->
-        <div class="card">
-            <h3>My flight history</h3>
-            {% if aircraft_stats %}
-            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
-                {% for reg, stats in aircraft_stats.items() %}
-                <div style="background:#0d0d1a;border:1px solid #2a2a3e;border-radius:8px;padding:12px 16px;min-width:140px">
-                    <div style="font-size:18px;font-weight:700;font-family:monospace;color:#ff6b35">{{ reg }}</div>
-                    <div style="font-size:12px;color:#666;margin-top:4px">{{ stats.flights }} flight{{ 's' if stats.flights != 1 else '' }}</div>
-                    {% if stats.last_date %}<div style="font-size:11px;color:#444">Last: {{ stats.last_date }}</div>{% endif %}
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-            <div style="display:flex;gap:10px;align-items:center">
-                <input type="text" id="new-reg-input" placeholder="Add aircraft (e.g. OY-BLZ)" 
-                    style="background:#0d0d1a;border:1px solid #333;border-radius:8px;padding:10px 12px;color:white;font-size:14px;width:200px">
-                <button onclick="addAircraft()" 
-                    style="background:#ff6b35;color:white;border:none;padding:10px 16px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600">
-                    + Add
-                </button>
-            </div>
-        </div>
 
         <!-- Logbog entries -->
         <div class="card">

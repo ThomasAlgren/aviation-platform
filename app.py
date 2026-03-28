@@ -3382,23 +3382,7 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
 </html>"""
 
 
-@app.route('/aircraft-for-sale')
-def aircraft_for_sale():
-    import json as _json
-    listings = AircraftListing.query.order_by(AircraftListing.created_at.desc()).all()
-    # Serialiser listings til JSON for frontend search
-    listings_data = []
-    for l in listings:
-        listings_data.append({
-            'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer,
-            'model': l.model, 'year': l.year, 'price': l.price or 0,
-            'hours_total': l.hours_total, 'hours_engine': l.hours_engine,
-            'location': l.location, 'hero_image': l.hero_image,
-            'condition': l.condition, 'seller_type': l.seller_type,
-            'ai_highlights': l.ai_highlights, 'description': l.description
-        })
-    return render_template_string(AIRCRAFT_FOR_SALE_HTML, listings=listings,
-        listings_json=_json.dumps(listings_data), current_user=current_user)
+
 
 @app.route('/api/aircraft-search', methods=['POST'])
 def api_aircraft_search():

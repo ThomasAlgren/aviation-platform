@@ -208,3 +208,17 @@ Aviation platform for piloter og flyejere. Tre dele:
 1. Parts marketplace med Escrow via Stripe
 2. Scraper til fly listings (Winglist, Controller)
 3. Fly listing: videresend besked til original broker
+
+## Udført 28. marts 2026 (nat)
+- Google Analytics tilføjet til alle 28 sider (G-K3PJMNF1JE)
+- Aircraft marketplace: flot listing-side med hero-billede, highlights, specs
+- Aircraft marketplace: AI-drevet konversations-søgning
+- Forretningsmodel dokumenteret — parts med Escrow er kernen
+- Test listing: Diamond DA50 RG LN-ABZ — ser fantastisk ud!
+- 532.805 fly i databasen
+
+## Næste session prioriteter
+1. Parts marketplace med Stripe Escrow
+2. Fly scraper fra Winglist/Controller
+3. Kontakt EAS om listings
+4. Logbog scanning forbedringer

@@ -3790,9 +3790,41 @@ def logbook_scan():
     if right_page:
         content_parts.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": right_page}})
     
+    # Preferred aircraft
+    import json as _json
+    preferred = []
+    if current_user.preferred_aircraft:
+        try:
+            preferred = _json.loads(current_user.preferred_aircraft)
+        except:
+            preferred = []
+    if preferred:
+        known_regs = list(set(known_regs + preferred))
+
     context_hint = ""
     if known_regs:
-        context_hint = f"\n\nThis pilot has previously flown: {', '.join(known_regs)}. Use these as reference when unsure about a registration."
+        context_hint = f"\n\nThis pilot flies: {', '.join(known_regs)}. Use these as PRIMARY reference for registration."
+
+    # Licens-baserede regler
+    license_rules = ""
+    lt = current_user.license_type or 'PPL'
+    if lt == 'SPL':
+        license_rules = """
+PILOT LICENSE: Student Pilot (SPL)
+- sep_vfr: ALWAYS fill with total_time
+- dual: ALWAYS fill with total_time (always flies with instructor)
+- pic_time: ALWAYS null
+- night_time: ALWAYS null
+- sep_ifr: ALWAYS null
+- landings_night: ALWAYS null"""
+    elif lt == 'PPL':
+        license_rules = """
+PILOT LICENSE: PPL
+- sep_vfr: fill if VFR flight
+- pic_time: fill if flying as PIC
+- dual: fill if flying with instructor
+- night_time: only if actual night flight
+- sep_ifr: null unless rated"""
 
     content_parts.append({"type": "text", "text": f"""These are pages from a pilot logbook. Extract all flight entries carefully.
 
@@ -3803,14 +3835,16 @@ IMPORTANT:
 - Aircraft registrations: OY-XXX (Denmark), LN-XXX (Norway), N12345 (USA). 
 - Danish registrations are always OY- followed by 3 letters. Read each letter carefully.
 - Times are H:MM format. A space between digits means colon e.g. "1 55" = 1:55.
+- Block time MAX 5 hours — if over 5 hours set off_block, on_block and total_time to null.
 - Only extract rows with actual flight data — skip empty rows.
 - CRITICAL: Preserve the EXACT order of rows as they appear on the page. Do NOT sort or reorder entries.
 - Read rows strictly from top to bottom. Row 1 in the logbook must be row 1 in your output.
-- Each row belongs to a specific line — do not mix data between rows.
+- landings_day: READ CAREFULLY from right page — this is important for training currency.
 - At the bottom of the page there are totals: "Total This Page", "Total Previous Pages", "Total".
 - Read these totals and include them in a "page_totals" field in your response.
 - Calculate your own total of all flight times and compare with "Total This Page".
-- If they differ, add a "validation_warning" field explaining the discrepancy.{context_hint}
+- If they differ, add a "validation_warning" field explaining the discrepancy.
+{license_rules}{context_hint}
 
 Respond ONLY with a JSON object:
 {{

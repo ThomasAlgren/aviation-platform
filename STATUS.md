@@ -160,3 +160,13 @@ Aviation platform for piloter og flyejere. Tre dele:
 - Holland (PH-): tilføj til månedlig opdatering
 - Stripe betalingssystem
 - Community funktion (når 20-30 brugere)
+
+## Udført 28. marts 2026 (aften)
+- Logbog: ny rækkefølge — Flight History op, Scan ned
+- Logbog: kun 5 entries på hovedsiden + "View all" link
+- Logbog: /my-logbook/all side med alle kolonner
+- Logbog: tabel scrollbar på desktop
+- Logbog: reduceret til 11 kolonner på hovedsiden
+- Forside: placeholder ændret til "Find your aircraft"
+- Forside: tre kort — Sell, Cockpit, Registry
+- Forside: "The aviation platform for pilots and owners"

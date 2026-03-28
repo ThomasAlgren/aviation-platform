@@ -4132,7 +4132,16 @@ def logbook_review():
             
             if prev_entries:
                 last = prev_entries[0]
-                context += f"\nLast approved entry: {last.flight_date}, {last.registration}, {last.total_time}"
+                context += f"\nLast database entry: {last.flight_date}, {last.registration}, {last.total_time}"
+
+            # Tilføj godkendte linjer fra denne session som kontekst
+            approved = session.get('review_approved', [])
+            if approved:
+                context += f"\nAlready approved in this session ({len(approved)} flights):"
+                for a in approved[-3:]:  # Kun de 3 seneste
+                    context += f"\n  - {a.get('flight_date','?')} {a.get('registration','?')} {a.get('dep_place','?')}->{a.get('arr_place','?')} total={a.get('total_time','?')}"
+                last_approved = approved[-1]
+                context += f"\nNext date must be >= {last_approved.get('flight_date','?')}. Registration is likely {last_approved.get('registration','?')} unless changed."
 
             client = ac.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
             response = client.messages.create(
@@ -4184,7 +4193,14 @@ Respond ONLY with JSON array:
             session['review_index'] = 0
             session['review_approved'] = []
             
-            return json.dumps({'ok': True, 'total': len(flights), 'first': flights[0] if flights else None})
+            # Find sidst godkendte dato til kronologi-tjek i frontend
+            last_date = None
+            if approved:
+                last_date = approved[-1].get('flight_date')
+            elif prev_entries:
+                last_date = prev_entries[0].flight_date
+
+            return json.dumps({'ok': True, 'total': len(flights), 'first': flights[0] if flights else None, 'last_approved_date': last_date})
         
         elif data.get('action') == 'approve':
             # Godkend nuværende linje (med eventuelle rettelser)
@@ -4222,7 +4238,7 @@ Respond ONLY with JSON array:
             session['review_approved'] = approved
             
             if index < len(flights):
-                return json.dumps({'ok': True, 'done': False, 'next': flights[index], 'index': index, 'total': len(flights)})
+                return json.dumps({'ok': True, 'done': False, 'next': flights[index], 'index': index, 'total': len(flights), 'last_approved_date': flight_data.get('flight_date')})
             else:
                 session.pop('review_flights', None)
                 session.pop('review_index', None)
@@ -4349,6 +4365,7 @@ LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
         var currentFlight = null;
         var currentIndex = 0;
         var totalFlights = 0;
+        var lastApprovedDate = null;  // Til dato-kronologi tjek
 
         function loadPage(input) {
             var file = input.files[0];
@@ -4394,6 +4411,7 @@ LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
                 if (result.ok) {
                     totalFlights = result.total;
                     currentIndex = 0;
+                    if (result.last_approved_date) lastApprovedDate = result.last_approved_date;
                     showFlight(result.first, 0, totalFlights);
                 }
             });
@@ -4433,8 +4451,15 @@ LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
             var off = document.getElementById("f-off").value;
             var on = document.getElementById("f-on").value;
             var total = document.getElementById("f-total").value;
-            
-            if (off && on && total) {
+            var warnings = [];
+
+            if (off && on) {
+                // Normaliser HHMM -> HH:MM
+                if (off.length == 4 && !off.includes(":")) off = off.slice(0,2) + ":" + off.slice(2);
+                if (on.length == 4 && !on.includes(":")) on = on.slice(0,2) + ":" + on.slice(2);
+                document.getElementById("f-off").value = off;
+                document.getElementById("f-on").value = on;
+
                 var offParts = off.split(":");
                 var onParts = on.split(":");
                 if (offParts.length == 2 && onParts.length == 2) {
@@ -4445,11 +4470,36 @@ LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
                     var calcH = Math.floor(diffMin / 60);
                     var calcM = diffMin % 60;
                     var calcStr = calcH + ":" + (calcM < 10 ? "0" : "") + calcM;
-                    
                     document.getElementById("f-total").value = calcStr;
-                    document.getElementById("time-warning").style.display = 
-                        (calcStr !== total) ? "block" : "none";
+
+                    // Max 5 timer
+                    if (diffMin > 300) {
+                        warnings.push("⚠ Block time er " + calcStr + " — over 5 timer. Er det korrekt?");
+                    }
                 }
+            }
+
+            // Dato-kronologi tjek
+            var dateVal = document.getElementById("f-date").value;
+            if (dateVal && lastApprovedDate) {
+                var parseDMY = function(s) {
+                    var p = s.split("/");
+                    if (p.length == 3) return new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
+                    return null;
+                };
+                var d1 = parseDMY(lastApprovedDate);
+                var d2 = parseDMY(dateVal);
+                if (d1 && d2 && d2 < d1) {
+                    warnings.push("⚠ Dato " + dateVal + " er før forrige godkendte dato " + lastApprovedDate);
+                }
+            }
+
+            var warnEl = document.getElementById("time-warning");
+            if (warnings.length > 0) {
+                warnEl.innerHTML = warnings.join("<br>");
+                warnEl.style.display = "block";
+            } else {
+                warnEl.style.display = "none";
             }
         }
 
@@ -4486,6 +4536,7 @@ LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
                     document.getElementById("done-text").textContent = 
                         result.saved + " flights saved to your logbook!";
                 } else {
+                    if (result.last_approved_date) lastApprovedDate = result.last_approved_date;
                     showFlight(result.next, result.index, result.total);
                 }
             });

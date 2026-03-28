@@ -164,11 +164,11 @@ AIRCRAFT_COCKPIT_HTML = """<!DOCTYPE html>
                 <!-- Edit form -->
                 <div id="dates-form" class="hidden" style="margin-top:16px">
                     <form method="POST" action="/my-aircraft/{{ aircraft.tail }}/update">
-                        <input type="text" name="arc_valid_until" placeholder="ARC valid until (e.g. 2026-12-01)" value="{{ claimed.arc_valid_until or '' }}">
-                        <input type="text" name="coa_valid_until" placeholder="CoA valid until" value="{{ claimed.coa_valid_until or '' }}">
-                        <input type="text" name="insurance_valid_until" placeholder="Insurance valid until" value="{{ claimed.insurance_valid_until or '' }}">
-                        <input type="text" name="last_service_date" placeholder="Last service date" value="{{ claimed.last_service_date or '' }}">
-                        <input type="text" name="next_service_date" placeholder="Next service date" value="{{ claimed.next_service_date or '' }}">
+                        <input type="text" name="arc_valid_until" type="date" value="{{ claimed.arc_valid_until or '' }}">
+                        <input type="text" name="coa_valid_until" type="date" value="{{ claimed.coa_valid_until or '' }}">
+                        <input type="text" name="insurance_valid_until" type="date" value="{{ claimed.insurance_valid_until or '' }}">
+                        <input type="text" name="last_service_date" type="date" value="{{ claimed.last_service_date or '' }}">
+                        <input type="text" name="next_service_date" type="date" value="{{ claimed.next_service_date or '' }}">
                         <button type="submit" class="save-btn">Save dates</button>
                     </form>
                 </div>
@@ -3145,7 +3145,7 @@ MY_PROFILE_HTML = """<!DOCTYPE html>
                     <label>License number</label>
                     <input type="text" name="license_number" placeholder="e.g. DK.FCL.2026.PPL.12345" value="{{ current_user.license_number or '' }}">
                     <label>License valid until</label>
-                    <input type="text" name="license_valid_until" placeholder="YYYY-MM-DD" value="{{ current_user.license_valid_until or '' }}">
+                    <input type="text" name="license_valid_until" type="date" value="{{ current_user.license_valid_until or '' }}">
                     <label>Medical class</label>
                     <select name="medical_class">
                         <option value="">Select...</option>
@@ -3154,7 +3154,7 @@ MY_PROFILE_HTML = """<!DOCTYPE html>
                         <option value="LAPL" {% if current_user.medical_class == 'LAPL' %}selected{% endif %}>LAPL Medical</option>
                     </select>
                     <label>Medical valid until</label>
-                    <input type="text" name="medical_valid_until" placeholder="YYYY-MM-DD" value="{{ current_user.medical_valid_until or '' }}">
+                    <input type="text" name="medical_valid_until" type="date" value="{{ current_user.medical_valid_until or '' }}">
                     <label>Ratings (e.g. IR, Night, MEP, SEP)</label>
                     <input type="text" name="ratings" placeholder="e.g. SEP, Night" value="{{ current_user.ratings or '' }}">
                     <button type="submit" class="save-btn">Save profile</button>

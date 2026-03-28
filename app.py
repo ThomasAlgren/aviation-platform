@@ -4092,27 +4092,6 @@ LOGBOOK_HTML = """<!DOCTYPE html>
         <!-- Træningsbarometer -->
 
 
-        <!-- Scan side -->
-        <div class="card">
-            <h3>Scan logbook pages with AI</h3>
-            <p style="color:#666;font-size:14px;margin-bottom:16px">Upload photos of left and right page — AI reads all flights automatically</p>
-            <div class="upload-row">
-                <div class="upload-box" onclick="document.getElementById('left-page').click()">
-                    <img id="left-preview">
-                    <span id="left-label">📷 Left page</span>
-                    <input type="file" id="left-page" accept="image/*" onchange="loadPage(this,'left')">
-                </div>
-                <div class="upload-box" onclick="document.getElementById('right-page').click()">
-                    <img id="right-preview">
-                    <span id="right-label">📷 Right page</span>
-                    <input type="file" id="right-page" accept="image/*" onchange="loadPage(this,'right')">
-                </div>
-            </div>
-            <button class="scan-btn" id="scan-btn" onclick="scanPages()" disabled>Scan with AI</button>
-            <a href="/logbook-review" style="display:block;text-align:center;margin-top:10px;color:#ff6b35;font-size:14px">Or use step-by-step review →</a>
-            <div class="status" id="status"></div>
-        </div>
-
         <!-- Mine fly -->
         <div class="card">
             <h3>My flight history</h3>
@@ -4140,7 +4119,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
 
         <!-- Logbog entries -->
         <div class="card">
-            <h3>Flight entries ({{ entries|length }} total)</h3>
+            <h3>Recent flights</h3>
             {% if entries %}
             <table>
                 <tr>
@@ -4165,7 +4144,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <th class="desktop-col">Remarks</th>
                     <th></th>
                 </tr>
-                {% for e in entries %}
+                {% for e in entries[:5] %}
                 <tr onclick="editEntry({{ e.id }}, '{{ e.flight_date or '' | replace("'", "") }}', '{{ e.dep_place or '' | replace("'", "") }}', '{{ e.arr_place or '' | replace("'", "") }}', '{{ e.aircraft_type or '' | replace("'", "") }}', '{{ e.registration or '' | replace("'", "") }}', '{{ e.total_time or '' | replace("'", "") }}', '{{ e.dual or '' | replace("'", "") }}', '{{ e.landings_day or 0 }}')">
                     <td>{{ e.flight_date or '—' }}</td>
                     <td>{{ e.dep_place or '—' }}</td>
@@ -4194,6 +4173,11 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                 </tr>
                 {% endfor %}
             </table>
+            {% if entries|length > 5 %}
+            <div style="text-align:center;margin-top:16px">
+                <a href="/my-logbook/all" style="color:#ff6b35;font-size:14px;text-decoration:none;font-weight:600">View all {{ entries|length }} flights →</a>
+            </div>
+            {% endif %}
             {% else %}
             <p style="color:#444;font-size:14px;padding:16px 0">No flights yet — scan your logbook pages above!</p>
             {% endif %}
@@ -4201,6 +4185,27 @@ LOGBOOK_HTML = """<!DOCTYPE html>
     </div>
 
     <!-- Edit modal -->
+        <!-- Scan side -->
+        <div class="card">
+            <h3>Scan logbook pages with AI</h3>
+            <p style="color:#666;font-size:14px;margin-bottom:16px">Upload photos of left and right page — AI reads all flights automatically</p>
+            <div class="upload-row">
+                <div class="upload-box" onclick="document.getElementById('left-page').click()">
+                    <img id="left-preview">
+                    <span id="left-label">📷 Left page</span>
+                    <input type="file" id="left-page" accept="image/*" onchange="loadPage(this,'left')">
+                </div>
+                <div class="upload-box" onclick="document.getElementById('right-page').click()">
+                    <img id="right-preview">
+                    <span id="right-label">📷 Right page</span>
+                    <input type="file" id="right-page" accept="image/*" onchange="loadPage(this,'right')">
+                </div>
+            </div>
+            <button class="scan-btn" id="scan-btn" onclick="scanPages()" disabled>Scan with AI</button>
+            <a href="/logbook-review" style="display:block;text-align:center;margin-top:10px;color:#ff6b35;font-size:14px">Or use step-by-step review →</a>
+            <div class="status" id="status"></div>
+        </div>
+
     <div id="edit-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;overflow-y:auto">
         <div style="max-width:500px;margin:40px auto;background:#1a1a2e;border-radius:12px;padding:28px;position:relative">
             <button onclick="document.getElementById('edit-modal').style.display='none'" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#aaa;font-size:20px;cursor:pointer">✕</button>
@@ -5113,7 +5118,7 @@ MAINTENANCE_HTML = """<!DOCTYPE html>
             </div>
 
             {% if entries %}
-                {% for e in entries %}
+                {% for e in entries[:5] %}
                 <div class="entry">
                     <div style="flex:1">
                         <span class="entry-type type-{{ e.entry_type }}">{{ e.entry_type }}</span>

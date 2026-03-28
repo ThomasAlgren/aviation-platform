@@ -3708,7 +3708,47 @@ def my_logbook():
         current_user.preferred_aircraft = _json.dumps(preferred)
         db.session.commit()
 
-    return render_template_string(LOGBOOK_HTML, entries=entries, current_user=current_user, total_time=total_str, total_flights=len(entries), aircraft_stats=dict(aircraft_stats), preferred=preferred)
+    # Træningsbarometer — seneste 6 måneder
+    from datetime import datetime, timedelta
+    import re as _re
+    six_months_ago = datetime.now() - timedelta(days=182)
+    recent_minutes = 0
+    recent_landings = 0
+    for e in entries:
+        if e.flight_date:
+            try:
+                # Parse DD/MM/YYYY
+                parts = e.flight_date.split('/')
+                if len(parts) == 3:
+                    edate = datetime(int(parts[2]), int(parts[1]), int(parts[0]))
+                    if edate >= six_months_ago:
+                        if e.total_time and e.total_time not in ['—', '-', '']:
+                            tp = e.total_time.replace(':', ' ').split()
+                            if len(tp) == 2:
+                                recent_minutes += int(tp[0]) * 60 + int(tp[1])
+                        if e.landings_day:
+                            recent_landings += int(e.landings_day)
+            except:
+                pass
+    recent_hours = recent_minutes / 60
+
+    # Grøn/gul/rød baseret på timer OG landinger
+    if recent_hours >= 6 and recent_landings >= 12:
+        baro_status = 'green'
+        baro_text = 'You are in good flying practice'
+        baro_emoji = '🟢'
+    elif recent_hours >= 3 and recent_landings >= 6:
+        baro_status = 'yellow'
+        baro_text = 'Your training is not optimal — be extra careful'
+        baro_emoji = '🟡'
+    else:
+        baro_status = 'red'
+        baro_text = 'You are rusty — contact an instructor before flying'
+        baro_emoji = '🔴'
+
+    recent_hours_str = f"{int(recent_hours)}:{int(recent_minutes % 60):02d}"
+
+    return render_template_string(LOGBOOK_HTML, entries=entries, current_user=current_user, total_time=total_str, total_flights=len(entries), aircraft_stats=dict(aircraft_stats), preferred=preferred, baro_status=baro_status, baro_text=baro_text, baro_emoji=baro_emoji, recent_hours_str=recent_hours_str, recent_landings=recent_landings)
 
 @app.route('/logbook/add-aircraft', methods=['POST'])
 @login_required
@@ -3922,6 +3962,54 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                 <div style="font-size:36px;font-weight:700;color:#ff6b35;font-family:monospace">{{ total_time }}</div>
                 <div style="font-size:12px;color:#666">Total flight hours</div>
                 <div style="font-size:12px;color:#444">{{ total_flights }} flights</div>
+            </div>
+        </div>
+
+        <!-- Træningsbarometer -->
+        <div class="card" style="border-left: 4px solid {% if baro_status == 'green' %}#4caf50{% elif baro_status == 'yellow' %}#ffc107{% else %}#f44336{% endif %}">
+            <h3>Training status — last 6 months</h3>
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+                <div style="font-size:48px">{{ baro_emoji }}</div>
+                <div>
+                    <div style="font-size:20px;font-weight:700;color:{% if baro_status == 'green' %}#4caf50{% elif baro_status == 'yellow' %}#ffc107{% else %}#f44336{% endif %}">
+                        {% if baro_status == 'green' %}GREEN{% elif baro_status == 'yellow' %}YELLOW{% else %}RED{% endif %}
+                    </div>
+                    <div style="font-size:14px;color:#aaa;margin-top:4px">{{ baro_text }}</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:24px">
+                <div style="background:#0d0d1a;border-radius:8px;padding:12px 20px;text-align:center">
+                    <div style="font-size:24px;font-weight:700;font-family:monospace;color:#ff6b35">{{ recent_hours_str }}</div>
+                    <div style="font-size:11px;color:#666;margin-top:2px">Hours (need {% if recent_hours_str < '3:00' %}3:00 for yellow, {% endif %}6:00 for green)</div>
+                </div>
+                <div style="background:#0d0d1a;border-radius:8px;padding:12px 20px;text-align:center">
+                    <div style="font-size:24px;font-weight:700;font-family:monospace;color:#ff6b35">{{ recent_landings }}</div>
+                    <div style="font-size:11px;color:#666;margin-top:2px">Landings (need 6 for yellow, 12 for green)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Træningsbarometer -->
+        <div class="card" style="border-left: 4px solid {% if baro_status == 'green' %}#4caf50{% elif baro_status == 'yellow' %}#ffc107{% else %}#f44336{% endif %}">
+            <h3>Training status — last 6 months</h3>
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+                <div style="font-size:48px">{{ baro_emoji }}</div>
+                <div>
+                    <div style="font-size:20px;font-weight:700;color:{% if baro_status == 'green' %}#4caf50{% elif baro_status == 'yellow' %}#ffc107{% else %}#f44336{% endif %}">
+                        {% if baro_status == 'green' %}GREEN{% elif baro_status == 'yellow' %}YELLOW{% else %}RED{% endif %}
+                    </div>
+                    <div style="font-size:14px;color:#aaa;margin-top:4px">{{ baro_text }}</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:24px">
+                <div style="background:#0d0d1a;border-radius:8px;padding:12px 20px;text-align:center">
+                    <div style="font-size:24px;font-weight:700;font-family:monospace;color:#ff6b35">{{ recent_hours_str }}</div>
+                    <div style="font-size:11px;color:#666;margin-top:2px">Hours (need {% if recent_hours_str < '3:00' %}3:00 for yellow, {% endif %}6:00 for green)</div>
+                </div>
+                <div style="background:#0d0d1a;border-radius:8px;padding:12px 20px;text-align:center">
+                    <div style="font-size:24px;font-weight:700;font-family:monospace;color:#ff6b35">{{ recent_landings }}</div>
+                    <div style="font-size:11px;color:#666;margin-top:2px">Landings (need 6 for yellow, 12 for green)</div>
+                </div>
             </div>
         </div>
 

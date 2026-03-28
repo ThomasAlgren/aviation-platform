@@ -4787,3 +4787,51 @@ MAINTENANCE_HTML = """<!DOCTYPE html>
     </script>
 </body>
 </html>"""
+
+def run_monthly_updates():
+    """Kører den 1. hver måned og opdaterer flyregistre"""
+    try:
+        import requests
+        import psycopg2
+        import psycopg2.extras
+        import pandas as pd
+        from io import StringIO
+        
+        print("Starter månedlig opdatering...")
+        
+        # Sverige — hent fra GitHub
+        r = requests.get('https://raw.githubusercontent.com/civictechsweden/oppna-luftfartygsregistret/master/register.csv', timeout=30)
+        if r.status_code == 200:
+            df = pd.read_csv(StringIO(r.text), dtype=str)
+            active = df[df['Avregistrerad'].isna()].copy()
+            
+            data = []
+            for _, row in active.iterrows():
+                data.append((
+                    str(row.get('code', '') or '')[:20],
+                    '',
+                    str(row.get('Luftfartygstyp', '') or '')[:200],
+                    str(row.get('Tillverkningsår', '') or '')[:10],
+                    str(row.get('Tillverkningsnummer', '') or '')[:100],
+                    'SE',
+                    'Transportstyrelsen',
+                    str(row.get('owner.name', '') or '')[:200],
+                    '',
+                    'Sweden'
+                ))
+            
+            conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+            cur = conn.cursor()
+            cur.execute("DELETE FROM aircraft WHERE country = 'SE'")
+            psycopg2.extras.execute_batch(cur, '''
+                INSERT INTO aircraft (registration, manufacturer, model, year, serial, country, source, owner, city, state)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', data)
+            conn.commit()
+            conn.close()
+            print(f"Sverige opdateret: {len(data)} fly")
+        
+        print("Månedlig opdatering færdig!")
+    
+    except Exception as e:
+        print(f"Månedlig opdatering fejl: {e}")

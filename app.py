@@ -323,6 +323,36 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
 db = SQLAlchemy(app)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+def normalize_date(value):
+    """Konverter alle datoformater til YYYY-MM-DD"""
+    if not value:
+        return None
+    value = str(value).strip()
+    from datetime import datetime
+    for fmt in ['%Y-%m-%d', '%Y%m%d', '%d/%m/%Y', '%d/%m/%y', '%m/%d/%Y']:
+        try:
+            d = datetime.strptime(value, fmt)
+            return d.strftime('%Y-%m-%d')
+        except:
+            pass
+    return value
+
+@app.template_filter('format_date')
+def format_date(value):
+    if not value:
+        return 'Not registered'
+    try:
+        from datetime import datetime
+        for fmt in ['%Y-%m-%d', '%Y%m%d', '%d/%m/%Y']:
+            try:
+                d = datetime.strptime(str(value), fmt)
+                return d.strftime('%d %b %Y')
+            except:
+                pass
+    except:
+        pass
+    return value
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message = ''
@@ -2943,12 +2973,16 @@ def my_profile():
     from datetime import datetime, date
     
     if request.method == 'POST':
-        fields = ['license_number', 'license_type', 'license_valid_until',
-                  'medical_class', 'medical_valid_until', 'total_flight_hours', 'ratings']
-        for field in fields:
+        date_fields = ['license_valid_until', 'medical_valid_until']
+        other_fields = ['license_number', 'license_type', 'medical_class', 'total_flight_hours', 'ratings']
+        for field in other_fields:
             val = request.form.get(field)
             if val is not None:
                 setattr(current_user, field, val)
+        for field in date_fields:
+            val = request.form.get(field)
+            if val is not None:
+                setattr(current_user, field, normalize_date(val))
         db.session.commit()
         return redirect('/my-profile')
     

@@ -3674,8 +3674,61 @@ def my_logbook():
     total_hours = total_minutes // 60
     total_mins = total_minutes % 60
     total_str = f"{total_hours}:{total_mins:02d}" if total_minutes > 0 else "0:00"
+
+    # Mine fly — unikke tail# med antal flyvninger og seneste dato
+    import json as _json
+    from sqlalchemy import func
+    from collections import defaultdict
+    aircraft_stats = defaultdict(lambda: {'flights': 0, 'last_date': None, 'type': None})
+    for e in entries:
+        if e.registration:
+            reg = e.registration.strip()
+            aircraft_stats[reg]['flights'] += 1
+            if e.flight_date:
+                if not aircraft_stats[reg]['last_date'] or e.flight_date > aircraft_stats[reg]['last_date']:
+                    aircraft_stats[reg]['last_date'] = e.flight_date
+            if e.aircraft_type and not aircraft_stats[reg]['type']:
+                aircraft_stats[reg]['type'] = e.aircraft_type
+
+    # Preferred aircraft fra user
+    preferred = []
+    if current_user.preferred_aircraft:
+        try:
+            preferred = _json.loads(current_user.preferred_aircraft)
+        except:
+            preferred = []
+
+    # Tilføj fly fra logbog til preferred hvis ikke allerede der
+    for reg in aircraft_stats:
+        if reg not in preferred:
+            preferred.append(reg)
     
-    return render_template_string(LOGBOOK_HTML, entries=entries, current_user=current_user, total_time=total_str, total_flights=len(entries))
+    # Gem opdateret preferred_aircraft
+    if preferred:
+        current_user.preferred_aircraft = _json.dumps(preferred)
+        db.session.commit()
+
+    return render_template_string(LOGBOOK_HTML, entries=entries, current_user=current_user, total_time=total_str, total_flights=len(entries), aircraft_stats=dict(aircraft_stats), preferred=preferred)
+
+@app.route('/logbook/add-aircraft', methods=['POST'])
+@login_required
+def logbook_add_aircraft():
+    import json as _json
+    data = request.get_json()
+    reg = data.get('registration', '').strip().upper()
+    if not reg:
+        return _json.dumps({'ok': False})
+    preferred = []
+    if current_user.preferred_aircraft:
+        try:
+            preferred = _json.loads(current_user.preferred_aircraft)
+        except:
+            preferred = []
+    if reg not in preferred:
+        preferred.append(reg)
+        current_user.preferred_aircraft = _json.dumps(preferred)
+        db.session.commit()
+    return _json.dumps({'ok': True})
 
 @app.route('/logbook-scan', methods=['POST'])
 @login_required
@@ -3893,6 +3946,54 @@ LOGBOOK_HTML = """<!DOCTYPE html>
             <div class="status" id="status"></div>
         </div>
 
+        <!-- Mine fly -->
+        <div class="card">
+            <h3>My aircraft</h3>
+            {% if aircraft_stats %}
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+                {% for reg, stats in aircraft_stats.items() %}
+                <div style="background:#0d0d1a;border:1px solid #2a2a3e;border-radius:8px;padding:12px 16px;min-width:140px">
+                    <div style="font-size:18px;font-weight:700;font-family:monospace;color:#ff6b35">{{ reg }}</div>
+                    <div style="font-size:12px;color:#666;margin-top:4px">{{ stats.flights }} flight{{ 's' if stats.flights != 1 else '' }}</div>
+                    {% if stats.last_date %}<div style="font-size:11px;color:#444">Last: {{ stats.last_date }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div style="display:flex;gap:10px;align-items:center">
+                <input type="text" id="new-reg-input" placeholder="Add aircraft (e.g. OY-BLZ)" 
+                    style="background:#0d0d1a;border:1px solid #333;border-radius:8px;padding:10px 12px;color:white;font-size:14px;width:200px">
+                <button onclick="addAircraft()" 
+                    style="background:#ff6b35;color:white;border:none;padding:10px 16px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600">
+                    + Add
+                </button>
+            </div>
+        </div>
+
+        <!-- Mine fly -->
+        <div class="card">
+            <h3>My aircraft</h3>
+            {% if aircraft_stats %}
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+                {% for reg, stats in aircraft_stats.items() %}
+                <div style="background:#0d0d1a;border:1px solid #2a2a3e;border-radius:8px;padding:12px 16px;min-width:140px">
+                    <div style="font-size:18px;font-weight:700;font-family:monospace;color:#ff6b35">{{ reg }}</div>
+                    <div style="font-size:12px;color:#666;margin-top:4px">{{ stats.flights }} flight{{ 's' if stats.flights != 1 else '' }}</div>
+                    {% if stats.last_date %}<div style="font-size:11px;color:#444">Last: {{ stats.last_date }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div style="display:flex;gap:10px;align-items:center">
+                <input type="text" id="new-reg-input" placeholder="Add aircraft (e.g. OY-BLZ)" 
+                    style="background:#0d0d1a;border:1px solid #333;border-radius:8px;padding:10px 12px;color:white;font-size:14px;width:200px">
+                <button onclick="addAircraft()" 
+                    style="background:#ff6b35;color:white;border:none;padding:10px 16px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600">
+                    + Add
+                </button>
+            </div>
+        </div>
+
         <!-- Logbog entries -->
         <div class="card">
             <h3>Flight entries ({{ entries|length }} total)</h3>
@@ -4004,6 +4105,28 @@ LOGBOOK_HTML = """<!DOCTYPE html>
 
     <script>
         var pages = {left: null, right: null};
+
+        function addAircraft() {
+            var reg = document.getElementById("new-reg-input").value.trim().toUpperCase();
+            if (!reg) return;
+            fetch("/logbook/add-aircraft", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({registration: reg})
+            })
+            .then(r => r.json())
+            .then(result => {
+                if (result.ok) { location.reload(); }
+                else { alert("Could not add aircraft"); }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            var inp = document.getElementById("new-reg-input");
+            if (inp) inp.addEventListener("keypress", function(e) {
+                if (e.key === "Enter") addAircraft();
+            });
+        });
 
         function loadPage(input, side) {
             var file = input.files[0];

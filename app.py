@@ -2786,6 +2786,13 @@ import boto3
 import gzip
 import psycopg2 as pg
 
+def run_daily_notifications():
+    try:
+        from notifications import check_and_notify
+        check_and_notify(app, db, User, ClaimedAircraft, PilotCertificate)
+    except Exception as e:
+        print(f"Notification fejl: {e}")
+
 def run_daily_backup():
     try:
         database_url = os.environ.get('DATABASE_URL')
@@ -2824,6 +2831,7 @@ def run_daily_backup():
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(run_daily_backup, 'cron', hour=2, minute=0)
+scheduler.add_job(run_daily_notifications, 'cron', hour=2, minute=30)
 scheduler.start()
 
 @app.route('/my-aircraft/<tail>')

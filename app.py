@@ -1,6 +1,14 @@
 AIRCRAFT_COCKPIT_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>{{ aircraft.tail }} Cockpit - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -570,6 +578,14 @@ LISTING_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>List Your Part - PanPanParts</title>
     <meta charset="utf-8">
     <style>
@@ -626,6 +642,14 @@ PARTS_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>Parts for Sale - PanPanParts</title>
     <meta charset="utf-8">
     <style>
@@ -684,6 +708,14 @@ SEARCH_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>PanPanParts — Aviation Parts & Aircraft Registry</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -845,6 +877,14 @@ OY_DETAIL_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>{{ aircraft.tail }} - PanPanParts</title>
     <meta charset="utf-8">
     <style>
@@ -1014,6 +1054,14 @@ DETAIL_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>N{{ aircraft.tail }} - PanPanParts</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1142,7 +1190,15 @@ def aircraft_detail(tail):
         r = get_aircraft(tail.upper())
     if not r:
         return render_template_string("""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>
+<html><head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script><meta charset="utf-8"><style>
 body{font-family:-apple-system,sans-serif;background:#0d0d1a;color:white;text-align:center;padding:80px 20px}
 p{color:#666;margin:16px 0 32px}
 a{background:#ff6b35;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;margin:8px}
@@ -1329,7 +1385,15 @@ def oy_detail(reg):
     r = get_aircraft(registration)
     if not r:
         return render_template_string("""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>
+<html><head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script><meta charset="utf-8"><style>
 body{font-family:-apple-system,sans-serif;background:#0d0d1a;color:white;text-align:center;padding:80px 20px}
 h1{font-size:48px;color:#ff6b35;font-family:monospace}
 p{color:#666;margin:16px 0 32px}
@@ -1383,7 +1447,15 @@ def ln_detail(reg):
     r = get_aircraft(registration)
     if not r:
         return render_template_string("""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>
+<html><head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script><meta charset="utf-8"><style>
 body{font-family:-apple-system,sans-serif;background:#0d0d1a;color:white;text-align:center;padding:80px 20px}
 h1{font-size:48px;color:#ff6b35;font-family:monospace}
 p{color:#666;margin:16px 0 32px}
@@ -1421,7 +1493,15 @@ def hb_detail(reg):
     r = get_aircraft(registration)
     if not r:
         return render_template_string("""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>
+<html><head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script><meta charset="utf-8"><style>
 body{font-family:-apple-system,sans-serif;background:#0d0d1a;color:white;text-align:center;padding:80px 20px}
 h1{font-size:48px;color:#ff6b35;font-family:monospace}
 p{color:#666;margin:16px 0 32px}
@@ -1464,6 +1544,14 @@ ABOUT_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>About - PanPanParts</title>
     <meta charset="utf-8">
     <style>
@@ -1521,6 +1609,14 @@ ABOUT_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>About - PanPanParts</title>
     <meta charset="utf-8">
     <style>
@@ -1568,6 +1664,14 @@ ABOUT_HTML = """
 LOGIN_HTML = '''<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>Login - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1616,6 +1720,14 @@ LOGIN_HTML = '''<!DOCTYPE html>
 REGISTER_HTML = '''<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>Sign Up - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1783,6 +1895,14 @@ def my_aircraft():
 MY_AIRCRAFT_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>My Aircraft - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1863,6 +1983,14 @@ def my_listings():
 MY_LISTINGS_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>My Listings - PanPanParts</title>
     <meta charset="utf-8">
     <style>
@@ -1941,6 +2069,14 @@ def part_detail(part_id):
 PART_DETAIL_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>{{ part.part_number or 'Part' }} - PanPanParts</title>
     <meta charset="utf-8">
     <style>
@@ -2058,6 +2194,8 @@ Aircraft registration: {tail}
 Description:
 {description}
 
+Clean the description first — remove any photo captions, image references, navigation elements, or metadata (like "Exterior (6)", "Posted: X ago", "Views: XXXX", "Make", "Model" labels etc). Keep only the actual descriptive text about the aircraft.
+
 Return ONLY a JSON object with these fields:
 {{
   "manufacturer": "e.g. Cessna",
@@ -2152,6 +2290,14 @@ def sell_aircraft(tail):
 SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>List {{ aircraft.tail }} for Sale - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -2458,6 +2604,14 @@ Be smart about interpreting criteria:
 AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>Aircraft for Sale — PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -2723,6 +2877,14 @@ def aircraft_type(query):
 TYPE_PAGE_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>{{ search }} - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -2854,6 +3016,14 @@ def register_aircraft():
 REGISTER_AIRCRAFT_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>Register Aircraft - PanPanParts</title>
     <meta charset="utf-8">
     <style>
@@ -2993,6 +3163,14 @@ Respond ONLY with JSON:
 UPLOAD_ARC_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>Upload ARC - {{ tail }} - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -3165,6 +3343,14 @@ def aircraft_listing_detail_OLD(listing_id):
 AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>{{ listing.tail }} — {{ listing.manufacturer }} {{ listing.model }} for Sale</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -3662,6 +3848,14 @@ def my_profile():
 MY_PROFILE_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>My Profile - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -4586,6 +4780,14 @@ def delete_logbook_entry(entry_id):
 LOGBOOK_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>My Logbook - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -5168,6 +5370,14 @@ Respond ONLY with JSON array:
 LOGBOOK_ALL_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>All Flights - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -5261,6 +5471,14 @@ LOGBOOK_ALL_HTML = """<!DOCTYPE html>
 LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>Logbook Review - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -5704,6 +5922,14 @@ def delete_maintenance_entry(tail, entry_id):
 MAINTENANCE_HTML = """<!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-K3PJMNF1JE');
+    </script>
     <title>{{ aircraft.tail }} Maintenance - PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

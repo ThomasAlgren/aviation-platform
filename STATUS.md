@@ -222,3 +222,15 @@ Aviation platform for piloter og flyejere. Tre dele:
 2. Fly scraper fra Winglist/Controller
 3. Kontakt EAS om listings
 4. Logbog scanning forbedringer
+
+## Problem: Billede upload til listings (uløst 28. marts)
+- Base64 upload: "Request Entity Too Large" ved 3 billeder
+- S3 upload forsøgt: S3 bucket er nu public-read, men upload hænger
+- Reverted til base64, men handlePhotos trigger ikke
+- NÆSTE SESSION: Fix billede upload til fly listings
+
+## Næste session starter her:
+1. Fix billede upload til fly listings (VIGTIGST)
+2. Parts marketplace med Stripe Escrow
+3. Fly scraper fra Winglist/Controller
+4. My Listings skal vise både fly og dele

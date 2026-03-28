@@ -2488,22 +2488,9 @@ SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
                         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                         var compressed = canvas.toDataURL('image/jpeg', 0.75);
                         
-                        // Upload til S3
-                        fetch('/upload-image', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({image: compressed})
-                        })
-                        .then(r => r.json())
-                        .then(result => {
-                            if (result.ok) {
-                                uploadedImages.push(result.url);
-                                document.getElementById('images_data').value = uploadedImages.join('|||');
-                                renderThumbs();
-                            } else {
-                                console.error('Upload fejl:', result.error);
-                            }
-                        });
+                        uploadedImages.push(compressed);
+                        document.getElementById('images_data').value = uploadedImages.join('|||');
+                        renderThumbs();
                     };
                     img.src = e.target.result;
                 };

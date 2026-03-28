@@ -719,6 +719,18 @@ SEARCH_HTML = """
         .feature-icon { font-size: 28px; margin-bottom: 12px; }
         .feature h3 { font-size: 15px; margin-bottom: 8px; }
         .feature p { font-size: 13px; color: #666; line-height: 1.6; }
+        .cta-row { display: flex; gap: 16px; justify-content: center; margin: 24px 0; flex-wrap: wrap; }
+        .cta-primary { background: #ff6b35; color: white; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 16px; }
+        .cta-primary:hover { background: #e55a25; }
+        .cta-secondary { background: transparent; color: #ff6b35; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; border: 2px solid #ff6b35; }
+        .cta-secondary:hover { background: rgba(255,107,53,0.1); }
+        .three-cards { display: flex; gap: 20px; margin-top: 32px; flex-wrap: wrap; }
+        .tcard { flex: 1; min-width: 220px; background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 12px; padding: 24px; }
+        .tcard-icon { font-size: 32px; margin-bottom: 12px; }
+        .tcard h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .tcard p { color: #666; font-size: 14px; line-height: 1.5; margin-bottom: 16px; }
+        .tcard-link { color: #ff6b35; text-decoration: none; font-size: 14px; font-weight: 600; }
+        .tcard-link:hover { text-decoration: underline; }
         .results { max-width: 800px; margin: 0 auto 40px; padding: 0 20px; }
         .result-count { color: #666; font-size: 14px; margin-bottom: 16px; }
         .aircraft-card { background: #1a1a2e; border-radius: 12px; padding: 20px 24px; margin-bottom: 10px; border: 1px solid #2a2a3e; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; transition: border-color 0.15s; }
@@ -753,24 +765,49 @@ SEARCH_HTML = """
     {% endif %}
     {% if not results %}
     <div class="hero">
-        <h1>Earn on <span>your parts</span><br>list in 2 minutes</h1>
-        <p>The verified marketplace for aircraft parts — with AI-powered documentation checking</p>
-        <form method="GET">
-            <div class="search-box">
-                <input name="tail" placeholder="Search by tail number, e.g. OY-RYY or N12345..." value="{{ tail }}">
-                <button type="submit">Search</button>
-            </div>
-        </form>
+        <h1>The aviation platform<br>for <span>pilots and owners</span></h1>
+        <p>Sell parts, manage your aircraft, track your logbook — all in one place</p>
+
+        <div class="cta-row">
+            <a href="/upload" class="cta-primary">+ List a part — free</a>
+            <a href="/register" class="cta-secondary">Create pilot account</a>
+        </div>
+
         <div class="stats">
             <div class="stat"><div class="stat-value">{{ "{:,.0f}".format(registry_count) }}</div><div class="stat-label">Aircraft registered</div></div>
             {% if part_count > 0 %}<div class="stat"><div class="stat-value">{{ part_count }}</div><div class="stat-label">Parts for sale</div></div>{% endif %}
             {% if aircraft_count > 0 %}<div class="stat"><div class="stat-value">{{ aircraft_count }}</div><div class="stat-label">Aircraft for sale</div></div>{% endif %}
-            <div class="stat"><div class="stat-value">AI</div><div class="stat-label">Verified parts</div></div>
+            <div class="stat"><div class="stat-value">AI</div><div class="stat-label">Verified</div></div>
         </div>
-        <div class="features">
-            <div class="feature"><div class="feature-icon">💰</div><h3>Earn on your parts</h3><p>Got spare parts collecting dust? List them in 2 minutes — AI handles description and documentation check automatically.</p></div>
-            <div class="feature"><div class="feature-icon">📷</div><h3>Photo to listing in 2 minutes</h3><p>Take photos, AI extracts all data automatically. Just add a price.</p></div>
-            <div class="feature"><div class="feature-icon">✓</div><h3>AI verified documentation</h3><p>Every part checked for valid airworthiness documentation — buyers trust verified listings.</p></div>
+
+        <div class="three-cards">
+            <div class="tcard">
+                <div class="tcard-icon">💰</div>
+                <h3>Sell your parts</h3>
+                <p>Got spare parts collecting dust? List in 2 minutes — AI writes the description and checks documentation automatically.</p>
+                <a href="/upload" class="tcard-link">List a part →</a>
+            </div>
+            <div class="tcard">
+                <div class="tcard-icon">✈️</div>
+                <h3>Pilot cockpit</h3>
+                <p>Digital logbook, flight currency, certificates, medical — everything a pilot needs in one place.</p>
+                <a href="/register" class="tcard-link">Get started →</a>
+            </div>
+            <div class="tcard">
+                <div class="tcard-icon">🔍</div>
+                <h3>Aircraft registry</h3>
+                <p>Search {{ "{:,.0f}".format(registry_count) }} registered aircraft from USA, EU, UK, Australia, Canada and Switzerland.</p>
+                <a href="#search" class="tcard-link">Search registry →</a>
+            </div>
+        </div>
+
+        <div id="search" style="margin-top:32px">
+            <form method="GET">
+                <div class="search-box">
+                    <input name="tail" placeholder="Search by tail number, e.g. OY-RYY or N12345..." value="{{ tail }}">
+                    <button type="submit">Search</button>
+                </div>
+            </form>
         </div>
     </div>
     {% endif %}

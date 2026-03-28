@@ -804,7 +804,7 @@ SEARCH_HTML = """
         <div id="search" style="margin-top:32px">
             <form method="GET">
                 <div class="search-box">
-                    <input name="tail" placeholder="Search by tail number, e.g. OY-RYY or N12345..." value="{{ tail }}">
+                    <input name="tail" placeholder="Find your aircraft — e.g. OY-RYY or N12345..." value="{{ tail }}">
                     <button type="submit">Search</button>
                 </div>
             </form>
@@ -4124,44 +4124,30 @@ LOGBOOK_HTML = """<!DOCTYPE html>
             <table>
                 <tr>
                     <th>Date</th>
-                    <th>From</th>
-                    <th>To</th>
+                    <th class="desktop-col">From</th>
+                    <th class="desktop-col">To</th>
                     <th class="desktop-col">Off</th>
                     <th class="desktop-col">On</th>
                     <th class="desktop-col">Type</th>
                     <th>Reg</th>
                     <th>Total</th>
-                    <th class="desktop-col">Night</th>
                     <th class="desktop-col">SEP VFR</th>
-                    <th class="desktop-col">SEP IFR</th>
-                    <th class="desktop-col">MEP VFR</th>
-                    <th class="desktop-col">MEP IFR</th>
-                    <th class="desktop-col">PIC</th>
-                    <th class="desktop-col">Dual</th>
-                    <th class="desktop-col">FI</th>
-                    <th>Ldg D</th>
-                    <th class="desktop-col">Ldg N</th>
-                    <th class="desktop-col">Remarks</th>
+                    <th>Dual</th>
+                    <th>Ldg</th>
                     <th></th>
                 </tr>
                 {% for e in entries[:5] %}
                 <tr onclick="editEntry({{ e.id }}, '{{ e.flight_date or '' | replace("'", "") }}', '{{ e.dep_place or '' | replace("'", "") }}', '{{ e.arr_place or '' | replace("'", "") }}', '{{ e.aircraft_type or '' | replace("'", "") }}', '{{ e.registration or '' | replace("'", "") }}', '{{ e.total_time or '' | replace("'", "") }}', '{{ e.dual or '' | replace("'", "") }}', '{{ e.landings_day or 0 }}')">
                     <td>{{ e.flight_date or '—' }}</td>
-                    <td>{{ e.dep_place or '—' }}</td>
-                    <td>{{ e.arr_place or '—' }}</td>
+                    <td class="desktop-col">{{ e.dep_place or '—' }}</td>
+                    <td class="desktop-col">{{ e.arr_place or '—' }}</td>
                     <td class="desktop-col">{{ e.off_block or '—' }}</td>
                     <td class="desktop-col">{{ e.on_block or '—' }}</td>
                     <td class="desktop-col">{{ e.aircraft_type or '—' }}</td>
                     <td style="color:#ff6b35">{{ e.registration or '—' }}</td>
                     <td>{{ e.total_time or '—' }}</td>
-                    <td class="desktop-col">{{ e.night_time or '—' }}</td>
                     <td class="desktop-col">{{ e.sep_vfr or '—' }}</td>
-                    <td class="desktop-col">{{ e.sep_ifr or '—' }}</td>
-                    <td class="desktop-col">{{ e.mep_vfr or '—' }}</td>
-                    <td class="desktop-col">{{ e.mep_ifr or '—' }}</td>
-                    <td class="desktop-col">{{ e.pic_time or '—' }}</td>
-                    <td class="desktop-col">{{ e.dual or '—' }}</td>
-                    <td class="desktop-col">{{ e.instructor_time or '—' }}</td>
+                    <td>{{ e.dual or '—' }}</td>
                     <td onclick="event.stopPropagation()" style="white-space:nowrap">
                         <button onclick="event.stopPropagation();adjustLandings({{ e.id }}, -1)" style="background:#1a1a2e;border:1px solid #333;color:#aaa;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1">-</button>
                         <span id="ldg-{{ e.id }}" style="margin:0 6px;font-family:monospace">{{ e.landings_day or 0 }}</span>

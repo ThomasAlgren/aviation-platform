@@ -84,9 +84,41 @@ Aviation platform for piloter og flyejere. Tre dele:
 - US flyregister: Kører lokalt mod Railway timeout efter ~100K fly. Skal køres direkte på Railway-serveren via run_monthly_updates i app.py
 - AU flyregister: CASA server timeout — prøv igen næste måned
 - DK flyregister: danishaircraft.dk er historisk register, kun 2 aktive fly fundet. Find bedre kilde til aktive OY-fly
-- Logbog foto-upload: venstre/højre fotos vises ikke efter de er taget
-- Logbog review flow: AI lærer ikke af tidligere godkendte linjer
-- Logbog dato-kronologi: datoer rettes ikke baseret på tidligere linjer
-- Logbog blocktime: indtast 1440, vis 14:40
+- Logbog foto-upload: venstre/højre fotos vises ikke efter de er taget — skal fixes
+- Logbog: Manuel entry — ny flyvning direkte uden scanning
+- Logbog: Flere logbøger (Logbog 1, 2, 3) — historisk scanning
+- Logbog: Preferred aircraft register per pilot
 - Forside: skift til sælger-fokus — "Earn on your parts", skjul 0-tællere
 - Holland (PH-): tilføj til månedlig opdatering
+- Stripe betalingssystem
+- Community funktion (når 20-30 brugere)
+
+## Udført 28. marts 2026
+- Månedlig opdatering script (update_registries.py) bygget og testet
+- SE, NO, CA, CH, AT opdateres automatisk den 1. hver måned
+- Logbog review: godkendte linjer sendes som kontekst til AI
+- Logbog review: block time max 5 timer advarsel
+- Logbog review: dato-kronologi advarsel
+- Logbog review: HHMM → HH:MM auto-formatering
+
+## Udført 28. marts 2026 (fortsat)
+- Logbog review: tomme linjer filtreres fra
+- Logbog review: licens-baserede AI regler (SPL = kun SEP VFR + Dual)
+- Logbog review: max 5 timer block time — ryder felter automatisk
+- Logbog review: dato-kronologi — ryder dato og blokerer Approve
+- User model: preferred_aircraft kolonne tilføjet
+- License type opdateret til SPL for Thomas
+
+## To Do (opdateret)
+- Preferred aircraft: UI til at vælge/tilføje fly + brug i AI-prompt
+- Preferred aircraft: vis fly-historik (unikke tail#, antal flyvninger, seneste dato)
+- Logbog foto-upload: venstre/højre fotos vises ikke — skal fixes
+- Logbog: Manuel entry — ny flyvning direkte uden scanning
+- Logbog: Flere logbøger (Logbog 1, 2, 3) — historisk scanning
+- Forside: skift til sælger-fokus — "Earn on your parts", skjul 0-tællere
+- US flyregister: køres på Railway-serveren direkte
+- AU flyregister: CASA server timeout — prøv igen næste måned
+- DK flyregister: find bedre kilde til aktive OY-fly
+- Holland (PH-): tilføj til månedlig opdatering
+- Stripe betalingssystem
+- Community funktion (når 20-30 brugere)

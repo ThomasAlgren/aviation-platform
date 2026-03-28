@@ -72,3 +72,10 @@ Aviation platform for piloter og flyejere. Tre dele:
 - DATABASE_URL, SECRET_KEY, ANTHROPIC_API_KEY
 - RESEND_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 - AWS_S3_BUCKET=panpanparts-backup, AWS_REGION=eu-north-1
+
+## Database status 28. marts 2026
+- US: 100.000/310.985 — mangler resten pga Railway timeout
+- DK: kun 2 fly fra danishaircraft.dk — historisk register, ikke aktivt
+- Sweden/OpenSky duplikat — 63 ekstra SE-fly fra OpenSky skal renses
+- AU: 16.590 fly fra gammel CASA fil — timeout ved download i dag
+- Total ca. 380.000 fly i databasen lige nu

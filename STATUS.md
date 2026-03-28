@@ -79,3 +79,14 @@ Aviation platform for piloter og flyejere. Tre dele:
 - Sweden/OpenSky duplikat — 63 ekstra SE-fly fra OpenSky skal renses
 - AU: 16.590 fly fra gammel CASA fil — timeout ved download i dag
 - Total ca. 380.000 fly i databasen lige nu
+
+## To Do
+- US flyregister: Kører lokalt mod Railway timeout efter ~100K fly. Skal køres direkte på Railway-serveren via run_monthly_updates i app.py
+- AU flyregister: CASA server timeout — prøv igen næste måned
+- DK flyregister: danishaircraft.dk er historisk register, kun 2 aktive fly fundet. Find bedre kilde til aktive OY-fly
+- Logbog foto-upload: venstre/højre fotos vises ikke efter de er taget
+- Logbog review flow: AI lærer ikke af tidligere godkendte linjer
+- Logbog dato-kronologi: datoer rettes ikke baseret på tidligere linjer
+- Logbog blocktime: indtast 1440, vis 14:40
+- Forside: skift til sælger-fokus — "Earn on your parts", skjul 0-tællere
+- Holland (PH-): tilføj til månedlig opdatering

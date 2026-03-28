@@ -26,3 +26,11 @@ VINTED for aviation parts med AI verifikation og Digital Hangar for ejere.
 ## Lokalt
 cd aviation-platform && source venv/bin/activate
 python3 -m flask --app app run --host=0.0.0.0 --port=8888
+
+## Datakilder
+- USA: registry.faa.gov (faa_small.csv + faa_ref_small.csv)
+- Danmark: oy-reg.dk + danishaircraft.dk (denmark.csv)
+- Norge: data.caa.no/nlr/norgesluftfartoyregister.json (ln_register.csv)
+- Schweiz: BAZL CSV download (hb_register.csv)
+- Australien: CASA acrftreg.csv (vh_register.csv)
+

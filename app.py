@@ -2736,7 +2736,7 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
                 <div class="empty-icon">✈️</div>
                 <h3>No aircraft listed yet</h3>
                 <p>Be the first to list your aircraft on PanPanParts</p>
-                <a href="/sell-aircraft" class="btn-list">+ List your aircraft — free</a>
+                <a href="/" class="btn-list">+ List your aircraft — free</a>
             </div>
             {% endif %}
         </div>

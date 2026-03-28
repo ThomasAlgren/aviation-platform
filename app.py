@@ -4516,7 +4516,11 @@ def aircraft_maintenance(tail):
     def s(val):
         v = str(val).strip() if val else ""
         return "" if v in ["nan", "None"] else v
-    aircraft = {"tail": tail, "model": s(r["model"]) if r else "", "manufacturer": s(r["manufacturer"]) if r else ""}
+    manufacturer = s(r["manufacturer"]) if r else ""
+    model = s(r["model"]) if r else ""
+    if model.lower().startswith(manufacturer.lower()):
+        model = model[len(manufacturer):].strip()
+    aircraft = {"tail": tail, "model": model, "manufacturer": manufacturer}
     return render_template_string(MAINTENANCE_HTML, entries=entries, aircraft=aircraft, current_user=current_user)
 
 @app.route('/my-aircraft/<tail>/maintenance/add', methods=['POST'])

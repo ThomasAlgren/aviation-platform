@@ -4347,7 +4347,7 @@ LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
             <div><label>Remarks</label><input type="text" id="f-remarks"></div>
 
             <div class="btn-row">
-                <button class="approve-btn" onclick="approveFlight()">✓ Approve & next</button>
+                <button class="approve-btn" id="approve-btn" onclick="approveFlight()">✓ Approve & next</button>
                 <button class="skip-btn" onclick="skipFlight()">Skip</button>
             </div>
         </div>
@@ -4450,7 +4450,6 @@ LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
         function validateTime() {
             var off = document.getElementById("f-off").value;
             var on = document.getElementById("f-on").value;
-            var total = document.getElementById("f-total").value;
             var warnings = [];
 
             if (off && on) {
@@ -4470,17 +4469,22 @@ LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
                     var calcH = Math.floor(diffMin / 60);
                     var calcM = diffMin % 60;
                     var calcStr = calcH + ":" + (calcM < 10 ? "0" : "") + calcM;
-                    document.getElementById("f-total").value = calcStr;
 
-                    // Max 5 timer
                     if (diffMin > 300) {
-                        warnings.push("⚠ Block time er " + calcStr + " — over 5 timer. Er det korrekt?");
+                        // Over 5 timer — ryd alle tidsfelter, piloten skal indtaste selv
+                        document.getElementById("f-off").value = "";
+                        document.getElementById("f-on").value = "";
+                        document.getElementById("f-total").value = "";
+                        warnings.push("Tider kunne ikke læses — indtast Off Block, On Block manuelt");
+                    } else {
+                        document.getElementById("f-total").value = calcStr;
                     }
                 }
             }
 
-            // Dato-kronologi tjek
+            // Dato-kronologi — kan ikke godkendes hvis dato er før forrige
             var dateVal = document.getElementById("f-date").value;
+            var dateBlocked = false;
             if (dateVal && lastApprovedDate) {
                 var parseDMY = function(s) {
                     var p = s.split("/");
@@ -4490,9 +4494,18 @@ LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
                 var d1 = parseDMY(lastApprovedDate);
                 var d2 = parseDMY(dateVal);
                 if (d1 && d2 && d2 < d1) {
-                    warnings.push("⚠ Dato " + dateVal + " er før forrige godkendte dato " + lastApprovedDate);
+                    document.getElementById("f-date").value = "";
+                    document.getElementById("f-date").placeholder = "Indtast dato (efter " + lastApprovedDate + ")";
+                    document.getElementById("f-date").style.borderColor = "#ff4444";
+                    dateBlocked = true;
+                    warnings.push("Dato er ryddet — skal være efter " + lastApprovedDate);
+                } else {
+                    document.getElementById("f-date").style.borderColor = "";
                 }
             }
+
+            // Bloker Approve-knappen hvis dato mangler
+            document.getElementById("approve-btn").disabled = dateBlocked || !document.getElementById("f-date").value;
 
             var warnEl = document.getElementById("time-warning");
             if (warnings.length > 0) {

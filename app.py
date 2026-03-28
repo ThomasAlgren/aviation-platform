@@ -2443,7 +2443,7 @@ SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
                     var img = new Image();
                     img.onload = function() {
                         var canvas = document.createElement('canvas');
-                        var maxSize = 1600;
+                        var maxSize = 1200;
                         var w = img.width, h = img.height;
                         if (w > maxSize || h > maxSize) {
                             if (w > h) { h = h * maxSize / w; w = maxSize; }
@@ -2451,7 +2451,7 @@ SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
                         }
                         canvas.width = w; canvas.height = h;
                         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        var compressed = canvas.toDataURL('image/jpeg', 0.82);
+                        var compressed = canvas.toDataURL('image/jpeg', 0.75);
                         uploadedImages.push(compressed);
                         document.getElementById('images_data').value = uploadedImages.join('|||');
                         renderThumbs();

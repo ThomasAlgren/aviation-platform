@@ -4114,7 +4114,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <th></th>
                 </tr>
                 {% for e in entries %}
-                <tr onclick="editEntry({{ e.id }}, '{{ e.flight_date or '' }}', '{{ e.dep_place or '' }}', '{{ e.arr_place or '' }}', '{{ e.aircraft_type or '' }}', '{{ e.registration or '' }}', '{{ e.total_time or '' }}', '{{ e.dual or '' }}', '{{ e.landings_day or '' }}')">
+                <tr onclick="editEntry({{ e.id }}, '{{ e.flight_date or '' | replace("'", "") }}', '{{ e.dep_place or '' | replace("'", "") }}', '{{ e.arr_place or '' | replace("'", "") }}', '{{ e.aircraft_type or '' | replace("'", "") }}', '{{ e.registration or '' | replace("'", "") }}', '{{ e.total_time or '' | replace("'", "") }}', '{{ e.dual or '' | replace("'", "") }}', '{{ e.landings_day or 0 }}')">
                     <td>{{ e.flight_date or '—' }}</td>
                     <td>{{ e.dep_place or '—' }}</td>
                     <td>{{ e.arr_place or '—' }}</td>

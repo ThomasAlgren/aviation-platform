@@ -4132,9 +4132,9 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <td class="desktop-col">{{ e.dual or '—' }}</td>
                     <td class="desktop-col">{{ e.instructor_time or '—' }}</td>
                     <td onclick="event.stopPropagation()" style="white-space:nowrap">
-                        <button onclick="adjustLandings({{ e.id }}, -1)" style="background:#1a1a2e;border:1px solid #333;color:#aaa;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1">-</button>
+                        <button onclick="event.stopPropagation();adjustLandings({{ e.id }}, -1)" style="background:#1a1a2e;border:1px solid #333;color:#aaa;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1">-</button>
                         <span id="ldg-{{ e.id }}" style="margin:0 6px;font-family:monospace">{{ e.landings_day or 0 }}</span>
-                        <button onclick="adjustLandings({{ e.id }}, 1)" style="background:#1a1a2e;border:1px solid #333;color:#aaa;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1">+</button>
+                        <button onclick="event.stopPropagation();adjustLandings({{ e.id }}, 1)" style="background:#1a1a2e;border:1px solid #333;color:#aaa;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1">+</button>
                     </td>
                     <td class="desktop-col">{{ e.landings_night or '—' }}</td>
                     <td class="desktop-col" style="color:#666;font-size:12px">{{ e.remarks or '' }}</td>

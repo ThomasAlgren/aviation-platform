@@ -378,6 +378,7 @@ class User(UserMixin, db.Model):
     verification_token = db.Column(db.String(100))
     reset_token = db.Column(db.String(100))
     reset_token_expires = db.Column(db.DateTime)
+    preferred_aircraft = db.Column(db.Text)  # JSON liste af foretrukne tail#
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method="pbkdf2:sha256")

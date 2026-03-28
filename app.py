@@ -4143,6 +4143,31 @@ def logbook_review():
                 last_approved = approved[-1]
                 context += f"\nNext date must be >= {last_approved.get('flight_date','?')}. Registration is likely {last_approved.get('registration','?')} unless changed."
 
+            # Licens-baserede regler for AI
+            license_rules = ""
+            lt = current_user.license_type or 'PPL'
+            if lt == 'SPL':
+                license_rules = """
+PILOT LICENSE: Student Pilot (SPL)
+- sep_vfr: ALWAYS fill with total_time (student flies VFR only)
+- dual: ALWAYS fill with total_time (student always flies with instructor)
+- pic_time: ALWAYS null (student cannot log PIC)
+- night_time: ALWAYS null (student cannot fly night)
+- sep_ifr: ALWAYS null (student cannot fly IFR)
+- landings_night: ALWAYS null"""
+            elif lt == 'PPL':
+                license_rules = """
+PILOT LICENSE: PPL (Private Pilot)
+- sep_vfr: fill if VFR flight
+- pic_time: fill if flying as PIC
+- dual: fill if flying with instructor
+- night_time: only if actual night flight
+- sep_ifr: ALWAYS null unless specifically rated"""
+            elif lt in ('CPL', 'ATPL'):
+                license_rules = """
+PILOT LICENSE: CPL/ATPL
+- Fill all relevant columns based on actual flight conditions"""
+
             client = ac.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
             response = client.messages.create(
                 model="claude-sonnet-4-20250514",
@@ -4156,10 +4181,11 @@ def logbook_review():
 RULES:
 - Dates are DD/MM/YY (European). 25=2025, 26=2026. NEVER MM/DD.
 - Off Block and On Block are UTC times HH:MM. Total = On Block - Off Block.
-- Calculate total_time yourself from off_block and on_block as validation.
+- Calculate total_time yourself from off_block and on_block as validation. MAX 5 hours — if calculated time exceeds 5 hours, set off_block, on_block and total_time to null.
 - Aircraft registrations: OY-XXX (Denmark). Read each letter carefully.
 - Preserve EXACT row order — do NOT sort.
-- Only rows with actual flight data.{context}
+- Only rows with actual flight data.
+{license_rules}{context}
 
 Respond ONLY with JSON array:
 [{{

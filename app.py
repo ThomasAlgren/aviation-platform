@@ -4015,6 +4015,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
         .scan-btn:disabled { background: #444; cursor: not-allowed; }
         .status { background: #0d0d1a; border-radius: 8px; padding: 16px; margin-top: 12px; color: #aaa; font-size: 14px; display: none; border: 1px solid #2a2a3e; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         th { text-align: left; padding: 8px 6px; color: #666; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #2a2a3e; white-space: nowrap; }
         td { padding: 8px 6px; border-bottom: 1px solid #1a1a2e; white-space: nowrap; }
         tr:hover td { background: #1a1a2e; cursor: pointer; }
@@ -4121,6 +4122,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
         <div class="card">
             <h3>Recent flights</h3>
             {% if entries %}
+            <div class="table-scroll">
             <table>
                 <tr>
                     <th>Date</th>
@@ -4159,6 +4161,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                 </tr>
                 {% endfor %}
             </table>
+            </div>
             {% if entries|length > 5 %}
             <div style="text-align:center;margin-top:16px">
                 <a href="/my-logbook/all" style="color:#ff6b35;font-size:14px;text-decoration:none;font-weight:600">View all {{ entries|length }} flights →</a>

@@ -122,3 +122,11 @@ Aviation platform for piloter og flyejere. Tre dele:
 - Holland (PH-): tilføj til månedlig opdatering
 - Stripe betalingssystem
 - Community funktion (når 20-30 brugere)
+
+## Strategi — flyejer administration
+- Kobl pilot-logbog entries til flyets timer automatisk
+- Tacho/Hobbs time felt i logbogen (ejer fakturerer efter dette)
+- Flyets totale timer opdateres når en flyvning logges
+- Næste service beregnes automatisk baseret på timer
+- Ejer ser hvem der har fløjet flyet og hvornår
+- IKKE skole-fakturering (myweblog.se's marked) — fokus på privat flyejer

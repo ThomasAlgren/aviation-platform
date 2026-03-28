@@ -844,6 +844,42 @@ OY_DETAIL_HTML = """
             <div class="field"><span class="field-label">Registered</span><span class="field-value">{{ aircraft.reg_date }}</span></div>
         </div>
 
+        <!-- Live tracking -->
+        <div class="card" id="live-card">
+            <h3>Live status</h3>
+            <div id="live-status" style="color:#666;font-size:14px">Checking live position...</div>
+        </div>
+
+        <script>
+        fetch('/api/live/{{ aircraft.tail }}')
+            .then(r => r.json())
+            .then(data => {
+                var card = document.getElementById('live-card');
+                var status = document.getElementById('live-status');
+                if (data.airborne) {
+                    card.style.borderColor = '#4caf50';
+                    status.innerHTML = 
+                        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
+                        '<span style="width:10px;height:10px;background:#4caf50;border-radius:50%;display:inline-block;animation:pulse 1s infinite"></span>' +
+                        '<span style="color:#4caf50;font-weight:600">AIRBORNE — ' + data.callsign + '</span></div>' +
+                        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">' +
+                        '<div><div style="font-size:24px;font-weight:700;color:#ff6b35">' + data.altitude + 'm</div><div style="font-size:11px;color:#666">ALTITUDE</div></div>' +
+                        '<div><div style="font-size:24px;font-weight:700;color:#ff6b35">' + data.speed + 'km/h</div><div style="font-size:11px;color:#666">SPEED</div></div>' +
+                        '<div><div style="font-size:24px;font-weight:700;color:#ff6b35">' + data.heading + '°</div><div style="font-size:11px;color:#666">HEADING</div></div>' +
+                        '</div>' +
+                        '<a href="https://www.flightradar24.com/' + data.callsign + '" target="_blank" style="display:block;margin-top:12px;color:#4a9eff;font-size:13px">View on FlightRadar24 →</a>';
+                } else {
+                    status.innerHTML = '<span style="color:#444">⬤</span> Currently on ground';
+                }
+            })
+            .catch(() => {
+                document.getElementById('live-status').textContent = 'Live data unavailable';
+            });
+        </script>
+        <style>
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        </style>
+
         {% if aircraft.previous %}
         <div class="card">
             <h3>Life history</h3>
@@ -4418,3 +4454,38 @@ LOGBOOK_REVIEW_HTML = """<!DOCTYPE html>
     </script>
 </body>
 </html>"""
+
+@app.route('/api/live/<tail>')
+def live_tracking(tail):
+    import requests
+    import json
+    
+    try:
+        # Søg i hele verden
+        r = requests.get('https://opensky-network.org/api/states/all', timeout=5)
+        data = r.json()
+        
+        if not data.get('states'):
+            return json.dumps({'airborne': False, 'reason': 'No data'})
+        
+        # Søg efter tail# som callsign
+        search = tail.upper().replace('-', '')
+        
+        for s in data['states']:
+            callsign = (s[1] or '').strip().upper().replace('-', '')
+            if callsign == search or callsign == tail.upper().replace('-', ''):
+                return json.dumps({
+                    'airborne': s[7] is not None and s[7] > 0,
+                    'altitude': round(s[7]) if s[7] else 0,
+                    'speed': round(s[9] * 3.6) if s[9] else 0,
+                    'latitude': s[6],
+                    'longitude': s[5],
+                    'heading': round(s[10]) if s[10] else 0,
+                    'callsign': s[1].strip() if s[1] else tail,
+                    'icao24': s[0]
+                })
+        
+        return json.dumps({'airborne': False, 'reason': 'Not found in airspace'})
+    
+    except Exception as e:
+        return json.dumps({'airborne': False, 'reason': str(e)})

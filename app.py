@@ -753,7 +753,7 @@ SEARCH_HTML = """
     {% endif %}
     {% if not results %}
     <div class="hero">
-        <h1>Find <span>any aviation part</span><br>anywhere in the world</h1>
+        <h1>Earn on <span>your parts</span><br>list in 2 minutes</h1>
         <p>The verified marketplace for aircraft parts — with AI-powered documentation checking</p>
         <form method="GET">
             <div class="search-box">
@@ -763,14 +763,14 @@ SEARCH_HTML = """
         </form>
         <div class="stats">
             <div class="stat"><div class="stat-value">{{ "{:,.0f}".format(registry_count) }}</div><div class="stat-label">Aircraft registered</div></div>
-            <div class="stat"><div class="stat-value">{{ part_count }}</div><div class="stat-label">Parts for sale</div></div>
-            <div class="stat"><div class="stat-value">{{ aircraft_count }}</div><div class="stat-label">Aircraft for sale</div></div>
+            {% if part_count > 0 %}<div class="stat"><div class="stat-value">{{ part_count }}</div><div class="stat-label">Parts for sale</div></div>{% endif %}
+            {% if aircraft_count > 0 %}<div class="stat"><div class="stat-value">{{ aircraft_count }}</div><div class="stat-label">Aircraft for sale</div></div>{% endif %}
             <div class="stat"><div class="stat-value">AI</div><div class="stat-label">Verified parts</div></div>
         </div>
         <div class="features">
+            <div class="feature"><div class="feature-icon">💰</div><h3>Earn on your parts</h3><p>Got spare parts collecting dust? List them in 2 minutes — AI handles description and documentation check automatically.</p></div>
             <div class="feature"><div class="feature-icon">📷</div><h3>Photo to listing in 2 minutes</h3><p>Take photos, AI extracts all data automatically. Just add a price.</p></div>
-            <div class="feature"><div class="feature-icon">✓</div><h3>AI verified documentation</h3><p>Every part checked for valid airworthiness documentation.</p></div>
-            <div class="feature"><div class="feature-icon">🚚</div><h3>Worldwide shipping</h3><p>Search across USA, Denmark, Norway, Switzerland, Australia and more — with new registries added continuously.</p></div>
+            <div class="feature"><div class="feature-icon">✓</div><h3>AI verified documentation</h3><p>Every part checked for valid airworthiness documentation — buyers trust verified listings.</p></div>
         </div>
     </div>
     {% endif %}

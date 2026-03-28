@@ -3948,7 +3948,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
 
         <!-- Mine fly -->
         <div class="card">
-            <h3>My aircraft</h3>
+            <h3>My flight history</h3>
             {% if aircraft_stats %}
             <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
                 {% for reg, stats in aircraft_stats.items() %}
@@ -3972,7 +3972,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
 
         <!-- Mine fly -->
         <div class="card">
-            <h3>My aircraft</h3>
+            <h3>My flight history</h3>
             {% if aircraft_stats %}
             <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
                 {% for reg, stats in aircraft_stats.items() %}

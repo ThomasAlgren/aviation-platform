@@ -54,23 +54,39 @@ HEADERS = {
 }
 
 def upsert_aircraft(conn, data, country_code, batch_size=10000):
-    """Slet alle fly for landet og indsæt nye i batches"""
+    """Indsæt nye fly i temp-tabel, slet gamle KUN hvis alt lykkedes"""
     cur = conn.cursor()
-    cur.execute("DELETE FROM aircraft WHERE country = %s", (country_code,))
+    
+    # Opret temp tabel
+    cur.execute(f"CREATE TEMP TABLE aircraft_temp AS SELECT * FROM aircraft WHERE false")
     conn.commit()
-    total = 0
-    for i in range(0, len(data), batch_size):
-        batch = data[i:i+batch_size]
-        psycopg2.extras.execute_batch(cur, '''
-            INSERT INTO aircraft (registration, manufacturer, model, year, serial, country, source, owner, city, state)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        ''', batch)
+    
+    try:
+        total = 0
+        for i in range(0, len(data), batch_size):
+            batch = data[i:i+batch_size]
+            psycopg2.extras.execute_batch(cur, '''
+                INSERT INTO aircraft_temp (registration, manufacturer, model, year, serial, country, source, owner, city, state)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', batch)
+            conn.commit()
+            total += len(batch)
+            if len(data) > 50000:
+                print(f"  {country_code}: {total}/{len(data)} indsat...")
+        
+        # Alt lykkedes — slet gamle og indsæt nye
+        cur.execute("DELETE FROM aircraft WHERE country = %s", (country_code,))
+        cur.execute("INSERT INTO aircraft SELECT * FROM aircraft_temp")
         conn.commit()
-        total += len(batch)
-        if country_code == 'US':
-            print(f"  US: {total}/{len(data)} indsat...")
-    cur.close()
-    print(f"  {country_code}: {len(data)} fly opdateret")
+        print(f"  {country_code}: {len(data)} fly opdateret")
+    except Exception as e:
+        conn.rollback()
+        print(f"  {country_code}: FEJL — gamle data bevaret! {e}")
+        raise
+    finally:
+        cur.execute("DROP TABLE IF EXISTS aircraft_temp")
+        conn.commit()
+        cur.close()
 
 # ─────────────────────────────────────────────
 # AUTO: Sverige
@@ -287,9 +303,36 @@ def fetch_usa():
     return data
 
 # ─────────────────────────────────────────────
-# AUTO: Danmark (scrape danishaircraft.dk)
+# MANUEL: Danmark (fil-drop fra GitHub eller lokal)
+# Kilde: denmark.csv genereret fra oy-reg.dk + danishaircraft.dk
+# Opdater ved at køre scrape-scriptet manuelt og committe ny denmark.csv
 # ─────────────────────────────────────────────
 def fetch_denmark():
+    print("Danmark (DK) — henter fra lokal denmark.csv...")
+    filepath = os.path.join(SCRIPT_DIR, 'denmark.csv')
+    if not os.path.exists(filepath):
+        print("  SPRING OVER: denmark.csv ikke fundet")
+        return None
+    
+    import pandas as pd
+    df = pd.read_csv(filepath, dtype=str).fillna("")
+    data = []
+    for _, row in df.iterrows():
+        reg = str(row.get("registration", "")).strip()
+        if not reg:
+            continue
+        data.append((
+            reg,
+            str(row.get("manufacturer", "")).strip()[:200],
+            str(row.get("type", "")).strip()[:200],
+            str(row.get("year_built", "")).strip()[:10],
+            str(row.get("serial", "")).strip()[:100],
+            "DK", "DCAA", "", "", "Denmark"
+        ))
+    return data
+
+def fetch_denmark_SCRAPE():
+    """Gammel scraper — brug kun hvis denmark.csv skal genbygges"""
     print("Danmark (DK) — scraper danishaircraft.dk...")
     import re
     base_url = 'https://www.danishaircraft.dk/list'

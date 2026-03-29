@@ -3629,54 +3629,6 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
                 <div class="ai-desc">{{ listing.ai_description }}</div>
                 {% endif %}
 
-                <!-- GAUGE PANEL -->
-                {% set has_gauges = listing.hours_engine or listing.hours_total or listing.hours_prop or listing.has_autopilot or listing.has_adsb or listing.is_hangared %}
-                {% if has_gauges %}
-                <div class="health-panel">
-
-                    <!-- YES/NO badges -->
-                    <div class="health-badges">
-                        {% if listing.has_autopilot %}<span class="hbadge yes">▲ AUTOPILOT</span>{% endif %}
-                        {% if listing.has_adsb %}<span class="hbadge yes">▲ ADS-B OUT</span>{% endif %}
-                        {% if listing.arc_verified %}<span class="hbadge yes">▲ ARC VERIFIED</span>{% endif %}
-                        {% if listing.is_hangared %}<span class="hbadge yes">▲ HANGARED</span>{% else %}<span class="hbadge no">▼ NOT HANGARED</span>{% endif %}
-                    </div>
-
-                    <!-- GAUGES — nåle beregnes med JS -->
-                    <div class="health-gauges" id="gauge-container">
-                        {% if listing.hours_engine and listing.hours_engine_tbo %}
-                        <div class="gauge-card">
-                            <div class="gauge-lbl">ENG · SMOH/TBO</div>
-                            <canvas class="gauge-canvas" width="130" height="82"
-                                data-pct="{{ (listing.hours_engine / listing.hours_engine_tbo * 100)|int }}"></canvas>
-                            <div class="gauge-val">{{ listing.hours_engine|int }}h SMOH</div>
-                            <div class="gauge-sub">TBO {{ listing.hours_engine_tbo|int }}h · {{ (listing.hours_engine_tbo - listing.hours_engine)|int }}h LEFT</div>
-                        </div>
-                        {% endif %}
-                        {% if listing.hours_total %}
-                        {% set af_pct = [listing.hours_total / 10000 * 100, 100]|min|int %}
-                        <div class="gauge-card">
-                            <div class="gauge-lbl">AIRFRAME · TT</div>
-                            <canvas class="gauge-canvas" width="130" height="82"
-                                data-pct="{{ af_pct }}" data-label="{{ listing.hours_total|int }}h"></canvas>
-                            <div class="gauge-val">{{ listing.hours_total|int }}h TT</div>
-                            <div class="gauge-sub">MFR {{ listing.year }} · {% if listing.engine_overhauls %}{{ listing.engine_overhauls }}x OH{% else %}NO OVERHAUL{% endif %}</div>
-                        </div>
-                        {% endif %}
-                        {% if listing.hours_prop and listing.hours_prop_tbo %}
-                        {% set prop_pct = (listing.hours_prop / listing.hours_prop_tbo * 100)|int %}
-                        <div class="gauge-card">
-                            <div class="gauge-lbl">PROP · OH INTERVAL</div>
-                            <canvas class="gauge-canvas" width="130" height="82"
-                                data-pct="{{ prop_pct }}"></canvas>
-                            <div class="gauge-val">{{ listing.hours_prop|int }}h</div>
-                            <div class="gauge-sub">OH INTERVAL {{ listing.hours_prop_tbo|int }}h · {{ (listing.hours_prop_tbo - listing.hours_prop)|int }}h LEFT</div>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
-                <!-- END GAUGE PANEL -->
 
                 {% if highlights %}
                 <div class="highlights">

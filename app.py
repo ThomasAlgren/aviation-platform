@@ -2339,7 +2339,6 @@ def sell_aircraft(tail):
             ai_highlights=ai_highlights,
             ai_specs=ai_specs,
             ai_description=request.form.get('ai_description', ''),
-            ai_description=ai_description,
         )
         db.session.add(listing)
         db.session.commit()

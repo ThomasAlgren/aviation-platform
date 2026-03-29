@@ -506,6 +506,7 @@ class AircraftListing(db.Model):
     ai_highlights = db.Column(db.Text)
     ai_specs = db.Column(db.Text)
     ai_description = db.Column(db.Text)
+    ai_description = db.Column(db.Text)
     views = db.Column(db.Integer, default=0)
     hours_engine_tbo = db.Column(db.Float)
     hours_prop = db.Column(db.Float)
@@ -550,6 +551,7 @@ with app.app_context():
             conn.execute(db.text("ALTER TABLE aircraft_listing ADD COLUMN arc_valid_until TEXT"))
             conn.execute(db.text("ALTER TABLE aircraft_listing ADD COLUMN arc_verified INTEGER DEFAULT 0"))
             conn.execute(db.text("ALTER TABLE aircraft_listing ADD COLUMN arc_document TEXT"))
+            conn.execute(db.text("ALTER TABLE aircraft_listing ADD COLUMN ai_description TEXT"))
             conn.commit()
     except: pass
 print("Connecting to PostgreSQL...")
@@ -2336,6 +2338,7 @@ def sell_aircraft(tail):
             hero_image=hero,
             ai_highlights=ai_highlights,
             ai_specs=ai_specs,
+            ai_description=request.form.get('ai_description', ''),
             ai_description=ai_description,
         )
         db.session.add(listing)
@@ -2419,6 +2422,7 @@ SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
             <input type="hidden" name="images_data" id="images_data">
             <input type="hidden" name="ai_highlights" id="ai_highlights">
             <input type="hidden" name="ai_specs" id="ai_specs">
+            <input type="hidden" name="ai_description" id="ai_description">
             <input type="hidden" name="ai_description" id="ai_description">
             <input type="hidden" name="manufacturer" id="h_manufacturer" value="{{ aircraft.manufacturer }}">
             <input type="hidden" name="model" id="h_model" value="{{ aircraft.model }}">
@@ -3706,7 +3710,12 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
                 </div>
                 {% endif %}
 
-                {% if listing.description %}
+                {% if listing.ai_description %}
+                <div class="description-card">
+                    <h3>About this aircraft</h3>
+                    <div class="description-text">{{ listing.ai_description }}</div>
+                </div>
+                {% elif listing.description %}
                 <div class="description-card">
                     <h3>Full description</h3>
                     <div class="description-text">{{ listing.description }}</div>

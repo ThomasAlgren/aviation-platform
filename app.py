@@ -3610,6 +3610,10 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
     <button class="hero-nav hero-nav-right" onclick="navHero(1)">&#8594;</button>
     {% endif %}
     </div>
+    <script>
+        var allImages = [{% for img in images %}'{{ img }}'{% if not loop.last %},{% endif %}{% endfor %}];
+        var currentIndex = 0;
+    </script>
 
     <!-- INFO BAR: titel + gauges + pris + thumbnails -->
     <div class="info-bar">

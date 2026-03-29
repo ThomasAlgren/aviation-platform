@@ -4029,6 +4029,95 @@ Be honest, specific and helpful. Use aviation expertise."""
     except Exception as e:
         return _json.dumps({"ok": False, "error": str(e)})
 
+
+@app.route('/admin/scrape-winglist')
+def admin_scrape_winglist():
+    import requests as _req
+    from bs4 import BeautifulSoup as _BS
+    import re as _re
+    import json as _json
+    import time as _time
+
+    BASE = "https://www.winglist.aero"
+    HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+    def get_urls(page_url):
+        resp = _req.get(page_url, headers=HEADERS, timeout=10)
+        soup = _BS(resp.text, "html.parser")
+        urls = []
+        for a in soup.find_all("a", href=True):
+            href = a["href"]
+            if "/listings/" in href:
+                if not href.startswith("http"): href = BASE + href
+                if href not in urls: urls.append(href)
+        return urls
+
+    def ph(t):
+        if not t: return None
+        m = _re.search(r"(\d+)", str(t).replace(" ","").replace(",",""))
+        try: return float(m.group(1)) if m else None
+        except: return None
+
+    def scrape(url):
+        resp = _req.get(url, headers=HEADERS, timeout=10)
+        soup = _BS(resp.text, "html.parser")
+        d = {"source_url": url, "source": "winglist"}
+        h1 = soup.find("h1")
+        if h1: d["title"] = h1.get_text(strip=True)
+        images = [img["src"] for img in soup.find_all("img", src=True) if "stwinglist01" in img["src"] and "/marketing/" not in img["src"]]
+        d["images"] = images[:8]
+        for dt in soup.find_all("dt"):
+            dd = dt.find_next_sibling("dd")
+            if dd: d[dt.get_text(strip=True).lower().strip(":").replace(" ","_")] = dd.get_text(" ", strip=True)
+        pm = _re.search(r"(\d[\d\s]{2,})\s*(EUR|USD|GBP)", soup.get_text())
+        if pm:
+            try: d["price"] = int(pm.group(1).replace(" ","")); d["currency"] = pm.group(2)
+            except: pass
+        sections = []
+        for h2 in soup.find_all(["h2","h3"]):
+            st = h2.get_text(strip=True)
+            if st in ["Highlights","Maintenance","Additional Remarks","Avionics","Engine"]:
+                ul = h2.find_next("ul")
+                if ul: sections.append(st+": "+"; ".join(li.get_text(strip=True) for li in ul.find_all("li")))
+        d["description"] = "\n".join(sections)
+        return d
+
+    all_urls = []
+    for region in ["EU","NA"]:
+        urls = get_urls(BASE+"/?region="+region)
+        all_urls.extend(urls)
+    all_urls = list(set(all_urls))
+
+    conn = get_pg_conn()
+    cur = conn.cursor()
+    imported = skipped = errors = 0
+
+    for url in all_urls[:30]:
+        try:
+            cur.execute("SELECT id FROM aircraft_listing WHERE source_url = %s", (url,))
+            if cur.fetchone():
+                skipped += 1
+                continue
+            d = scrape(url)
+            title = d.get("title","")
+            parts = title.split(" ", 2)
+            year = parts[0] if parts and parts[0].isdigit() else d.get("year","")
+            manufacturer = d.get("make", parts[1] if len(parts) > 1 else "")
+            model = d.get("model", parts[2] if len(parts) > 2 else "")
+            desc = d.get("description","")
+            reg = d.get("registration","") or ("WING-"+str(imported+1))
+            cur.execute("INSERT INTO aircraft_listing (tail,manufacturer,model,year,price,location,condition,seller_type,hours_total,images,description,source_url,source,has_autopilot,has_adsb,contact_name,contact_email,status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (reg, manufacturer, model, year, d.get("price"), d.get("location",""), d.get("condition","Pre-owned"), d.get("seller_type",""), ph(d.get("total_time")), _json.dumps(d.get("images",[])), desc, url, "winglist", 1 if "autopilot" in desc.lower() else 0, 1 if "ads-b" in desc.lower() or "adsb" in desc.lower() else 0, "Winglist Seller", "listings@winglist.aero", "active"))
+            imported += 1
+            _time.sleep(0.3)
+        except Exception as e:
+            errors += 1
+            continue
+
+    conn.commit()
+    conn.close()
+    return f"Done! Importeret: {imported}, Sprunget over: {skipped}, Fejl: {errors}"
+
 @app.route('/sitemap.xml')
 def sitemap():
     return render_template_string("""<?xml version="1.0" encoding="UTF-8"?>

@@ -3511,8 +3511,8 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
         .thumb.active { opacity: 1; outline: 2px solid #ff6b35; }
         
         .container { max-width: 1000px; margin: 0 auto; padding: 32px 20px; }
-        .layout { display: grid; grid-template-columns: 1fr 320px; gap: 32px; }
-        @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } }
+        .layout { display: block; max-width: 900px; }
+
         
         /* Left column */
         .main-col {}
@@ -3708,76 +3708,23 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
                     <div class="description-text">{{ listing.description }}</div>
                 </div>
                 {% endif %}
-            </div>
 
-            <!-- Højre kolonne — sidebar -->
-            <div class="sidebar">
-                <div class="price-card">
-                    {% if listing.location %}
-                    <div class="location-row">📍 <span>{{ listing.location }}</span></div>
-                    {% endif %}
-
-                    <!-- BADGES -->
-                    {% if listing.has_autopilot or listing.has_adsb or listing.is_hangared or listing.arc_verified %}
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid #2a2a3e;">
-                        {% if listing.has_autopilot %}<span class="hbadge yes">▲ AUTOPILOT</span>{% endif %}
-                        {% if listing.has_adsb %}<span class="hbadge yes">▲ ADS-B</span>{% endif %}
-                        {% if listing.arc_verified %}<span class="hbadge yes">▲ ARC</span>{% endif %}
-                        {% if listing.is_hangared %}<span class="hbadge yes">▲ HANGAR</span>{% else %}<span class="hbadge no">▼ NO HANGAR</span>{% endif %}
-                    </div>
-                    {% endif %}
-
-                    <!-- GAUGES IN SIDEBAR -->
-                    {% if listing.hours_engine and listing.hours_engine_tbo or listing.hours_total or listing.hours_prop and listing.hours_prop_tbo %}
-                    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #2a2a3e;">
-                        <div style="font-size:9px;color:#4a8a4a;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;font-family:monospace;">AIRCRAFT HEALTH</div>
-                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;">
-                            {% if listing.hours_engine and listing.hours_engine_tbo %}
-                            {% set eng_pct = (listing.hours_engine / listing.hours_engine_tbo * 100)|int %}
-                            <div class="gauge-card">
-                                <div class="gauge-lbl">ENG · SMOH</div>
-                                <canvas class="gauge-canvas" width="110" height="70" data-pct="{{ eng_pct }}" data-label="{{ eng_pct }}%"></canvas>
-                                <div class="gauge-val">{{ listing.hours_engine|int }}h / {{ listing.hours_engine_tbo|int }}h</div>
-                            </div>
-                            {% endif %}
-                            {% if listing.hours_total %}
-                            {% set af_pct = [listing.hours_total / 10000 * 100, 100]|min|int %}
-                            <div class="gauge-card">
-                                <div class="gauge-lbl">AIRFRAME</div>
-                                <canvas class="gauge-canvas" width="110" height="70" data-pct="{{ af_pct }}" data-label="{{ listing.hours_total|int }}h" data-cx="55" data-cy="64" data-r="44"></canvas>
-                                <div class="gauge-val">{{ listing.hours_total|int }}h TT</div>
-                            </div>
-                            {% endif %}
-                            {% if listing.hours_prop and listing.hours_prop_tbo %}
-                            {% set prop_pct = (listing.hours_prop / listing.hours_prop_tbo * 100)|int %}
-                            <div class="gauge-card">
-                                <div class="gauge-lbl">PROP</div>
-                                <canvas class="gauge-canvas" width="110" height="70" data-pct="{{ prop_pct }}" data-label="{{ prop_pct }}%" data-cx="55" data-cy="64" data-r="44"></canvas>
-                                <div class="gauge-val">{{ listing.hours_prop|int }}h / {{ listing.hours_prop_tbo|int }}h</div>
-                            </div>
-                            {% endif %}
+                <!-- Kontakt -->
+                <div style="background:#1a1a2e;border-radius:16px;padding:24px;border:1px solid #2a2a3e;margin-top:8px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+                        <div>
+                            <div style="font-size:13px;color:#666;margin-bottom:4px;">Listed by</div>
+                            <div style="font-size:16px;font-weight:600;">{{ listing.contact_name }}</div>
+                            <div style="font-size:14px;color:#aaa;">{{ listing.contact_email }}</div>
+                            {% if listing.contact_phone %}<div style="font-size:14px;color:#aaa;">{{ listing.contact_phone }}</div>{% endif %}
+                        </div>
+                        <div style="text-align:right;">
+                            <a href="mailto:{{ listing.contact_email }}?subject=Re: {{ listing.tail }} for sale on PanPanParts" class="btn-contact" style="display:inline-block;padding:14px 32px;font-size:16px;">✉ Send message</a>
+                            <div style="font-size:12px;color:#444;margin-top:8px;">{{ listing.views or 0 }} views</div>
                         </div>
                     </div>
-                    {% endif %}
-                </div>
-
-                <div class="contact-card">
-                    <h3>Contact seller</h3>
-                    <div class="contact-name">{{ listing.contact_name }}</div>
-                    <div class="contact-email">{{ listing.contact_email }}</div>
-                    {% if listing.contact_phone %}
-                    <div class="contact-email">{{ listing.contact_phone }}</div>
-                    {% endif %}
-                    <a href="mailto:{{ listing.contact_email }}?subject=Re: {{ listing.tail }} for sale on PanPanParts" class="btn-contact">✉ Send message</a>
-                    <div class="views-count">{{ listing.views or 0 }} views</div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <script>
-        var currentIndex = 0;
-        var allImages = [{% for img in images %}'{{ img }}'{% if not loop.last %},{% endif %}{% endfor %}];
 
         // Tegn gauges med canvas
         document.querySelectorAll('.gauge-canvas').forEach(function(canvas) {

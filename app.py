@@ -2683,7 +2683,8 @@ def aircraft_for_sale():
             'hours_total': l.hours_total, 'hours_engine': l.hours_engine,
             'location': l.location, 'hero_image': l.hero_image,
             'condition': l.condition, 'seller_type': l.seller_type,
-            'ai_highlights': l.ai_highlights, 'description': l.description
+            'ai_highlights': l.ai_highlights, 'description': l.description,
+            'images': l.images, 'hero_image': l.hero_image
         })
     return render_template_string(AIRCRAFT_FOR_SALE_HTML, listings=listings,
         listings_json=_json.dumps(listings_data), current_user=current_user)

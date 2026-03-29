@@ -4037,7 +4037,7 @@ def admin_migrate():
     conn = get_pg_conn()
     cur = conn.cursor()
     results = []
-    for col, typ in [('source_url','TEXT'),('source','TEXT'),('ai_description','TEXT')]:
+    for col, typ in [('source_url','TEXT'),('source','TEXT'),('ai_description','TEXT'),('status','TEXT')]:
         try:
             cur.execute(f"ALTER TABLE aircraft_listing ADD COLUMN {col} {typ}")
             conn.commit()

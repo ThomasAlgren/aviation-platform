@@ -3486,11 +3486,19 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
         .back { color: #666; text-decoration: none; font-size: 14px; display: inline-block; padding: 8px 0; }
         
         /* Hero billede */
-        .hero-img { width: 100%; height: 60vh; min-height: 380px; object-fit: cover; display: block; }
+        .hero-img { width: 100%; height: 45vh; min-height: 320px; object-fit: cover; display: block; }
         .hero-placeholder { width: 100%; height: 40vh; background: linear-gradient(135deg, #1a1a2e, #2a1a3e); display: flex; align-items: center; justify-content: center; font-size: 80px; }
         
         /* Thumbnail strip */
         .thumb-strip { display: flex; gap: 6px; padding: 6px; background: #0a0a14; overflow-x: auto; }
+        .info-bar { display: grid; grid-template-columns: 1fr 1fr 1fr 38.2fr; gap: 0; background: #0d0d1a; border-bottom: 1px solid #1a2a1a; font-family: monospace; }
+        .info-bar-gauge { padding: 12px 16px; border-right: 1px solid #1a2a1a; text-align: center; }
+        .info-bar-price { padding: 12px 20px; display: flex; flex-direction: column; justify-content: center; }
+        .info-bar-gauge-lbl { font-size: 9px; color: #4a8a4a; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+        .info-bar-gauge-val { font-size: 12px; color: #ccc; font-weight: 700; margin-top: 4px; }
+        .info-bar-price-amount { font-size: 28px; font-weight: 800; color: #ff6b35; font-family: monospace; line-height: 1; }
+        .info-bar-price-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .info-bar-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
         .hero-wrap { position: relative; }
         .hero-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; font-size: 28px; width: 52px; height: 52px; border-radius: 50%; cursor: pointer; z-index: 10; transition: background 0.2s; display: flex; align-items: center; justify-content: center; }
         .hero-nav:hover { background: rgba(255,107,53,0.8); }
@@ -3598,6 +3606,44 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
     <button class="hero-nav hero-nav-left" onclick="navHero(-1)">&#8592;</button>
     <button class="hero-nav hero-nav-right" onclick="navHero(1)">&#8594;</button>
     {% endif %}
+    </div>
+
+    <!-- INFO BAR: gauges + pris under hero -->
+    <div class="info-bar">
+        {% if listing.hours_engine and listing.hours_engine_tbo %}
+        {% set eng_pct = (listing.hours_engine / listing.hours_engine_tbo * 100)|int %}
+        <div class="info-bar-gauge">
+            <div class="info-bar-gauge-lbl">ENG · SMOH/TBO</div>
+            <canvas class="gauge-canvas" width="110" height="68" data-pct="{{ eng_pct }}" data-cx="55" data-cy="62" data-r="44"></canvas>
+            <div class="info-bar-gauge-val">{{ listing.hours_engine|int }}h / {{ listing.hours_engine_tbo|int }}h</div>
+        </div>
+        {% endif %}
+        {% if listing.hours_total %}
+        {% set af_pct = [listing.hours_total / 10000 * 100, 100]|min|int %}
+        <div class="info-bar-gauge">
+            <div class="info-bar-gauge-lbl">AIRFRAME · TT</div>
+            <canvas class="gauge-canvas" width="110" height="68" data-pct="{{ af_pct }}" data-label="{{ listing.hours_total|int }}h" data-cx="55" data-cy="62" data-r="44"></canvas>
+            <div class="info-bar-gauge-val">{{ listing.hours_total|int }}h TT</div>
+        </div>
+        {% endif %}
+        {% if listing.hours_prop and listing.hours_prop_tbo %}
+        {% set prop_pct = (listing.hours_prop / listing.hours_prop_tbo * 100)|int %}
+        <div class="info-bar-gauge">
+            <div class="info-bar-gauge-lbl">PROP · OH</div>
+            <canvas class="gauge-canvas" width="110" height="68" data-pct="{{ prop_pct }}" data-cx="55" data-cy="62" data-r="44"></canvas>
+            <div class="info-bar-gauge-val">{{ listing.hours_prop|int }}h / {{ listing.hours_prop_tbo|int }}h</div>
+        </div>
+        {% endif %}
+        <div class="info-bar-price">
+            <div class="info-bar-price-label">Asking price</div>
+            <div class="info-bar-price-amount">EUR {{ "{:,.0f}".format(listing.price) }}</div>
+            <div class="info-bar-badges">
+                {% if listing.has_autopilot %}<span class="hbadge yes">▲ AP</span>{% endif %}
+                {% if listing.has_adsb %}<span class="hbadge yes">▲ ADS-B</span>{% endif %}
+                {% if listing.is_hangared %}<span class="hbadge yes">▲ HANGAR</span>{% endif %}
+                {% if listing.arc_verified %}<span class="hbadge yes">▲ ARC</span>{% endif %}
+            </div>
+        </div>
     </div>
 
     {% if images|length > 1 %}

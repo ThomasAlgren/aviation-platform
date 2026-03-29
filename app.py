@@ -4444,6 +4444,11 @@ def workshops():
     parts.append('</div></body></html>')
     return ''.join(parts)
 
+
+@app.route('/admin/import-easa-foreign')
+def admin_import_easa_foreign():
+    return "Klar - data mangler endnu"
+
 @app.route('/sitemap.xml')
 def sitemap():
     return render_template_string("""<?xml version="1.0" encoding="UTF-8"?>

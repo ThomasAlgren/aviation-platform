@@ -3727,6 +3727,7 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
             </div>
 
         // Tegn gauges med canvas
+        window.addEventListener("load", function() {
         document.querySelectorAll('.gauge-canvas').forEach(function(canvas) {
             var pct = parseInt(canvas.dataset.pct) || 0;
             var label = canvas.dataset.label || (pct + '%');
@@ -3788,6 +3789,7 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
             ctx.textAlign = 'center';
             ctx.fillText(label || pct + '%', cx, 62);
         });
+        }); // end load
 
         function setHero(thumb, src) {
             document.getElementById('hero-img').src = src;

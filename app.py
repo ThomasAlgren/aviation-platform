@@ -703,7 +703,7 @@ PARTS_HTML = """
             {% for p in parts %}
             <a class="part-card" href="/part/{{ p.id }}" style="text-decoration:none;color:inherit">
                 <div class="part-info">
-                    <h3>{{ p.part_number or 'Unknown part' }}</h3>
+                    <h3>{{ p.title or p.part_number or 'Unknown part' }}</h3>
                     {% if p.fits_manufacturer %}<p style="color:#ff6b35;font-size:13px">Fits: {{ p.fits_manufacturer }} {{ p.fits_model }}</p>{% endif %}
                     <p>{{ p.description[:80] if p.description else 'No description' }}</p>
                     <p>{{ p.contact_name }} &bull; {{ p.location }}</p>
@@ -2064,7 +2064,7 @@ MY_LISTINGS_HTML = """<!DOCTYPE html>
             {% for p in parts %}
             <div class="card">
                 <div>
-                    <div class="part-number">{{ p.part_number or 'Unknown part' }}</div>
+                    <div class="part-number">{{ p.title or p.part_number or 'Unknown part' }}</div>
                     <div class="meta">{{ p.location }} · {{ p.part_condition }}</div>
                     <span class="badge">{{ p.ai_recommendation }}</span>
                 </div>
@@ -2100,7 +2100,7 @@ PART_DETAIL_HTML = """<!DOCTYPE html>
       gtag('js', new Date());
       gtag('config', 'G-K3PJMNF1JE');
     </script>
-    <title>{{ part.part_number or 'Part' }} - PanPanParts</title>
+    <title>{{ part.title or part.part_number or 'Part' }} - PanPanParts</title>
     <meta charset="utf-8">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -2154,7 +2154,7 @@ PART_DETAIL_HTML = """<!DOCTYPE html>
     <div class="container">
         <a href="/parts" class="back">← Back to listings</a>
         <div class="card">
-            <div class="part-title">{{ part.part_number or 'Unknown part' }}</div>
+            <div class="part-title">{{ part.title or part.part_number or 'Unknown part' }}</div>
             <div style="margin:12px 0">
                 <span class="badge {% if part.ai_recommendation != 'Approved for listing' %}badge-warn{% endif %}">
                     ✓ {{ part.ai_recommendation }}
@@ -3115,7 +3115,7 @@ TYPE_PAGE_HTML = """<!DOCTYPE html>
             {% for p in parts %}
             <a class="part-card" href="/part/{{ p.id }}">
                 <div>
-                    <div style="font-weight:600">{{ p.part_number or "Unknown part" }}</div>
+                    <div style="font-weight:600">{{ p.title or p.part_number or "Unknown part" }}</div>
                     <div class="meta">{{ p.location }} · {{ p.part_condition }}</div>
                 </div>
                 <div style="font-weight:700;color:#ff6b35">€{{ p.price }}</div>

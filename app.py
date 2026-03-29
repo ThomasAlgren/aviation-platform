@@ -2851,7 +2851,7 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
                         <div class="card-tail">{{ l.tail }}</div>
                         <div class="card-title">{{ l.manufacturer }} {{ l.model }}</div>
                         <div class="card-meta">{{ l.year }}{% if l.location %} · {{ l.location }}{% endif %}</div>
-                        <div class="card-price">EUR {{ "{:,.0f}".format(l.price) }}</div>
+                        <div class="card-price">{% if l.price %}EUR {{ "{:,.0f}".format(l.price) }}{% else %}Price on request{% endif %}</div>
                         {% if l.hours_total %}
                         <div class="card-hours">{{ l.hours_total|int }}h TT{% if l.hours_engine %} · {{ l.hours_engine|int }}h SMOH{% endif %}</div>
                         {% endif %}

@@ -3486,19 +3486,22 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
         .back { color: #666; text-decoration: none; font-size: 14px; display: inline-block; padding: 8px 0; }
         
         /* Hero billede */
-        .hero-img { width: 100%; height: 45vh; min-height: 320px; object-fit: cover; display: block; }
+        .hero-img { width: 100%; height: 60vh; min-height: 380px; object-fit: cover; display: block; }
         .hero-placeholder { width: 100%; height: 40vh; background: linear-gradient(135deg, #1a1a2e, #2a1a3e); display: flex; align-items: center; justify-content: center; font-size: 80px; }
         
         /* Thumbnail strip */
         .thumb-strip { display: flex; gap: 6px; padding: 6px; background: #0a0a14; overflow-x: auto; }
-        .info-bar { display: grid; grid-template-columns: 1fr 1fr 1fr 38.2fr; gap: 0; background: #0d0d1a; border-bottom: 1px solid #1a2a1a; font-family: monospace; }
-        .info-bar-gauge { padding: 12px 16px; border-right: 1px solid #1a2a1a; text-align: center; }
-        .info-bar-price { padding: 12px 20px; display: flex; flex-direction: column; justify-content: center; }
+        .info-bar { display: flex; align-items: stretch; background: #0d0d1a; border-bottom: 1px solid #1a2a1a; font-family: monospace; }
+        .info-bar-gauge { padding: 12px 16px; border-right: 1px solid #1a2a1a; text-align: center; flex-shrink: 0; }
+        .info-bar-price { padding: 12px 20px; display: flex; flex-direction: column; justify-content: center; flex-shrink: 0; border-right: 1px solid #1a2a1a; }
+        .info-bar-thumbs { display: flex; gap: 6px; padding: 8px 12px; align-items: center; overflow-x: auto; flex: 1; }
         .info-bar-gauge-lbl { font-size: 9px; color: #4a8a4a; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
         .info-bar-gauge-val { font-size: 12px; color: #ccc; font-weight: 700; margin-top: 4px; }
-        .info-bar-price-amount { font-size: 28px; font-weight: 800; color: #ff6b35; font-family: monospace; line-height: 1; }
+        .info-bar-price-amount { font-size: 26px; font-weight: 800; color: #ff6b35; font-family: monospace; line-height: 1; }
         .info-bar-price-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
         .info-bar-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+        .info-thumb { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; opacity: 0.6; flex-shrink: 0; }
+        .info-thumb.active { opacity: 1; outline: 2px solid #ff6b35; }
         .hero-wrap { position: relative; }
         .hero-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; font-size: 28px; width: 52px; height: 52px; border-radius: 50%; cursor: pointer; z-index: 10; transition: background 0.2s; display: flex; align-items: center; justify-content: center; }
         .hero-nav:hover { background: rgba(255,107,53,0.8); }
@@ -3608,7 +3611,7 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
     {% endif %}
     </div>
 
-    <!-- INFO BAR: gauges + pris under hero -->
+    <!-- INFO BAR: titel + gauges + pris + thumbnails -->
     <div class="info-bar">
         {% if listing.hours_engine and listing.hours_engine_tbo %}
         {% set eng_pct = (listing.hours_engine / listing.hours_engine_tbo * 100)|int %}
@@ -3644,15 +3647,15 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
                 {% if listing.arc_verified %}<span class="hbadge yes">▲ ARC</span>{% endif %}
             </div>
         </div>
+        <!-- Thumbnails til højre -->
+        {% if images|length > 1 %}
+        <div class="info-bar-thumbs">
+            {% for img in images %}
+            <img class="info-thumb {% if loop.first %}active{% endif %}" src="{{ img }}" onclick="setHero(this, '{{ img }}')">
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
-
-    {% if images|length > 1 %}
-    <div class="thumb-strip">
-        {% for img in images %}
-        <img class="thumb {% if loop.first %}active{% endif %}" src="{{ img }}" onclick="setHero(this, '{{ img }}')">
-        {% endfor %}
-    </div>
-    {% endif %}
 
     <div class="container">
         <a href="/aircraft-for-sale" class="back">← Back to listings</a>
@@ -3710,26 +3713,6 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
             <!-- Højre kolonne — sidebar -->
             <div class="sidebar">
                 <div class="price-card">
-                    <div class="price-label">Asking price</div>
-                    <div class="price-amount">
-                        <span class="price-currency">EUR </span>{{ "{:,.0f}".format(listing.price) }}
-                    </div>
-                    {% if listing.hours_total or listing.hours_engine %}
-                    <div class="hours-row">
-                        {% if listing.hours_total %}
-                        <div class="hours-item">
-                            <div class="hours-label">Airframe TT</div>
-                            <div class="hours-value">{{ listing.hours_total|int }}h</div>
-                        </div>
-                        {% endif %}
-                        {% if listing.hours_engine %}
-                        <div class="hours-item">
-                            <div class="hours-label">Engine SMOH</div>
-                            <div class="hours-value">{{ listing.hours_engine|int }}h</div>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% endif %}
                     {% if listing.location %}
                     <div class="location-row">📍 <span>{{ listing.location }}</span></div>
                     {% endif %}
@@ -3859,7 +3842,7 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
 
         function setHero(thumb, src) {
             document.getElementById('hero-img').src = src;
-            document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.thumb, .info-thumb').forEach(t => t.classList.remove('active'));
             thumb.classList.add('active');
             currentIndex = allImages.indexOf(src);
         }

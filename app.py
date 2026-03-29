@@ -3731,7 +3731,9 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
             var pct = parseInt(canvas.dataset.pct) || 0;
             var label = canvas.dataset.label || (pct + '%');
             var ctx = canvas.getContext('2d');
-            var cx = 65, cy = 76, r = 52;
+            var cx = parseInt(canvas.dataset.cx) || Math.round(canvas.width/2);
+            var cy = parseInt(canvas.dataset.cy) || Math.round(canvas.height*0.88);
+            var r = parseInt(canvas.dataset.r) || Math.round(canvas.width*0.40);
             var startAngle = Math.PI;
             var endAngle = 2 * Math.PI;
             var color = pct < 50 ? '#4caf50' : (pct < 75 ? '#ffc107' : '#f44336');

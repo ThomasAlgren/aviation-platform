@@ -4091,6 +4091,7 @@ def admin_scrape_winglist():
     conn = get_pg_conn()
     cur = conn.cursor()
     imported = skipped = errors = 0
+    err_msgs = []
 
     for url in all_urls[:30]:
         try:
@@ -4112,11 +4113,12 @@ def admin_scrape_winglist():
             _time.sleep(0.3)
         except Exception as e:
             errors += 1
+            err_msgs.append(str(e)[:80])
             continue
 
     conn.commit()
     conn.close()
-    return f"Done! Importeret: {imported}, Sprunget over: {skipped}, Fejl: {errors}"
+    return f"Done! Importeret: {imported}, Sprunget over: {skipped}, Fejl: {errors}<br>" + "<br>".join(err_msgs[:5])
 
 @app.route('/sitemap.xml')
 def sitemap():

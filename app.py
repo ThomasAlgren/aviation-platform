@@ -2759,7 +2759,7 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
         .logo span { color: #ff6b35; }
         .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
         .nav a.primary { background: #ff6b35; color: white; padding: 8px 16px; border-radius: 8px; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
         
         /* Konversations-søgning */
         .search-section { margin-bottom: 40px; }
@@ -2786,7 +2786,7 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
         .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .results-count { font-size: 14px; color: #666; }
         
-        .listings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .listings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
         
         .listing-card { background: #1a1a2e; border-radius: 16px; overflow: hidden; border: 1px solid #2a2a3e; text-decoration: none; color: white; display: block; transition: transform 0.2s, border-color 0.2s; }
         .listing-card:hover { transform: translateY(-2px); border-color: #ff6b35; }

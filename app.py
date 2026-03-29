@@ -552,6 +552,8 @@ with app.app_context():
             conn.execute(db.text("ALTER TABLE aircraft_listing ADD COLUMN arc_verified INTEGER DEFAULT 0"))
             conn.execute(db.text("ALTER TABLE aircraft_listing ADD COLUMN arc_document TEXT"))
             conn.execute(db.text("ALTER TABLE aircraft_listing ADD COLUMN ai_description TEXT"))
+            conn.execute(db.text("ALTER TABLE aircraft_listing ADD COLUMN source_url TEXT"))
+            conn.execute(db.text("ALTER TABLE aircraft_listing ADD COLUMN source TEXT"))
             conn.commit()
     except: pass
 print("Connecting to PostgreSQL...")

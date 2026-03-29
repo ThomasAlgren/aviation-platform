@@ -2197,8 +2197,7 @@ def upload_image():
             Bucket=bucket,
             Key=filename,
             Body=image_bytes,
-            ContentType='image/jpeg',
-            ACL='public-read'
+            ContentType='image/jpeg'
         )
         
         url = f"https://{bucket}.s3.{os.environ.get('AWS_REGION', 'eu-north-1')}.amazonaws.com/{filename}"
@@ -2488,9 +2487,29 @@ SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
                         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                         var compressed = canvas.toDataURL('image/jpeg', 0.75);
                         
-                        uploadedImages.push(compressed);
-                        document.getElementById('images_data').value = uploadedImages.join('|||');
-                        renderThumbs();
+                        // Upload til S3
+                        var thumbEl = addPendingThumb();
+                        fetch('/upload-image', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({image: compressed})
+                        })
+                        .then(r => r.json())
+                        .then(result => {
+                            if (result.ok) {
+                                uploadedImages.push(result.url);
+                                document.getElementById('images_data').value = uploadedImages.join('|||');
+                                thumbEl.src = result.url;
+                                thumbEl.style.opacity = '1';
+                            } else {
+                                thumbEl.remove();
+                                alert('Upload fejlede: ' + result.error);
+                            }
+                        })
+                        .catch(function(e) {
+                            thumbEl.remove();
+                            alert('Upload fejlede — prøv igen');
+                        });
                     };
                     img.src = e.target.result;
                 };
@@ -2508,6 +2527,17 @@ SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
                 if (i === 0) img.style.outline = '3px solid #ff6b35';
                 grid.appendChild(img);
             });
+        }
+
+        function addPendingThumb() {
+            var grid = document.getElementById('img-grid');
+            var img = document.createElement('img');
+            img.className = 'img-thumb';
+            img.style.opacity = '0.3';
+            img.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+            img.style.background = '#2a2a3e';
+            grid.appendChild(img);
+            return img;
         }
 
         function analyzeWithAI() {

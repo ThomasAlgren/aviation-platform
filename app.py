@@ -3722,6 +3722,44 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
                 </div>
                 {% endif %}
 
+                <!-- AI Insight sektion -->
+                <div class="ai-insight-card" id="ai-insight-card" style="background:#1a1a2e;border-radius:16px;padding:24px;border:1px solid #2a2a3e;margin-bottom:16px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="color:#ff6b35;font-size:18px">✦</span>
+                            <span style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#888">AI Aircraft Analysis</span>
+                        </div>
+                        <button id="btn-ai-insight" onclick="loadAIInsight()" style="background:#ff6b35;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;cursor:pointer;">Analyze this aircraft →</button>
+                    </div>
+                    <div id="ai-insight-loading" style="display:none;text-align:center;padding:24px;color:#666;">
+                        <div style="font-size:24px;margin-bottom:8px">✦</div>
+                        <div style="font-size:13px">AI is analyzing this aircraft...</div>
+                    </div>
+                    <div id="ai-insight-content" style="display:none;">
+                        <div id="insight-character" style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:20px;font-style:italic;border-bottom:1px solid #2a2a3e;padding-bottom:16px;"></div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+                            <div>
+                                <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#4caf50;margin-bottom:8px;">Strengths</div>
+                                <div id="insight-strengths"></div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#f44336;margin-bottom:8px;">Considerations</div>
+                                <div id="insight-weaknesses"></div>
+                            </div>
+                        </div>
+                        <div id="insight-economy" style="background:#0d0d1a;border-radius:12px;padding:16px;margin-bottom:20px;display:none;">
+                            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:12px;">Operating Economy (estimated)</div>
+                            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;" id="insight-economy-grid"></div>
+                            <div id="insight-economy-note" style="font-size:12px;color:#666;margin-top:10px;"></div>
+                        </div>
+                        <div id="insight-buyer-match" style="display:none;border-radius:12px;padding:16px;margin-bottom:20px;">
+                            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:8px;">Your Buyer Match</div>
+                            <div id="insight-match-reason" style="font-size:14px;color:#ccc;line-height:1.6;"></div>
+                        </div>
+                        <div id="insight-recommendation" style="border-top:1px solid #2a2a3e;padding-top:16px;font-size:14px;line-height:1.6;color:#ff6b35;"></div>
+                    </div>
+                </div>
+
                 <!-- Kontakt -->
                 <div style="background:#1a1a2e;border-radius:16px;padding:24px;border:1px solid #2a2a3e;margin-top:8px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
@@ -3804,6 +3842,92 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
             ctx.fillText(label || pct + '%', cx, 62);
         });
         }); // end load
+        function loadAIInsight() {
+            document.getElementById('btn-ai-insight').style.display = 'none';
+            document.getElementById('ai-insight-loading').style.display = 'block';
+
+            var userHours = {% if current_user.is_authenticated and current_user.total_flight_hours %}{{ current_user.total_flight_hours }}{% else %}null{% endif %};
+            var userLicense = {% if current_user.is_authenticated and current_user.license_type %}'{{ current_user.license_type }}'{% else %}null{% endif %};
+
+            fetch('/aircraft-listing/{{ listing.id }}/ai-insight', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_hours: userHours, user_license: userLicense})
+            })
+            .then(r => r.json())
+            .then(function(result) {
+                document.getElementById('ai-insight-loading').style.display = 'none';
+                if (!result.ok) return;
+                var d = result.data;
+                document.getElementById('ai-insight-content').style.display = 'block';
+
+                // Karakter
+                if (d.character) document.getElementById('insight-character').textContent = d.character;
+
+                // Styrker
+                var sDiv = document.getElementById('insight-strengths');
+                (d.strengths || []).forEach(function(s) {
+                    var el = document.createElement('div');
+                    el.style.cssText = 'font-size:13px;color:#ccc;padding:4px 0;display:flex;gap:8px;align-items:flex-start;';
+                    el.innerHTML = '<span style="color:#4caf50;flex-shrink:0;">✓</span>' + s;
+                    sDiv.appendChild(el);
+                });
+
+                // Svagheder
+                var wDiv = document.getElementById('insight-weaknesses');
+                (d.weaknesses || []).forEach(function(w) {
+                    var el = document.createElement('div');
+                    el.style.cssText = 'font-size:13px;color:#ccc;padding:4px 0;display:flex;gap:8px;align-items:flex-start;';
+                    el.innerHTML = '<span style="color:#f44336;flex-shrink:0;">!</span>' + w;
+                    wDiv.appendChild(el);
+                });
+
+                // Økonomi
+                if (d.economy) {
+                    var econ = d.economy;
+                    var grid = document.getElementById('insight-economy-grid');
+                    var items = [
+                        {label: 'Fuel burn', value: econ.fuel_burn_lph ? econ.fuel_burn_lph + ' L/h' : '—'},
+                        {label: 'Cruise', value: econ.cruise_speed_kt ? econ.cruise_speed_kt + ' kt' : '—'},
+                        {label: 'Range', value: econ.range_nm ? econ.range_nm + ' nm' : '—'},
+                        {label: 'Cost/hour', value: econ.cost_per_hour_eur ? '~€' + econ.cost_per_hour_eur : '—'}
+                    ];
+                    items.forEach(function(item) {
+                        var el = document.createElement('div');
+                        el.style.cssText = 'text-align:center;';
+                        el.innerHTML = '<div style="font-size:18px;font-weight:700;color:#fff;">' + item.value + '</div><div style="font-size:11px;color:#666;margin-top:2px;">' + item.label + '</div>';
+                        grid.appendChild(el);
+                    });
+                    if (econ.note) document.getElementById('insight-economy-note').textContent = '* ' + econ.note;
+                    document.getElementById('insight-economy').style.display = 'block';
+                }
+
+                // Køber-match
+                if (d.buyer_match) {
+                    var matchColors = {'great': '#4caf50', 'good': '#8bc34a', 'caution': '#ffc107', 'mismatch': '#f44336'};
+                    var matchLabels = {'great': '✓ Great match', 'good': '✓ Good match', 'caution': '⚠ Proceed with caution', 'mismatch': '✗ Not ideal match'};
+                    var score = d.buyer_match.score || 'good';
+                    var color = matchColors[score] || '#888';
+                    var matchDiv = document.getElementById('insight-buyer-match');
+                    matchDiv.style.background = color + '15';
+                    matchDiv.style.border = '1px solid ' + color + '44';
+                    matchDiv.querySelector('div:first-child').style.color = color;
+                    matchDiv.querySelector('div:first-child').textContent = matchLabels[score] || 'Buyer Match';
+                    document.getElementById('insight-match-reason').textContent = d.buyer_match.reason || '';
+                    matchDiv.style.display = 'block';
+                }
+
+                // Anbefaling
+                if (d.recommendation) {
+                    document.getElementById('insight-recommendation').innerHTML = '<strong style="color:#ff6b35;">✦ Recommendation:</strong> ' + d.recommendation;
+                }
+            })
+            .catch(function() {
+                document.getElementById('ai-insight-loading').style.display = 'none';
+                document.getElementById('btn-ai-insight').style.display = 'block';
+            });
+        }
+
         function setHero(thumb, src) {
             document.getElementById('hero-img').src = src;
             document.querySelectorAll('.thumb, .info-thumb').forEach(t => t.classList.remove('active'));
@@ -3837,6 +3961,76 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
 
 
 
+
+@app.route('/aircraft-listing/<int:listing_id>/ai-insight', methods=['POST'])
+def aircraft_listing_ai_insight(listing_id):
+    import json as _json
+    listing = AircraftListing.query.get_or_404(listing_id)
+    data = request.get_json() or {}
+    user_hours = data.get('user_hours')
+    user_license = data.get('user_license')
+
+    aircraft_info = f"""
+Aircraft: {listing.manufacturer} {listing.model} ({listing.year})
+Registration: {listing.tail}
+Total time: {listing.hours_total or 'unknown'} hours
+Engine SMOH: {listing.hours_engine or 'unknown'} hours
+Engine TBO: {listing.hours_engine_tbo or 'unknown'} hours
+Price: EUR {listing.price or 'unknown'}
+Location: {listing.location or 'unknown'}
+Condition: {listing.condition or 'unknown'}
+Has autopilot: {listing.has_autopilot}
+Has ADS-B: {listing.has_adsb}
+Is hangared: {listing.is_hangared}
+Description: {listing.description or ''}
+"""
+
+    buyer_info = ""
+    if user_hours and user_license:
+        buyer_info = f"""
+Potential buyer profile:
+- Total flight hours: {user_hours}
+- License type: {user_license}
+"""
+
+    try:
+        import anthropic as _anthropic
+        client = _anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1000,
+            messages=[{
+                "role": "user",
+                "content": f"""You are an expert aviation advisor. Analyze this aircraft listing and provide insights for a potential buyer.
+
+{aircraft_info}
+{buyer_info}
+
+Return ONLY a JSON object with these fields:
+{{
+  "character": "2-3 sentence description of this aircraft type's flying characteristics, personality and typical use",
+  "strengths": ["3-4 key strengths as short strings"],
+  "weaknesses": ["2-3 honest weaknesses or considerations as short strings"],
+  "economy": {{
+    "fuel_burn_lph": estimated fuel burn in liters per hour as number or null,
+    "cruise_speed_kt": cruise speed in knots as number or null,
+    "range_nm": range in nautical miles as number or null,
+    "cost_per_hour_eur": estimated total operating cost per hour in EUR as number or null,
+    "note": "brief note on operating economics"
+  }},
+  "buyer_match": {{"score": "great/good/caution/mismatch", "reason": "1-2 sentences why this aircraft does or does not match the buyer profile"}} or null if no buyer profile,
+  "recommendation": "1-2 sentence honest recommendation — who is this aircraft ideal for?"
+}}
+
+Be honest, specific and helpful. Use aviation expertise."""
+            }]
+        )
+        text = response.content[0].text
+        clean = text.replace("```json", "").replace("```", "").strip()
+        result = _json.loads(clean)
+        return _json.dumps({"ok": True, "data": result})
+    except Exception as e:
+        return _json.dumps({"ok": False, "error": str(e)})
 
 @app.route('/admin/fix-da50')
 def admin_fix_da50():

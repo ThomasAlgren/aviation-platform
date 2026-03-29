@@ -3807,7 +3807,7 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
             currentIndex = (currentIndex + dir + allImages.length) % allImages.length;
             var src = allImages[currentIndex];
             document.getElementById('hero-img').src = src;
-            document.querySelectorAll('.thumb').forEach(function(t, i) {
+            document.querySelectorAll('.thumb, .info-thumb').forEach(function(t, i) {
                 t.classList.toggle('active', i === currentIndex);
             });
         }

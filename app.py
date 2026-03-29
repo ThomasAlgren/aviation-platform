@@ -3838,6 +3838,23 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
 
 
 
+@app.route('/admin/fix-da50')
+def admin_fix_da50():
+    try:
+        conn = get_pg_conn()
+        cur = conn.cursor()
+        cur.execute("""UPDATE aircraft_listing 
+            SET ai_description = 'The 2022 Diamond DA50 RG (LN-ABZ) is a premium five-seat, retractable-gear touring aircraft powered by a Continental CD-300 diesel engine. With only 456 hours total time and 456 hours SMOH, this nearly-new example offers exceptional fuel efficiency and modern avionics including a full Garmin G1000 NXi suite with ADS-B. Hangared since new and maintained to the highest standards, it represents an outstanding opportunity in the current market.'
+            WHERE tail = 'LN-ABZ'
+        """)
+        conn.commit()
+        cur.execute("SELECT id, tail, ai_description FROM aircraft_listing WHERE tail = 'LN-ABZ'")
+        row = cur.fetchone()
+        conn.close()
+        return f"Updated! ID={row[0]} tail={row[1]} desc={row[2][:50]}..."
+    except Exception as e:
+        return f"Error: {e}"
+
 @app.route('/sitemap.xml')
 def sitemap():
     return render_template_string("""<?xml version="1.0" encoding="UTF-8"?>

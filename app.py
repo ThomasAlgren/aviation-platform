@@ -4057,15 +4057,6 @@ def admin_test_scrape():
     except Exception as e:
         return f"FEJL: {e}"
 
-@app.route('/admin/test-scrape')
-def admin_test_scrape():
-    import requests as _req
-    try:
-        resp = _req.get('https://www.winglist.aero/', timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
-        return f"Status: {resp.status_code}, Bytes: {len(resp.text)}"
-    except Exception as e:
-        return f"FEJL: {e}"
-
 @app.route('/admin/scrape-winglist')
 def admin_scrape_winglist():
     import requests as _req

@@ -324,6 +324,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
 
 app = Flask(__name__)
+
+@app.template_filter('from_json_first')
+def from_json_first(s):
+    try:
+        import json
+        arr = json.loads(s)
+        return arr[0] if arr else ''
+    except:
+        return ''
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance')
 os.makedirs(DB_PATH, exist_ok=True)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(DB_PATH, 'panpanparts.db'))
@@ -2843,7 +2852,7 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
                     {% if l.hero_image %}
                     <img class="card-img" src="{{ l.hero_image }}" alt="{{ l.tail }}">
                     {% elif l.images %}
-                    <img class="card-img" src="{{ l.images|replace('|||', '') }}" alt="{{ l.tail }}">
+                    <img class="card-img" src="{{ l.images | from_json_first }}" alt="{{ l.tail }}">
                     {% else %}
                     <div class="card-img-placeholder">✈️</div>
                     {% endif %}

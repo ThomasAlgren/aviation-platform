@@ -4134,8 +4134,9 @@ def admin_scrape_winglist():
             model = d.get("model", parts[2] if len(parts) > 2 else "")
             desc = d.get("description","")
             reg = d.get("registration","") or ("WING-"+str(imported+1))
+            price_val = d.get("price") if isinstance(d.get("price"), (int, float)) else None
             cur.execute("INSERT INTO aircraft_listing (tail,manufacturer,model,year,price,location,condition,seller_type,hours_total,images,description,source_url,source,has_autopilot,has_adsb,contact_name,contact_email,status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (reg, manufacturer, model, year, d.get("price"), d.get("location",""), d.get("condition","Pre-owned"), d.get("seller_type",""), ph(d.get("total_time")), _json.dumps(d.get("images",[])), desc, url, "winglist", 1 if "autopilot" in desc.lower() else 0, 1 if "ads-b" in desc.lower() or "adsb" in desc.lower() else 0, "Winglist Seller", "listings@winglist.aero", "active"))
+                (reg, manufacturer, model, year, price_val, d.get("location",""), d.get("condition","Pre-owned"), d.get("seller_type",""), ph(d.get("total_time")), _json.dumps(d.get("images",[])), desc, url, "winglist", 1 if "autopilot" in desc.lower() else 0, 1 if "ads-b" in desc.lower() or "adsb" in desc.lower() else 0, "Winglist Seller", "listings@winglist.aero", "active"))
             imported += 1
             _time.sleep(0.3)
         except Exception as e:

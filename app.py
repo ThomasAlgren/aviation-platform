@@ -4082,6 +4082,14 @@ def admin_migrate():
         except Exception as e:
             conn.rollback()
             results.append(f"{col}: {str(e)[:50]}")
+    for col in ['source','source_url','title']:
+        try:
+            cur.execute(f"ALTER TABLE part ADD COLUMN {col} TEXT")
+            conn.commit()
+            results.append(f"part.{col} added")
+        except Exception as e:
+            conn.rollback()
+            results.append(f"part.{col}: {str(e)[:40]}")
     conn.close()
     return "<br>".join(results)
 

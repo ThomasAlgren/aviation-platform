@@ -234,3 +234,18 @@ Aviation platform for piloter og flyejere. Tre dele:
 2. Parts marketplace med Stripe Escrow
 3. Fly scraper fra Winglist/Controller
 4. My Listings skal vise både fly og dele
+
+## Status 29. marts 2026 (eftermiddag)
+### Listing-siden — næsten færdig
+- Edge-to-edge hero billede med ← → navigation
+- Info-bar under hero: pris + badges + thumbnails
+- Canvas gauges: ULØST — vises ikke (window.addEventListener tilføjet men ikke pushet korrekt)
+- Sidebar fjernet — kontakt-knap under beskrivelse
+- Layout: enkelt kolonne, max 900px
+
+### Næste session starter her:
+1. Fix canvas gauges — start frisk, simpel tilgang
+2. Fix pile navigation og thumbnail klik
+3. AI auto-udfyld tekniske felter fra kopieret listing-tekst
+4. Parts marketplace med Stripe Escrow
+5. Fly scraper fra Winglist/Controller

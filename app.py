@@ -547,6 +547,9 @@ class Part(db.Model):
     fits_manufacturer = db.Column(db.String(200))
     fits_model = db.Column(db.String(200))
     fits_aircraft = db.Column(db.Text)
+    source = db.Column(db.String(50))
+    source_url = db.Column(db.Text)
+    title = db.Column(db.String(300))
 
 with app.app_context():
     db.create_all()
@@ -4067,6 +4070,12 @@ def admin_migrate():
     results = []
     for col, typ in [('source_url','TEXT'),('source','TEXT'),('ai_description','TEXT'),('status','TEXT')]:
         try:
+            cur.execute('ALTER TABLE part ADD COLUMN source TEXT')
+            cur.execute('ALTER TABLE part ADD COLUMN source_url TEXT')
+            cur.execute('ALTER TABLE part ADD COLUMN title TEXT')
+            conn.commit()
+        except: conn.rollback()
+        try:
             cur.execute(f"ALTER TABLE aircraft_listing ADD COLUMN {col} {typ}")
             conn.commit()
             results.append(f"Added {col}")
@@ -4099,6 +4108,61 @@ def admin_test_scrape():
         return f"Status: {resp.status_code}, Bytes: {len(resp.text)}"
     except Exception as e:
         return f"FEJL: {e}"
+
+
+@app.route('/admin/import-barnstormers-parts')
+def admin_import_barnstormers_parts():
+    import requests as _req, time as _time, re as _re
+    from bs4 import BeautifulSoup as _BS
+    BASE = 'https://www.barnstormers.com'
+    HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Referer': 'https://www.barnstormers.com/'}
+    conn = get_pg_conn()
+    cur = conn.cursor()
+    imported = skipped = errors = 0
+    err_msgs = []
+    for page in range(1, 6):
+        try:
+            resp = _req.get(BASE + '/listing.php?cat=Parts&page=' + str(page), headers=HEADERS, timeout=15)
+            soup = _BS(resp.text, 'html.parser')
+            ads = soup.find_all('div', class_='classified_single')
+            if not ads: break
+            for ad in ads:
+                try:
+                    adid = ad.get('data-adid', '')
+                    title_tag = ad.find('a', class_='listing_header')
+                    title = title_tag.get_text(strip=True) if title_tag else ''
+                    href = title_tag['href'] if title_tag else ''
+                    if not href.startswith('http'): href = BASE + href
+                    cur.execute('SELECT id FROM part WHERE source_url = %s', (href,))
+                    if cur.fetchone():
+                        skipped += 1
+                        continue
+                    body_tag = ad.find('span', class_='body')
+                    description = body_tag.get_text(strip=True) if body_tag else ''
+                    contact_tag = ad.find('span', class_='contact')
+                    contact_text = contact_tag.get_text(' ', strip=True) if contact_tag else ''
+                    price = None
+                    pm = _re.search(r'\$[\d,]+', title + ' ' + description)
+                    if pm:
+                        try: price = float(pm.group().replace('$','').replace(',',''))
+                        except: pass
+                    phone = ''
+                    phone_m = _re.search(r'[\d]{3}[-.\s][\d]{3}[-.\s][\d]{4}', contact_text)
+                    if phone_m: phone = phone_m.group()
+                    img = BASE + '/listing_images.php?id=' + adid if adid else None
+                    cur.execute('INSERT INTO part (title, description, price, contact_phone, source, source_url, part_image) VALUES (%s,%s,%s,%s,%s,%s,%s)',
+                        (title, description, price, phone, 'barnstormers', href, img))
+                    imported += 1
+                except Exception as e:
+                    errors += 1
+                    err_msgs.append(str(e)[:80])
+            _time.sleep(0.5)
+        except Exception as e:
+            err_msgs.append('Side ' + str(page) + ': ' + str(e)[:80])
+            break
+    conn.commit()
+    conn.close()
+    return 'Done! Importeret: ' + str(imported) + ', Sprunget over: ' + str(skipped) + ', Fejl: ' + str(errors) + '<br>' + '<br>'.join(err_msgs[:5])
 
 @app.route('/admin/scrape-winglist')
 def admin_scrape_winglist():

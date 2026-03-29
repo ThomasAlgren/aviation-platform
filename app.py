@@ -4076,6 +4076,21 @@ def admin_migrate():
     conn.close()
     return "<br>".join(results)
 
+@app.route('/admin/test-barnstormers')
+def admin_test_barnstormers():
+    import requests as _req
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Referer': 'https://www.google.com',
+        }
+        resp = _req.get('https://www.barnstormers.com/classified_cats.php?cat=Parts', headers=headers, timeout=15)
+        return f"Status: {resp.status_code}, Bytes: {len(resp.text)}, First 500 chars: {resp.text[:500]}"
+    except Exception as e:
+        return f"FEJL: {e}"
+
 @app.route('/admin/test-scrape')
 def admin_test_scrape():
     import requests as _req

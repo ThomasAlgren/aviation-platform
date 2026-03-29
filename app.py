@@ -4411,38 +4411,111 @@ def workshops():
     cur.execute("SELECT name, approval_number, address, country FROM maintenance_org ORDER BY country, name")
     rows = cur.fetchall()
     conn.close()
-    by_country = {}
+
+    search = request.args.get('q', '').strip().lower()
+    filter_type = request.args.get('type', '').strip().upper()
+    filter_country = request.args.get('country', '').strip().upper()
+
+    all_countries = sorted(set(r[3] for r in rows if r[3]))
+    total = len(rows)
+
+    def get_type(approval):
+        if '.145.' in approval: return '145'
+        if '.147.' in approval: return '147'
+        if '.CAMO.' in approval or '.CAO.' in approval: return 'CAMO'
+        return '145'
+
+    filtered = []
     for r in rows:
-        c = r[3] or 'Unknown'
+        name, approval, address, country = r[0], r[1], r[2] or '', r[3] or 'Unknown'
+        atype = get_type(approval)
+        if search and search not in name.lower() and search not in approval.lower() and search not in country.lower():
+            continue
+        if filter_type and atype != filter_type:
+            continue
+        if filter_country and country.upper() != filter_country:
+            continue
+        filtered.append({'name': name, 'approval': approval, 'address': address, 'country': country, 'type': atype})
+
+    by_country = {}
+    for o in filtered:
+        c = o['country']
         if c not in by_country: by_country[c] = []
-        by_country[c].append({'name': r[0], 'approval': r[1], 'address': r[2]})
-    parts = ['<!DOCTYPE html><html><head><meta charset="utf-8"><title>Workshops - PanPanParts</title><style>']
-    parts.append('body{font-family:-apple-system,sans-serif;background:#0d0d1a;color:#fff;margin:0}')
-    parts.append('.nav{background:#0d0d1a;border-bottom:1px solid #1a1a2e;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}')
-    parts.append('.nav a{color:#fff;text-decoration:none;font-size:14px;margin-left:16px}')
-    parts.append('.logo{font-size:20px;font-weight:800}.logo span{color:#ff6b35}')
-    parts.append('.container{max-width:1200px;margin:0 auto;padding:40px 20px}')
-    parts.append('h1{font-size:32px}h1 span{color:#ff6b35}.subtitle{color:#666;margin-bottom:40px}')
-    parts.append('.country-title{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#ff6b35;margin:32px 0 12px;border-bottom:1px solid #1a1a2e;padding-bottom:8px}')
-    parts.append('.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px}')
-    parts.append('.card{background:#1a1a2e;border-radius:12px;padding:20px;border:1px solid #2a2a3e}')
-    parts.append('.name{font-size:15px;font-weight:600;margin-bottom:4px}')
-    parts.append('.approval{font-size:12px;color:#ff6b35;font-family:monospace;margin-bottom:8px}')
-    parts.append('.address{font-size:13px;color:#888}.badge{display:inline-block;background:#0d2a0d;color:#4caf50;border:1px solid #2a4a2a;border-radius:6px;padding:2px 8px;font-size:11px;margin-top:8px}')
-    parts.append('</style></head><body>')
-    parts.append('<div class="nav"><a href="/" class="logo">PanPan<span>Parts</span></a><div>')
-    parts.append('<a href="/aircraft-for-sale">Aircraft for sale</a><a href="/parts">Parts for sale</a><a href="/workshops">Workshops</a>')
-    parts.append('</div></div><div class="container">')
-    parts.append('<h1>Certified <span>Workshops</span></h1>')
-    parts.append('<p class="subtitle">EASA Part-145 approved maintenance organisations</p>')
+        by_country[c].append(o)
+
+    type_colors = {'145': '#ff6b35', '147': '#4caf50', 'CAMO': '#2196f3'}
+    type_labels = {'145': 'Part-145 MRO', '147': 'Part-147 Training', 'CAMO': 'CAMO/CAO'}
+
+    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>Workshops - PanPanParts</title>
+<style>
+*{{box-sizing:border-box}}
+body{{font-family:-apple-system,sans-serif;background:#0d0d1a;color:#fff;margin:0}}
+.nav{{background:#0d0d1a;border-bottom:1px solid #1a1a2e;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}}
+.nav a{{color:#fff;text-decoration:none;font-size:14px;margin-left:16px}}
+.logo{{font-size:20px;font-weight:800}}.logo span{{color:#ff6b35}}
+.container{{max-width:1400px;margin:0 auto;padding:40px 20px}}
+h1{{font-size:32px;margin-bottom:4px}}h1 span{{color:#ff6b35}}
+.subtitle{{color:#666;margin-bottom:24px}}
+.filters{{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px;align-items:center}}
+.filters input{{background:#1a1a2e;border:1px solid #2a2a3e;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;width:280px;outline:none}}
+.filters input:focus{{border-color:#ff6b35}}
+.filters select{{background:#1a1a2e;border:1px solid #2a2a3e;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;outline:none;cursor:pointer}}
+.filters select:focus{{border-color:#ff6b35}}
+.stats{{color:#888;font-size:13px;margin-bottom:24px}}
+.stats span{{color:#ff6b35;font-weight:600}}
+.country-section{{margin-bottom:40px}}
+.country-title{{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#ff6b35;margin-bottom:12px;border-bottom:1px solid #1a1a2e;padding-bottom:8px;display:flex;justify-content:space-between}}
+.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}}
+.card{{background:#1a1a2e;border-radius:10px;padding:16px;border:1px solid #2a2a3e;transition:border-color 0.2s}}
+.card:hover{{border-color:#ff6b35}}
+.card-name{{font-size:14px;font-weight:600;margin-bottom:6px;line-height:1.3}}
+.card-approval{{font-size:11px;font-family:monospace;margin-bottom:8px;opacity:0.7}}
+.badge{{display:inline-block;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}}
+.no-results{{text-align:center;padding:60px;color:#666}}
+</style></head><body>
+<div class="nav"><a href="/" class="logo">PanPan<span>Parts</span></a><div>
+<a href="/aircraft-for-sale">Aircraft for sale</a>
+<a href="/parts">Parts for sale</a>
+<a href="/workshops">Workshops</a>
+</div></div>
+<div class="container">
+<h1>Certified <span>Workshops</span></h1>
+<p class="subtitle">EASA approved maintenance, training and continuing airworthiness organisations worldwide</p>
+<form method="get" class="filters">
+<input type="text" name="q" placeholder="Search by name, country or approval number..." value="{search}">
+<select name="type" onchange="this.form.submit()">
+<option value="">All types</option>
+<option value="145" {"selected" if filter_type=="145" else ""}>Part-145 MRO</option>
+<option value="147" {"selected" if filter_type=="147" else ""}>Part-147 Training</option>
+<option value="CAMO" {"selected" if filter_type=="CAMO" else ""}>CAMO/CAO</option>
+</select>
+<select name="country" onchange="this.form.submit()">
+<option value="">All countries</option>
+"""
+    for c in all_countries:
+        sel = 'selected' if filter_country == c.upper() else ''
+        html += f'<option value="{c}" {sel}>{c.title()}</option>'
+    html += f"""</select>
+<button type="submit" style="background:#ff6b35;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px">Search</button>
+</form>
+<div class="stats">Showing <span>{len(filtered)}</span> of <span>{total}</span> organisations across <span>{len(by_country)}</span> countries</div>
+"""
+    if not filtered:
+        html += '<div class="no-results">No organisations found. Try a different search.</div>'
     for country, orgs in sorted(by_country.items()):
-        parts.append(f'<div class="country-title">🌍 {country} — {len(orgs)} organisations</div>')
-        parts.append('<div class="grid">')
+        html += f'<div class="country-section"><div class="country-title"><span>🌍 {country.title()}</span><span>{len(orgs)} orgs</span></div><div class="grid">'
         for o in orgs:
-            parts.append(f'<div class="card"><div class="name">{o["name"]}</div><div class="approval">{o["approval"]}</div><div class="address">{o["address"] or ""}</div><span class="badge">✓ EASA Part-145</span></div>')
-        parts.append('</div>')
-    parts.append('</div></body></html>')
-    return ''.join(parts)
+            color = type_colors.get(o["type"], "#ff6b35")
+            label = type_labels.get(o["type"], o["type"])
+            html += f'''<div class="card">
+<div class="card-name">{o["name"]}</div>
+<div class="card-approval">{o["approval"]}</div>
+<span class="badge" style="background:{color}22;color:{color};border:1px solid {color}44">{label}</span>
+</div>'''
+        html += '</div></div>'
+    html += '</div></body></html>'
+    return html
 
 
 @app.route('/admin/import-easa-foreign')

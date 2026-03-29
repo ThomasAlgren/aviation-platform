@@ -4032,6 +4032,25 @@ Be honest, specific and helpful. Use aviation expertise."""
         return _json.dumps({"ok": False, "error": str(e)})
 
 
+@app.route('/admin/status')
+def admin_status():
+    conn = get_pg_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM aircraft_listing")
+    total = cur.fetchone()[0]
+    cur.execute("SELECT source, COUNT(*) FROM aircraft_listing GROUP BY source")
+    sources = cur.fetchall()
+    cur.execute("SELECT id, tail, manufacturer, model FROM aircraft_listing WHERE source='winglist' LIMIT 5")
+    winglist = cur.fetchall()
+    conn.close()
+    result = f"Total: {total}<br><br>Sources:<br>"
+    for s in sources:
+        result += f"  {s[0]}: {s[1]}<br>"
+    result += "<br>Winglist sample:<br>"
+    for w in winglist:
+        result += f"  {w}<br>"
+    return result
+
 @app.route('/admin/migrate')
 def admin_migrate():
     conn = get_pg_conn()

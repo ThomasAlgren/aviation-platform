@@ -551,6 +551,22 @@ class Part(db.Model):
     source_url = db.Column(db.Text)
     title = db.Column(db.String(300))
 
+class MaintenanceOrg(db.Model):
+    __tablename__ = 'maintenance_org'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(300))
+    approval_number = db.Column(db.String(50), unique=True)
+    address = db.Column(db.String(300))
+    country = db.Column(db.String(100))
+    city = db.Column(db.String(100))
+    email = db.Column(db.String(200))
+    phone = db.Column(db.String(50))
+    website = db.Column(db.String(200))
+    source = db.Column(db.String(100))
+    source_url = db.Column(db.Text)
+    source_date = db.Column(db.String(20))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 with app.app_context():
     db.create_all()
     try:
@@ -4172,6 +4188,129 @@ def admin_import_barnstormers_parts():
     conn.commit()
     conn.close()
     return 'Done! Importeret: ' + str(imported) + ', Sprunget over: ' + str(skipped) + ', Fejl: ' + str(errors) + '<br>' + '<br>'.join(err_msgs[:5])
+
+
+@app.route('/admin/import-workshops')
+def admin_import_workshops():
+    import json as _json, re as _re
+    conn = get_pg_conn()
+    cur = conn.cursor()
+    
+    # Opret tabel hvis den ikke findes
+    cur.execute("""CREATE TABLE IF NOT EXISTS maintenance_org (
+        id SERIAL PRIMARY KEY,
+        name TEXT,
+        approval_number TEXT UNIQUE,
+        address TEXT,
+        country TEXT,
+        city TEXT,
+        email TEXT,
+        phone TEXT,
+        website TEXT,
+        source TEXT,
+        source_url TEXT,
+        source_date TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+    )""")
+    conn.commit()
+    
+    # Data fra scrape
+    data = [
+        {'name': 'AeroInterior ApS', 'approval_number': 'DK.145.0108', 'address': '5270 Odense N', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'AEROSERVICE ApS', 'approval_number': 'DK.145.0109', 'address': '2770 Kastrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Air Alsie A/S Sønderborg Lufthavn', 'approval_number': 'DK.145.0050', 'address': '6400 Sønderborg', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Air Greenland A/S', 'approval_number': 'DK.145.0025', 'address': '', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Air Service International A/S', 'approval_number': 'DK.145.0007', 'address': '7190 Billund', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Air Service Vamdrup ApS', 'approval_number': 'DK.145.0027', 'address': '6580 Vamdrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Atlantic Airways, Faroe Islands, P/F Vagar Airport', 'approval_number': 'DK.145.0009', 'address': 'FO-380 Sørvágur', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Avia Radio A/S Hangar', 'approval_number': 'DK.145.0033', 'address': 'Københavns Lufthavn Syd 2791 Dragør', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Bel Air Aviation A/S Vestre', 'approval_number': 'DK.145.0094', 'address': '6705 Esbjerg Ø', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Benair A/S Stauning Lufthavn', 'approval_number': 'DK.145.0019', 'address': '6900 Skjern', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Bornholm Air Service ApS Søndre', 'approval_number': 'DK.145.0079', 'address': '3700 Rønne', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Cat Flyservice A/S', 'approval_number': 'DK.145.0015', 'address': '4000 Roskilde', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'CCS Maintenance ApS Hangar', 'approval_number': 'DK.145.0097', 'address': 'Københavns Lufthavn Syd 2791 Dragør', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'CHEP Aerospace Solutions ApS Copenhagen Airport South, Building', 'approval_number': 'DK.145.0104', 'address': '280 2791 Dragør', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Classic Trim ApS', 'approval_number': 'DK.145.0072', 'address': '5330 Munkebo', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'DanCopter A/S DanCopter Allé', 'approval_number': 'DK.145.0070', 'address': '6705 Esbjerg Ø page 3 of 50', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Danish Aerotech A/S', 'approval_number': 'DK.145.0073', 'address': 'Karup Airbase 7470 Karup J', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Danish Air Transport A/S', 'approval_number': 'DK.145.0083', 'address': '6580 Vamdrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'DAO Aviation A/S Hangarvej H', 'approval_number': 'DK.145.0020', 'address': 'Københavns Lufthavn Roskilde 4000 Roskilde', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'F.O. Flyservice ApS', 'approval_number': 'DK.145.0076', 'address': '7400 Herning', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'General Aviation Service ApS Hangarvej A', 'approval_number': 'DK.145.0098', 'address': '4000 Roskilde', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Jet Time A/S', 'approval_number': 'DK.145.0091', 'address': '2770 Kastrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Kalundborg Aviation v/ Thorkild', 'approval_number': 'DK.145.0031', 'address': 'Kristensen Kalundborg Flyveplads 4593 Eskebjerg', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Lite Flite ApS v/John C. Holstein', 'approval_number': 'DK.145.0039', 'address': 'Koldingegnens Lufthavn 6580 Vamdrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Nordic Aviation Capital A/S', 'approval_number': 'DK.145.0018', 'address': '7190 Billund', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Nordisk Svejse Kontrol A/S Hammeren', 'approval_number': 'DK.145.0081', 'address': '6715 Esbjerg N', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'North Flying A/S Aalborg Lufthavn', 'approval_number': 'DK.145.0022', 'address': '9400 Nørresundby', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Northern Aerotech ApS Københavns Lufthavn Syd Bygn.', 'approval_number': 'DK.145.0103', 'address': '2791 Dragør', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Scanaviation of', 'approval_number': 'DK.145.0107', 'address': '2770 Kastrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Scandinavian Aircraft Technologies', 'approval_number': 'DK.145.0078', 'address': 'A/S 9870 Sindal', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Scandinavian Avionics A/S', 'approval_number': 'DK.145.0075', 'address': '7190 Billund', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Skyways Technics A/S', 'approval_number': 'DK.145.0105', 'address': '6400 Sønderborg', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'ST Aerospace Solutions (Europe) A/S Amager', 'approval_number': 'DK.145.0092', 'address': '2770 Kastrup page 4 of 50', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Star Air A/S Hangar', 'approval_number': 'DK.145.0087', 'address': 'Københavns Lufthavn Syd 2791 Dragør', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Sun-Air of Scandinavia A/S', 'approval_number': 'DK.145.0002', 'address': '7190 Billund', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Thomas Cook Airlines Scandinavia Københavns Lufthavn Syd', 'approval_number': 'DK.145.0049', 'address': 'A/S 2791 Dragør', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Thrane & Thrane A/S', 'approval_number': 'DK.145.0060', 'address': '2800 Kgs. Lyngby', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Uni-Fly A/S', 'approval_number': 'DK.145.0099', 'address': 'H. C. Andersen Airport 5270 Odense N', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Viking Life-Saving Equipment A/S Sædding', 'approval_number': 'DK.145.0102', 'address': '6710 Esbjerg V. page 5 of 50', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'AeroInterior ApS Approval No:', 'approval_number': 'DK.145.0108', 'address': 'Lufthavnvej 131 5270 Odense N', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'AEROSERVICE ApS Approval No:', 'approval_number': 'DK.145.0109', 'address': 'Oliefabriksvej 118 2770 Kastrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Air Alsie A/S Approval No:', 'approval_number': 'DK.145.0050', 'address': 'Sønderborg Lufthavn 6400 Sønderborg', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Air Greenland A/S Approval No:', 'approval_number': 'DK.145.0025', 'address': '3900 Nuuk Other approved addresses:', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Air Service International A/S Approval No:', 'approval_number': 'DK.145.0007', 'address': 'Stratusvej 1 7190 Billund', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Air Service Vamdrup ApS Approval No:', 'approval_number': 'DK.145.0027', 'address': 'Lufthavnsvej 7A 6580 Vamdrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Atlantic Airways, Faroe Islands, P/F Approval No:', 'approval_number': 'DK.145.0009', 'address': 'Vagar Airport FO-380 Sørvágur', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Avia Radio A/S Approval No:', 'approval_number': 'DK.145.0033', 'address': 'Hangar 141 Københavns Lufthavn Syd 2791 Dragør', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Bel Air Aviation A/S Approval No:', 'approval_number': 'DK.145.0094', 'address': 'Vestre Lufthavnsvej 54 6705 Esbjerg Ø', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Benair A/S Approval No:', 'approval_number': 'DK.145.0019', 'address': 'Stauning Lufthavn 6900 Skjern', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Bornholm Air Service ApS Approval No:', 'approval_number': 'DK.145.0079', 'address': 'Søndre Landevej 2 3700 Rønne', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Cat Flyservice A/S Approval No:', 'approval_number': 'DK.145.0015', 'address': 'Lufthavnsvej 34 4000 Roskilde', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'CCS Maintenance ApS Approval No:', 'approval_number': 'DK.145.0097', 'address': 'Hangar 253 Københavns Lufthavn Syd 2791 Dragør', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'CHEP Aerospace Solutions ApS Approval No:', 'approval_number': 'DK.145.0104', 'address': 'Copenhagen Airport South, Building 280 2791 Dragør', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Classic Trim ApS Approval No:', 'approval_number': 'DK.145.0072', 'address': 'Garbæksvej 10 5330 Munkebo', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'DanCopter A/S Approval No:', 'approval_number': 'DK.145.0070', 'address': 'DanCopter Allé 2 6705 Esbjerg Ø', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Danish Aerotech A/S Approval No:', 'approval_number': 'DK.145.0073', 'address': 'Herningvej 30 Karup Airbase 7470 Karup J', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Danish Air Transport A/S Approval No:', 'approval_number': 'DK.145.0083', 'address': 'Lufthavnsvej 7A 6580 Vamdrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'DAO Aviation A/S Approval No:', 'approval_number': 'DK.145.0020', 'address': 'Hangarvej H 1 Københavns Lufthavn Roskilde 4000 Roskilde', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'F.O. Flyservice ApS Approval No:', 'approval_number': 'DK.145.0076', 'address': 'Skinderholmvej 19 7400 Herning', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'General Aviation Service ApS Approval No:', 'approval_number': 'DK.145.0098', 'address': 'Hangarvej A 4 4000 Roskilde', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Jet Time A/S Approval No:', 'approval_number': 'DK.145.0091', 'address': 'Skøjtevej 27-31 2770 Kastrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Kalundborg Aviation v/ Thorkild Kristensen Approval No:', 'approval_number': 'DK.145.0031', 'address': 'Eskebjergvej 92 Kalundborg Flyveplads 4593 Eskebjerg', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Lite Flite ApS v/John C. Holstein Approval No:', 'approval_number': 'DK.145.0039', 'address': 'Lufthavnsvej 8A Koldingegnens Lufthavn 6580 Vamdrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Nordic Aviation Capital A/S Approval No:', 'approval_number': 'DK.145.0018', 'address': 'Stratusvej 12 7190 Billund', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Nordisk Svejse Kontrol A/S Approval No:', 'approval_number': 'DK.145.0081', 'address': 'Hammeren 5 6715 Esbjerg N', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'North Flying A/S Approval No:', 'approval_number': 'DK.145.0022', 'address': 'Aalborg Lufthavn 9400 Nørresundby', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Northern Aerotech ApS Approval No:', 'approval_number': 'DK.145.0103', 'address': 'Københavns Lufthavn Syd Bygn. 273 2791 Dragør', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Scanaviation of', 'approval_number': 'DK.145.0107', 'address': 'Amager Landevej 147 B 2770 Kastrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Scandinavian Aircraft Technologies A/S Approval No:', 'approval_number': 'DK.145.0078', 'address': 'Taagholtvej 178 9870 Sindal', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Scandinavian Avionics A/S Approval No:', 'approval_number': 'DK.145.0075', 'address': 'Stratusvej 9 7190 Billund', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Skyways Technics A/S Approval No:', 'approval_number': 'DK.145.0105', 'address': 'Lufthavnsvej 1B 6400 Sønderborg', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'ST Aerospace Solutions (Europe) A/S Approval No:', 'approval_number': 'DK.145.0092', 'address': 'Amager Strandvej 392 2770 Kastrup', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Star Air A/S Approval No:', 'approval_number': 'DK.145.0087', 'address': 'Hangar 243 Københavns Lufthavn Syd 2791 Dragør', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Sun-Air of Scandinavia A/S Approval No:', 'approval_number': 'DK.145.0002', 'address': 'Cumulusvej 10 7190 Billund', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Thomas Cook Airlines Scandinavia A/S Approval No:', 'approval_number': 'DK.145.0049', 'address': 'Københavns Lufthavn Syd 2791 Dragør', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Thrane & Thrane A/S Approval No:', 'approval_number': 'DK.145.0060', 'address': 'Lundtoftegårdsvej 93D 2800 Kgs. Lyngby', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Uni-Fly A/S Approval No:', 'approval_number': 'DK.145.0099', 'address': 'Lufthavnsvej 131 H. C. Andersen Airport 5270 Odense N', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'},
+        {'name': 'Viking Life-Saving Equipment A/S Approval No:', 'approval_number': 'DK.145.0102', 'address': 'Sædding Ringvej 13 6710 Esbjerg V.', 'country': 'Denmark', 'source': 'trafikstyrelsen', 'source_url': 'https://www.en.trafikstyrelsen.dk/media/13045/Approved%20Part-145%20Maintenance%20Organisations%20august%202015.pdf', 'source_date': '2015-08-03'}
+    ]
+    
+    imported = skipped = 0
+    for w in data:
+        try:
+            cur.execute("SELECT id FROM maintenance_org WHERE approval_number = %s", (w['approval_number'],))
+            if cur.fetchone():
+                skipped += 1
+                continue
+            cur.execute("INSERT INTO maintenance_org (name, approval_number, address, country, source, source_url, source_date) VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                (w['name'], w['approval_number'], w['address'], w['country'], w['source'], w['source_url'], w['source_date']))
+            imported += 1
+        except Exception as e:
+            conn.rollback()
+    conn.commit()
+    conn.close()
+    return f"Done! Importeret: {imported}, Sprunget over: {skipped}"
 
 @app.route('/admin/scrape-winglist')
 def admin_scrape_winglist():

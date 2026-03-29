@@ -3642,109 +3642,33 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
                         {% if listing.is_hangared %}<span class="hbadge yes">▲ HANGARED</span>{% else %}<span class="hbadge no">▼ NOT HANGARED</span>{% endif %}
                     </div>
 
-                    <!-- GAUGES -->
-                    <div class="health-gauges">
+                    <!-- GAUGES — nåle beregnes med JS -->
+                    <div class="health-gauges" id="gauge-container">
                         {% if listing.hours_engine and listing.hours_engine_tbo %}
-                        {% set eng_pct = (listing.hours_engine / listing.hours_engine_tbo * 100)|int %}
-                        {% set eng_color = '#4caf50' if eng_pct < 50 else ('#ffc107' if eng_pct < 75 else '#f44336') %}
-                        {% set eng_x2 = (65 + 52 * [(eng_pct / 100 * 3.14159 - 3.14159)|cos])|int %}
-                        {% set eng_y2 = (76 - 52 * [(eng_pct / 100 * 3.14159 - 3.14159)|sin])|int %}
                         <div class="gauge-card">
                             <div class="gauge-lbl">ENG · SMOH/TBO</div>
-                            <svg width="130" height="82" viewBox="0 0 130 82">
-                                <defs>
-                                    <linearGradient id="eg" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#4caf50"/>
-                                        <stop offset="55%" stop-color="#ffc107"/>
-                                        <stop offset="100%" stop-color="#f44336"/>
-                                    </linearGradient>
-                                </defs>
-                                <g stroke="#2a3a2a" stroke-width="1">
-                                    <line x1="14" y1="76" x2="19" y2="71"/>
-                                    <line x1="29" y1="43" x2="35" y2="46"/>
-                                    <line x1="65" y1="28" x2="65" y2="35"/>
-                                    <line x1="101" y1="43" x2="95" y2="46"/>
-                                    <line x1="116" y1="76" x2="111" y2="71"/>
-                                </g>
-                                <path d="M14 76 A52 52 0 0 1 116 76" fill="none" stroke="#1a2a1a" stroke-width="12" stroke-linecap="butt"/>
-                                <path d="M14 76 A52 52 0 0 1 116 76" fill="none" stroke="url(#eg)" stroke-width="12" stroke-linecap="butt" opacity="0.8"/>
-                                <line x1="65" y1="76" x2="{{ eng_x2 }}" y2="{{ eng_y2 }}" stroke="#000" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-                                <line x1="65" y1="76" x2="{{ eng_x2 }}" y2="{{ eng_y2 }}" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-                                <circle cx="65" cy="76" r="5" fill="#0d0d1a" stroke="{{ eng_color }}" stroke-width="1.5"/>
-                                <circle cx="65" cy="76" r="2" fill="{{ eng_color }}"/>
-                                <text x="65" y="62" text-anchor="middle" font-size="12" font-weight="700" fill="{{ eng_color }}" font-family="monospace">{{ eng_pct }}%</text>
-                            </svg>
+                            <canvas class="gauge-canvas" width="130" height="82"
+                                data-pct="{{ (listing.hours_engine / listing.hours_engine_tbo * 100)|int }}"></canvas>
                             <div class="gauge-val">{{ listing.hours_engine|int }}h SMOH</div>
                             <div class="gauge-sub">TBO {{ listing.hours_engine_tbo|int }}h · {{ (listing.hours_engine_tbo - listing.hours_engine)|int }}h LEFT</div>
                         </div>
                         {% endif %}
-
                         {% if listing.hours_total %}
                         {% set af_pct = [listing.hours_total / 10000 * 100, 100]|min|int %}
-                        {% set af_color = '#4caf50' if af_pct < 40 else ('#ffc107' if af_pct < 70 else '#f44336') %}
-                        {% set af_angle = af_pct / 100 * 180 %}
-                        {% set af_x2 = (65 + 52 * (af_angle - 180)|float|radians|cos)|int %}
-                        {% set af_y2 = (76 + 52 * (af_angle - 180)|float|radians|sin)|int %}
                         <div class="gauge-card">
                             <div class="gauge-lbl">AIRFRAME · TT</div>
-                            <svg width="130" height="82" viewBox="0 0 130 82">
-                                <defs>
-                                    <linearGradient id="ag" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#4caf50"/>
-                                        <stop offset="55%" stop-color="#ffc107"/>
-                                        <stop offset="100%" stop-color="#f44336"/>
-                                    </linearGradient>
-                                </defs>
-                                <g stroke="#2a3a2a" stroke-width="1">
-                                    <line x1="14" y1="76" x2="19" y2="71"/>
-                                    <line x1="29" y1="43" x2="35" y2="46"/>
-                                    <line x1="65" y1="28" x2="65" y2="35"/>
-                                    <line x1="101" y1="43" x2="95" y2="46"/>
-                                    <line x1="116" y1="76" x2="111" y2="71"/>
-                                </g>
-                                <path d="M14 76 A52 52 0 0 1 116 76" fill="none" stroke="#1a2a1a" stroke-width="12" stroke-linecap="butt"/>
-                                <path d="M14 76 A52 52 0 0 1 116 76" fill="none" stroke="url(#ag)" stroke-width="12" stroke-linecap="butt" opacity="0.8"/>
-                                <line x1="65" y1="76" x2="{{ af_x2 }}" y2="{{ af_y2 }}" stroke="#000" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-                                <line x1="65" y1="76" x2="{{ af_x2 }}" y2="{{ af_y2 }}" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-                                <circle cx="65" cy="76" r="5" fill="#0d0d1a" stroke="{{ af_color }}" stroke-width="1.5"/>
-                                <circle cx="65" cy="76" r="2" fill="{{ af_color }}"/>
-                                <text x="65" y="62" text-anchor="middle" font-size="12" font-weight="700" fill="{{ af_color }}" font-family="monospace">{{ listing.hours_total|int }}h</text>
-                            </svg>
+                            <canvas class="gauge-canvas" width="130" height="82"
+                                data-pct="{{ af_pct }}" data-label="{{ listing.hours_total|int }}h"></canvas>
                             <div class="gauge-val">{{ listing.hours_total|int }}h TT</div>
                             <div class="gauge-sub">MFR {{ listing.year }} · {% if listing.engine_overhauls %}{{ listing.engine_overhauls }}x OH{% else %}NO OVERHAUL{% endif %}</div>
                         </div>
                         {% endif %}
-
                         {% if listing.hours_prop and listing.hours_prop_tbo %}
                         {% set prop_pct = (listing.hours_prop / listing.hours_prop_tbo * 100)|int %}
-                        {% set prop_color = '#4caf50' if prop_pct < 50 else ('#ffc107' if prop_pct < 75 else '#f44336') %}
                         <div class="gauge-card">
                             <div class="gauge-lbl">PROP · OH INTERVAL</div>
-                            <svg width="130" height="82" viewBox="0 0 130 82">
-                                <defs>
-                                    <linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#4caf50"/>
-                                        <stop offset="55%" stop-color="#ffc107"/>
-                                        <stop offset="100%" stop-color="#f44336"/>
-                                    </linearGradient>
-                                </defs>
-                                <g stroke="#2a3a2a" stroke-width="1">
-                                    <line x1="14" y1="76" x2="19" y2="71"/>
-                                    <line x1="29" y1="43" x2="35" y2="46"/>
-                                    <line x1="65" y1="28" x2="65" y2="35"/>
-                                    <line x1="101" y1="43" x2="95" y2="46"/>
-                                    <line x1="116" y1="76" x2="111" y2="71"/>
-                                </g>
-                                <path d="M14 76 A52 52 0 0 1 116 76" fill="none" stroke="#1a2a1a" stroke-width="12" stroke-linecap="butt"/>
-                                <path d="M14 76 A52 52 0 0 1 116 76" fill="none" stroke="url(#pg)" stroke-width="12" stroke-linecap="butt" opacity="0.8"/>
-                                {% set prop_x2 = (65 + 52 * (prop_pct / 100 * 3.14159 - 3.14159)|cos)|int %}
-                                {% set prop_y2 = (76 - 52 * (prop_pct / 100 * 3.14159 - 3.14159)|sin)|int %}
-                                <line x1="65" y1="76" x2="{{ prop_x2 }}" y2="{{ prop_y2 }}" stroke="#000" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-                                <line x1="65" y1="76" x2="{{ prop_x2 }}" y2="{{ prop_y2 }}" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-                                <circle cx="65" cy="76" r="5" fill="#0d0d1a" stroke="{{ prop_color }}" stroke-width="1.5"/>
-                                <circle cx="65" cy="76" r="2" fill="{{ prop_color }}"/>
-                                <text x="65" y="62" text-anchor="middle" font-size="12" font-weight="700" fill="{{ prop_color }}" font-family="monospace">{{ prop_pct }}%</text>
-                            </svg>
+                            <canvas class="gauge-canvas" width="130" height="82"
+                                data-pct="{{ prop_pct }}"></canvas>
                             <div class="gauge-val">{{ listing.hours_prop|int }}h</div>
                             <div class="gauge-sub">OH INTERVAL {{ listing.hours_prop_tbo|int }}h · {{ (listing.hours_prop_tbo - listing.hours_prop)|int }}h LEFT</div>
                         </div>
@@ -3830,6 +3754,67 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
     <script>
         var currentIndex = 0;
         var allImages = [{% for img in images %}'{{ img }}'{% if not loop.last %},{% endif %}{% endfor %}];
+
+        // Tegn gauges med canvas
+        document.querySelectorAll('.gauge-canvas').forEach(function(canvas) {
+            var pct = parseInt(canvas.dataset.pct) || 0;
+            var label = canvas.dataset.label || (pct + '%');
+            var ctx = canvas.getContext('2d');
+            var cx = 65, cy = 76, r = 52;
+            var startAngle = Math.PI;
+            var endAngle = 2 * Math.PI;
+            var color = pct < 50 ? '#4caf50' : (pct < 75 ? '#ffc107' : '#f44336');
+
+            // Baggrund arc
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, startAngle, endAngle);
+            ctx.strokeStyle = '#1a2a1a';
+            ctx.lineWidth = 12;
+            ctx.lineCap = 'butt';
+            ctx.stroke();
+
+            // Gradient arc
+            var grad = ctx.createLinearGradient(14, 0, 116, 0);
+            grad.addColorStop(0, '#4caf50');
+            grad.addColorStop(0.55, '#ffc107');
+            grad.addColorStop(1, '#f44336');
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, startAngle, endAngle);
+            ctx.strokeStyle = grad;
+            ctx.globalAlpha = 0.8;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // Tick marks
+            ctx.strokeStyle = '#2a3a2a';
+            ctx.lineWidth = 1;
+            [[14,76,19,71],[29,43,35,46],[65,28,65,35],[101,43,95,46],[116,76,111,71]].forEach(function(t) {
+                ctx.beginPath(); ctx.moveTo(t[0],t[1]); ctx.lineTo(t[2],t[3]); ctx.stroke();
+            });
+
+            // Nål
+            var angle = Math.PI + (pct / 100) * Math.PI;
+            var nx = cx + r * Math.cos(angle);
+            var ny = cy + r * Math.sin(angle);
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(nx, ny);
+            ctx.strokeStyle = '#000'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+            ctx.globalAlpha = 0.4; ctx.stroke(); ctx.globalAlpha = 1;
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(nx, ny);
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
+
+            // Hub
+            ctx.beginPath(); ctx.arc(cx, cy, 5, 0, 2*Math.PI);
+            ctx.fillStyle = '#0d0d1a'; ctx.fill();
+            ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+            ctx.beginPath(); ctx.arc(cx, cy, 2, 0, 2*Math.PI);
+            ctx.fillStyle = color; ctx.fill();
+
+            // Label
+            ctx.fillStyle = color;
+            ctx.font = 'bold 12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(label || pct + '%', cx, 62);
+        });
 
         function setHero(thumb, src) {
             document.getElementById('hero-img').src = src;

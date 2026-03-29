@@ -4032,6 +4032,22 @@ Be honest, specific and helpful. Use aviation expertise."""
         return _json.dumps({"ok": False, "error": str(e)})
 
 
+@app.route('/admin/migrate')
+def admin_migrate():
+    conn = get_pg_conn()
+    cur = conn.cursor()
+    results = []
+    for col, typ in [('source_url','TEXT'),('source','TEXT'),('ai_description','TEXT')]:
+        try:
+            cur.execute(f"ALTER TABLE aircraft_listing ADD COLUMN {col} {typ}")
+            conn.commit()
+            results.append(f"Added {col}")
+        except Exception as e:
+            conn.rollback()
+            results.append(f"{col}: {str(e)[:50]}")
+    conn.close()
+    return "<br>".join(results)
+
 @app.route('/admin/scrape-winglist')
 def admin_scrape_winglist():
     import requests as _req

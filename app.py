@@ -3435,6 +3435,11 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
         
         /* Thumbnail strip */
         .thumb-strip { display: flex; gap: 6px; padding: 6px; background: #0a0a14; overflow-x: auto; }
+        .hero-wrap { position: relative; }
+        .hero-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; font-size: 28px; width: 52px; height: 52px; border-radius: 50%; cursor: pointer; z-index: 10; transition: background 0.2s; display: flex; align-items: center; justify-content: center; }
+        .hero-nav:hover { background: rgba(255,107,53,0.8); }
+        .hero-nav-left { left: 16px; }
+        .hero-nav-right { right: 16px; }
         .thumb { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; opacity: 0.6; flex-shrink: 0; }
         .thumb.active { opacity: 1; outline: 2px solid #ff6b35; }
         
@@ -3513,6 +3518,7 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
     </div>
 
     <!-- Hero billede -->
+    <div class="hero-wrap">
     {% if listing.hero_image %}
     <img class="hero-img" id="hero-img" src="{{ listing.hero_image }}" alt="{{ listing.tail }}">
     {% elif images %}
@@ -3520,6 +3526,11 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
     {% else %}
     <div class="hero-placeholder">✈️</div>
     {% endif %}
+    {% if images|length > 1 %}
+    <button class="hero-nav hero-nav-left" onclick="navHero(-1)">&#8592;</button>
+    <button class="hero-nav hero-nav-right" onclick="navHero(1)">&#8594;</button>
+    {% endif %}
+    </div>
 
     {% if images|length > 1 %}
     <div class="thumb-strip">
@@ -3624,11 +3635,31 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
     </div>
 
     <script>
+        var currentIndex = 0;
+        var allImages = [{% for img in images %}'{{ img }}'{% if not loop.last %},{% endif %}{% endfor %}];
+
         function setHero(thumb, src) {
             document.getElementById('hero-img').src = src;
             document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
             thumb.classList.add('active');
+            currentIndex = allImages.indexOf(src);
         }
+
+        function navHero(dir) {
+            if (allImages.length === 0) return;
+            currentIndex = (currentIndex + dir + allImages.length) % allImages.length;
+            var src = allImages[currentIndex];
+            document.getElementById('hero-img').src = src;
+            document.querySelectorAll('.thumb').forEach(function(t, i) {
+                t.classList.toggle('active', i === currentIndex);
+            });
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') navHero(-1);
+            if (e.key === 'ArrowRight') navHero(1);
+        });
     </script>
 </body>
 </html>"""

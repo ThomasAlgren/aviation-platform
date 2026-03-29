@@ -4403,6 +4403,47 @@ def admin_scrape_winglist():
     conn.close()
     return f"Done! Importeret: {imported}, Sprunget over: {skipped}, Fejl: {errors}<br>" + "<br>".join(err_msgs[:5])
 
+
+@app.route('/workshops')
+def workshops():
+    conn = get_pg_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT name, approval_number, address, country FROM maintenance_org ORDER BY country, name")
+    rows = cur.fetchall()
+    conn.close()
+    by_country = {}
+    for r in rows:
+        c = r[3] or 'Unknown'
+        if c not in by_country: by_country[c] = []
+        by_country[c].append({'name': r[0], 'approval': r[1], 'address': r[2]})
+    parts = ['<!DOCTYPE html><html><head><meta charset="utf-8"><title>Workshops - PanPanParts</title><style>']
+    parts.append('body{font-family:-apple-system,sans-serif;background:#0d0d1a;color:#fff;margin:0}')
+    parts.append('.nav{background:#0d0d1a;border-bottom:1px solid #1a1a2e;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}')
+    parts.append('.nav a{color:#fff;text-decoration:none;font-size:14px;margin-left:16px}')
+    parts.append('.logo{font-size:20px;font-weight:800}.logo span{color:#ff6b35}')
+    parts.append('.container{max-width:1200px;margin:0 auto;padding:40px 20px}')
+    parts.append('h1{font-size:32px}h1 span{color:#ff6b35}.subtitle{color:#666;margin-bottom:40px}')
+    parts.append('.country-title{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#ff6b35;margin:32px 0 12px;border-bottom:1px solid #1a1a2e;padding-bottom:8px}')
+    parts.append('.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px}')
+    parts.append('.card{background:#1a1a2e;border-radius:12px;padding:20px;border:1px solid #2a2a3e}')
+    parts.append('.name{font-size:15px;font-weight:600;margin-bottom:4px}')
+    parts.append('.approval{font-size:12px;color:#ff6b35;font-family:monospace;margin-bottom:8px}')
+    parts.append('.address{font-size:13px;color:#888}.badge{display:inline-block;background:#0d2a0d;color:#4caf50;border:1px solid #2a4a2a;border-radius:6px;padding:2px 8px;font-size:11px;margin-top:8px}')
+    parts.append('</style></head><body>')
+    parts.append('<div class="nav"><a href="/" class="logo">PanPan<span>Parts</span></a><div>')
+    parts.append('<a href="/aircraft-for-sale">Aircraft for sale</a><a href="/parts">Parts for sale</a><a href="/workshops">Workshops</a>')
+    parts.append('</div></div><div class="container">')
+    parts.append('<h1>Certified <span>Workshops</span></h1>')
+    parts.append('<p class="subtitle">EASA Part-145 approved maintenance organisations</p>')
+    for country, orgs in sorted(by_country.items()):
+        parts.append(f'<div class="country-title">🌍 {country} — {len(orgs)} organisations</div>')
+        parts.append('<div class="grid">')
+        for o in orgs:
+            parts.append(f'<div class="card"><div class="name">{o["name"]}</div><div class="approval">{o["approval"]}</div><div class="address">{o["address"] or ""}</div><span class="badge">✓ EASA Part-145</span></div>')
+        parts.append('</div>')
+    parts.append('</div></body></html>')
+    return ''.join(parts)
+
 @app.route('/sitemap.xml')
 def sitemap():
     return render_template_string("""<?xml version="1.0" encoding="UTF-8"?>

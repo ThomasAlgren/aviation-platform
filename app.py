@@ -4699,14 +4699,22 @@ def sitemap():
 
 @app.route('/sitemap-pages.xml')
 def sitemap_pages():
-    return render_template_string("""<?xml version="1.0" encoding="UTF-8"?>
+    conn_s = get_pg_conn()
+    cur_s = conn_s.cursor()
+    cur_s.execute("SELECT id, manufacturer, model, tail FROM aircraft_listing WHERE status='active' ORDER BY id")
+    listings = cur_s.fetchall()
+    conn_s.close()
+    urls = """<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url><loc>https://panpanparts.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
     <url><loc>https://panpanparts.com/parts</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
     <url><loc>https://panpanparts.com/aircraft-for-sale</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
-    <url><loc>https://panpanparts.com/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-    <url><loc>https://panpanparts.com/tos</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
-</urlset>"""), 200, {'Content-Type': 'application/xml'}
+    <url><loc>https://panpanparts.com/workshops</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+"""
+    for l in listings:
+        urls += f"    <url><loc>https://panpanparts.com/aircraft-listing/{l[0]}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n"
+    urls += "</urlset>"
+    return urls, 200, {'Content-Type': 'application/xml'}
 
 @app.route('/sitemap-aircraft-<int:page>.xml')
 def sitemap_aircraft(page):

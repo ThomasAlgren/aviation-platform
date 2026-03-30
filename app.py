@@ -755,9 +755,14 @@ SEARCH_HTML = """
       gtag('js', new Date());
       gtag('config', 'G-K3PJMNF1JE');
     </script>
-    <title>PanPanParts — Aviation Parts & Aircraft Registry</title>
+    <title>PanPanParts — Aircraft for Sale, Aviation Parts & Pilot Logbook</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Buy and sell aircraft and aviation parts. Browse 700+ aircraft for sale including Cessna, Piper, Cirrus and Diamond. Digital pilot logbook, EASA certified workshops directory.">
+    <meta property="og:title" content="PanPanParts — Aircraft for Sale & Aviation Marketplace">
+    <meta property="og:description" content="Buy and sell aircraft and aviation parts. 700+ aircraft for sale, EASA certified workshops, digital pilot logbook.">
+    <meta property="og:type" content="website">
+    <link rel="canonical" href="https://panpanparts.com/">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; min-height: 100vh; }
@@ -3622,9 +3627,15 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
       gtag('js', new Date());
       gtag('config', 'G-K3PJMNF1JE');
     </script>
-    <title>{{ listing.tail }} — {{ listing.manufacturer }} {{ listing.model }} for Sale</title>
+    <title>{{ listing.tail }} — {{ listing.manufacturer }} {{ listing.model }} for Sale | PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="{{ listing.manufacturer }} {{ listing.model }}{% if listing.year %} ({{ listing.year }}){% endif %}{% if listing.price %} for sale at EUR {{ "{:,.0f}".format(listing.price) }}{% else %} for sale{% endif %}{% if listing.location %} — {{ listing.location }}{% endif %}. {% if listing.hours_total %}Total time {{ listing.hours_total|int }} hrs. {% endif %}Listed on PanPanParts aviation marketplace.">
+    <meta property="og:title" content="{{ listing.tail }} — {{ listing.manufacturer }} {{ listing.model }} for Sale">
+    <meta property="og:description" content="{{ listing.manufacturer }} {{ listing.model }}{% if listing.price %} — EUR {{ "{:,.0f}".format(listing.price) }}{% else %} — Price on request{% endif %}{% if listing.location %} — {{ listing.location }}{% endif %}">
+    {% if images %}<meta property="og:image" content="{{ images[0] }}">{% endif %}
+    <meta property="og:type" content="website">
+    <link rel="canonical" href="https://panpanparts.com/aircraft-listing/{{ listing.id }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, sans-serif; background: #0a0a14; color: white; }

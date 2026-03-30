@@ -4364,18 +4364,26 @@ def admin_scrape_winglist():
         d["description"] = "\n".join(sections)
         return d
 
-    all_urls = []
-    for region in ["EU","NA"]:
-        urls = get_urls(BASE+"/?region="+region)
-        all_urls.extend(urls)
-    all_urls = list(set(all_urls))
+    all_urls = set()
+    import time as _time2
+    for region in ["EU","NA","AS","AF"]:
+        prev = set()
+        for page in range(1, 50):
+            urls = set(get_urls(BASE+f"/?region={region}&page={page}"))
+            new = urls - all_urls
+            all_urls |= urls
+            if not new or urls == prev:
+                break
+            prev = urls
+            _time2.sleep(0.2)
+    all_urls = list(all_urls)
 
     conn = get_pg_conn()
     cur = conn.cursor()
     imported = skipped = errors = 0
     err_msgs = []
 
-    for url in all_urls[:30]:
+    for url in all_urls:
         try:
             cur.execute("SELECT id FROM aircraft_listing WHERE source_url = %s", (url,))
             if cur.fetchone():

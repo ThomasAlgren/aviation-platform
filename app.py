@@ -3009,8 +3009,9 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
                 return;
             }
             grid.innerHTML = listings.map(function(l) {
-                var img = l.hero_image ? 
-                    '<img class="card-img" src="' + l.hero_image + '">' :
+                var imgSrc = l.hero_image || (Array.isArray(l.images) && l.images[0]) || (typeof l.images === 'string' && JSON.parse(l.images || '[]')[0]) || null;
+                var img = imgSrc ? 
+                    '<img class="card-img" src="' + imgSrc + '">' :
                     '<div class="card-img-placeholder">✈️</div>';
                 var hours = l.hours_total ? l.hours_total + 'h TT' + (l.hours_engine ? ' · ' + l.hours_engine + 'h SMOH' : '') : '';
                 return '<a class="listing-card" href="/aircraft-listing/' + l.id + '">' +

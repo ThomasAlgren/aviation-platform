@@ -2783,7 +2783,7 @@ Examples:
         conditions.append("(" + " OR ".join(kw_conditions) + ")")
 
     where = " AND ".join(conditions)
-    cur.execute(f"SELECT * FROM aircraft_listing WHERE {where} LIMIT 50", params)
+    cur.execute(f"SELECT * FROM aircraft_listing WHERE {where} ORDER BY CASE WHEN price IS NULL OR price = 0 THEN 1 ELSE 0 END, price ASC LIMIT 50", params)
     rows = cur.fetchall()
     conn.close()
 

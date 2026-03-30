@@ -900,12 +900,20 @@ SEARCH_HTML = """
             var track = document.getElementById('carouselTrack');
             if (!track) return;
             var cards = track.children.length;
-            var cardWidth = 236; // 220px + 16px gap
-            var visible = Math.floor(track.parentElement.offsetWidth / cardWidth);
+            var cardWidth = 236;
             var current = 0;
             setInterval(function() {
-                current = (current + 1) % (cards - visible + 1);
+                current = (current + 1) % cards;
                 track.style.transform = 'translateX(-' + (current * cardWidth) + 'px)';
+                // Reset smoothly when near end
+                if (current === cards - 1) {
+                    setTimeout(function() {
+                        track.style.transition = 'none';
+                        current = 0;
+                        track.style.transform = 'translateX(0)';
+                        setTimeout(function() { track.style.transition = 'transform 0.5s ease'; }, 50);
+                    }, 500);
+                }
             }, 4000);
         })();
         </script>
@@ -1265,7 +1273,7 @@ def index():
     import json as _json2
     conn3 = get_pg_conn()
     cur3 = conn3.cursor()
-    cur3.execute("SELECT id, tail, manufacturer, model, year, price, location, images FROM aircraft_listing WHERE status='active' AND images != '[]' ORDER BY RANDOM() LIMIT 16")
+    cur3.execute("SELECT id, tail, manufacturer, model, year, price, location, images FROM aircraft_listing WHERE status='active' AND images != '[]' AND price > 0 ORDER BY RANDOM()")
     featured_rows = cur3.fetchall()
     conn3.close()
     featured_aircraft = []

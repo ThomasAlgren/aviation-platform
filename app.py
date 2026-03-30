@@ -793,7 +793,7 @@ SEARCH_HTML = """
         .stat { text-align: center; }
         .stat-value { font-size: 32px; font-weight: 700; color: #ff6b35; }
         .stat-label { font-size: 13px; color: #666; margin-top: 4px; }
-        .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 900px; margin: 0 auto 80px; padding: 0 20px; }
+        .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 1100px; margin: 0 auto 80px; padding: 0 20px; }
         .feature { background: #1a1a2e; border-radius: 12px; padding: 24px; border: 1px solid #2a2a3e; }
         .feature-icon { font-size: 28px; margin-bottom: 12px; }
         .feature h3 { font-size: 15px; margin-bottom: 8px; }

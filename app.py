@@ -2713,48 +2713,88 @@ def api_aircraft_search():
     queries = data.get('queries', [])
     listings = data.get('listings', [])
 
-    if not queries or not listings:
+    if not queries:
         return _json.dumps({'matches': listings, 'suggestion': None})
 
     combined_query = ' AND '.join(queries)
 
+    # Step 1: Ask AI to extract search filters (fast, no listings sent)
     client = ac.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=1000,
+        max_tokens=300,
         messages=[{
             "role": "user",
-            "content": f"""You are an aircraft search engine. Filter and rank these aircraft listings based on the search criteria.
+            "content": f"""Extract search filters from this aircraft search query. Return ONLY JSON, no markdown.
 
-Search criteria (applied cumulatively): {combined_query}
+Query: {combined_query}
 
-Listings:
-{_json.dumps(listings, indent=2)}
-
-Return ONLY a JSON object:
+Return:
 {{
-  "matching_ids": [list of matching listing IDs, ranked by relevance],
-  "suggestion": "A helpful follow-up suggestion for narrowing the search, or null"
+  "keywords": ["list", "of", "keywords", "to", "search", "in", "description", "and", "model"],
+  "max_price": null or number,
+  "min_price": null or number,
+  "manufacturer": null or string,
+  "has_autopilot": null or true,
+  "has_adsb": null or true,
+  "suggestion": null or "helpful tip"
 }}
 
-Be smart about interpreting criteria:
-- "glass cockpit" = Garmin G1000, Avidyne, or similar mentioned in description/specs
-- "4-seat" = 4 seats
-- Price ranges: "under 200k" = price < 200000
-- Motor hours: "500h to TBO" = hours_engine < 500 (approximately)
-- If no listings match, suggest broadening the search"""
+Examples:
+- "glass cockpit" -> keywords: ["G1000", "Avidyne", "glass", "Garmin", "GTN", "GNS"]
+- "under 100k" -> max_price: 100000
+- "Cessna" -> manufacturer: "Cessna"
+- "with autopilot" -> has_autopilot: true"""
         }]
     )
-    
-    text = response.content[0].text.replace("```json", "").replace("```", "").strip()
+
     try:
-        result = _json.loads(text)
-        matching_ids = result.get('matching_ids', [])
-        id_to_listing = {l['id']: l for l in listings}
-        matches = [id_to_listing[i] for i in matching_ids if i in id_to_listing]
-        return _json.dumps({'matches': matches, 'suggestion': result.get('suggestion')})
+        filters = _json.loads(response.content[0].text.replace("```json","").replace("```","").strip())
     except:
-        return _json.dumps({'matches': listings, 'suggestion': None})
+        filters = {"keywords": queries}
+
+    # Step 2: Filter in database using SQL
+    conn = get_pg_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    conditions = ["status = 'active'"]
+    params = []
+
+    if filters.get('max_price'):
+        conditions.append("price <= %s")
+        params.append(filters['max_price'])
+    if filters.get('min_price'):
+        conditions.append("price >= %s")
+        params.append(filters['min_price'])
+    if filters.get('manufacturer'):
+        conditions.append("manufacturer ILIKE %s")
+        params.append(f"%{filters['manufacturer']}%")
+    if filters.get('has_autopilot'):
+        conditions.append("has_autopilot = true")
+    if filters.get('has_adsb'):
+        conditions.append("has_adsb = true")
+
+    keywords = filters.get('keywords', [])
+    if keywords:
+        kw_conditions = []
+        for kw in keywords[:5]:
+            kw_conditions.append("(description ILIKE %s OR model ILIKE %s OR manufacturer ILIKE %s)")
+            params.extend([f"%{kw}%", f"%{kw}%", f"%{kw}%"])
+        conditions.append("(" + " OR ".join(kw_conditions) + ")")
+
+    where = " AND ".join(conditions)
+    cur.execute(f"SELECT * FROM aircraft_listing WHERE {where} LIMIT 50", params)
+    rows = cur.fetchall()
+    conn.close()
+
+    matches = []
+    for r in rows:
+        row = dict(r)
+        try: row['images'] = _json.loads(row['images']) if isinstance(row['images'], str) else row['images']
+        except: row['images'] = []
+        matches.append(row)
+
+    return _json.dumps({'matches': matches, 'suggestion': filters.get('suggestion')})
 
 
 AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
@@ -4383,7 +4423,13 @@ def admin_scrape_winglist():
     imported = skipped = errors = 0
     err_msgs = []
 
-    for url in all_urls:
+    batch = int(request.args.get('batch', 0))
+    batch_size = 50
+    start = batch * batch_size
+    end = start + batch_size
+    batch_urls = all_urls[start:end]
+    total_urls = len(all_urls)
+    for url in batch_urls:
         try:
             cur.execute("SELECT id FROM aircraft_listing WHERE source_url = %s", (url,))
             if cur.fetchone():
@@ -4409,7 +4455,7 @@ def admin_scrape_winglist():
 
     conn.commit()
     conn.close()
-    return f"Done! Importeret: {imported}, Sprunget over: {skipped}, Fejl: {errors}<br>" + "<br>".join(err_msgs[:5])
+    return f"Batch {batch}: {start}-{min(end,total_urls)} af {total_urls}. Importeret: {imported}, Sprunget over: {skipped}, Fejl: {errors}. <br>Næste: <a href='/admin/scrape-winglist?batch={batch+1}'>Batch {batch+1}</a>" + "<br>".join(err_msgs[:5])
 
 
 @app.route('/workshops')

@@ -859,7 +859,16 @@ SEARCH_HTML = """
             <div class="stat"><div class="stat-value">AI</div><div class="stat-label">Verified</div></div>
         </div>
 
-        <div class="carousel-section" style="margin:0 auto 48px;max-width:1100px;padding:0 20px">
+        <div id="search" style="margin:0 auto 32px;max-width:640px;padding:0 20px">
+            <form method="GET">
+                <div class="search-box">
+                    <input name="tail" placeholder="Find your aircraft — e.g. OY-RYY or N12345..." value="{{ tail }}">
+                    <button type="submit">Search</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="carousel-section" style="margin:0 auto 48px;max-width:900px;padding:0 20px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
                 <span style="font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#ff6b35">Featured Aircraft</span>
                 <a href="/aircraft-for-sale" style="color:#666;font-size:13px;text-decoration:none">View all {{ aircraft_count }} →</a>
@@ -922,14 +931,6 @@ SEARCH_HTML = """
             </div>
         </div>
 
-        <div id="search" style="margin-top:32px">
-            <form method="GET">
-                <div class="search-box">
-                    <input name="tail" placeholder="Find your aircraft — e.g. OY-RYY or N12345..." value="{{ tail }}">
-                    <button type="submit">Search</button>
-                </div>
-            </form>
-        </div>
     </div>
     {% endif %}
     {% if results is not none %}

@@ -859,6 +859,48 @@ SEARCH_HTML = """
             <div class="stat"><div class="stat-value">AI</div><div class="stat-label">Verified</div></div>
         </div>
 
+        <div class="carousel-section" style="margin:0 auto 48px;max-width:1100px;padding:0 20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <span style="font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#ff6b35">Featured Aircraft</span>
+                <a href="/aircraft-for-sale" style="color:#666;font-size:13px;text-decoration:none">View all {{ aircraft_count }} →</a>
+            </div>
+            <div class="carousel-track" id="carouselTrack">
+                {% for f in featured_aircraft %}
+                <a class="carousel-card" href="/aircraft-listing/{{ f.id }}">
+                    <div class="carousel-img" style="background-image:url('{{ f.hero_image }}')"></div>
+                    <div class="carousel-body">
+                        <div style="font-size:11px;color:#ff6b35;font-family:monospace">{{ f.tail }}</div>
+                        <div style="font-size:14px;font-weight:600;margin:2px 0">{{ f.manufacturer }} {{ f.model }}</div>
+                        <div style="font-size:12px;color:#666">{{ f.year }}{% if f.location %} · {{ f.location[:20] }}{% endif %}</div>
+                        <div style="font-size:13px;color:#ff6b35;font-weight:600;margin-top:6px">{% if f.price %}EUR {{ "{:,.0f}".format(f.price) }}{% else %}Price on request{% endif %}</div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        <style>
+        .carousel-section { overflow: hidden; }
+        .carousel-track { display: flex; gap: 16px; transition: transform 0.5s ease; }
+        .carousel-card { flex: 0 0 220px; background: #1a1a2e; border-radius: 12px; border: 1px solid #2a2a3e; text-decoration: none; color: inherit; overflow: hidden; transition: border-color 0.2s; }
+        .carousel-card:hover { border-color: #ff6b35; }
+        .carousel-img { height: 130px; background-size: cover; background-position: center; background-color: #2a2a3e; }
+        .carousel-body { padding: 12px; }
+        </style>
+        <script>
+        (function() {
+            var track = document.getElementById('carouselTrack');
+            if (!track) return;
+            var cards = track.children.length;
+            var cardWidth = 236; // 220px + 16px gap
+            var visible = Math.floor(track.parentElement.offsetWidth / cardWidth);
+            var current = 0;
+            setInterval(function() {
+                current = (current + 1) % (cards - visible + 1);
+                track.style.transform = 'translateX(-' + (current * cardWidth) + 'px)';
+            }, 4000);
+        })();
+        </script>
+
         <div class="three-cards">
             <div class="tcard">
                 <div class="tcard-icon">💰</div>
@@ -1218,9 +1260,21 @@ def index():
         cur2.execute("SELECT COUNT(*) FROM aircraft")
         registry_count = cur2.fetchone()[0]
         conn2.close()
+    # Hent 16 featured fly til karussel
+    import json as _json2
+    conn3 = get_pg_conn()
+    cur3 = conn3.cursor()
+    cur3.execute("SELECT id, tail, manufacturer, model, year, price, location, images FROM aircraft_listing WHERE status='active' AND images != '[]' ORDER BY RANDOM() LIMIT 16")
+    featured_rows = cur3.fetchall()
+    conn3.close()
+    featured_aircraft = []
+    for fr in featured_rows:
+        imgs = _json2.loads(fr[7]) if isinstance(fr[7], str) else fr[7]
+        featured_aircraft.append({'id': fr[0], 'tail': fr[1], 'manufacturer': fr[2], 'model': fr[3], 'year': fr[4], 'price': fr[5], 'location': fr[6], 'hero_image': imgs[0] if imgs else ''})
+
     return render_template_string(SEARCH_HTML, tail=tail, model=model, state=state,
         year_from=year_from, year_to=year_to, states=states,
-        results=results, result_count=result_count, part_count=part_count, aircraft_count=aircraft_count, registry_count=registry_count)
+        results=results, result_count=result_count, part_count=part_count, aircraft_count=aircraft_count, registry_count=registry_count, featured_aircraft=featured_aircraft)
 
 @app.route("/aircraft/<tail>")
 def aircraft_detail(tail):

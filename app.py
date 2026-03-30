@@ -868,7 +868,7 @@ SEARCH_HTML = """
             </form>
         </div>
 
-        <div class="carousel-section" style="margin:0 auto 48px;max-width:900px;padding:0 20px">
+        <div class="carousel-section" style="margin:0 auto 48px;max-width:1100px;padding:0 20px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
                 <span style="font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#ff6b35">Featured Aircraft</span>
                 <a href="/aircraft-for-sale" style="color:#666;font-size:13px;text-decoration:none">View all {{ aircraft_count }} →</a>
@@ -2757,8 +2757,19 @@ def aircraft_for_sale():
             'ai_highlights': l.ai_highlights, 'description': l.description,
             'images': l.images, 'hero_image': l.hero_image
         })
+    # Hent 16 featured fly til karussel
+    conn_f = get_pg_conn()
+    cur_f = conn_f.cursor()
+    cur_f.execute("SELECT id, tail, manufacturer, model, year, price, location, images FROM aircraft_listing WHERE status='active' AND images != '[]' ORDER BY RANDOM() LIMIT 16")
+    featured_rows = cur_f.fetchall()
+    conn_f.close()
+    featured_aircraft = []
+    for fr in featured_rows:
+        imgs = _json.loads(fr[7]) if isinstance(fr[7], str) else fr[7]
+        featured_aircraft.append({'id': fr[0], 'tail': fr[1], 'manufacturer': fr[2], 'model': fr[3], 'year': fr[4], 'price': fr[5], 'location': fr[6], 'hero_image': imgs[0] if imgs else ''})
+
     return render_template_string(AIRCRAFT_FOR_SALE_HTML, listings=listings,
-        listings_json=_json.dumps(listings_data), current_user=current_user)
+        listings_json=_json.dumps(listings_data), current_user=current_user, featured_aircraft=featured_aircraft)
 
 @app.route('/api/aircraft-search', methods=['POST'])
 def api_aircraft_search():

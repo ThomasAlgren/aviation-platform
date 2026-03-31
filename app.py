@@ -5726,6 +5726,234 @@ def my_logbook():
 
     return render_template_string(LOGBOOK_HTML, entries=entries, current_user=current_user, total_time=total_str, total_flights=len(entries), aircraft_stats=dict(aircraft_stats), preferred=preferred, baro_status=baro_status, baro_text=baro_text, baro_emoji=baro_emoji, recent_hours_str=recent_hours_str, recent_landings=recent_landings)
 
+@app.route('/logbook/import-csv', methods=['GET', 'POST'])
+@login_required
+def logbook_import_csv():
+    if request.method == 'GET':
+        return render_template_string("""<!DOCTYPE html>
+<html>
+<head>
+    <title>Import Logbook — PanPanParts</title>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:-apple-system,sans-serif;background:#0a0a14;color:white;}
+        .header{padding:16px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1a1a2e;}
+        .logo{font-size:20px;font-weight:700;}.logo span{color:#ff6b35;}
+        .nav a{color:#aaa;text-decoration:none;font-size:14px;margin-left:16px;}
+        .container{max-width:700px;margin:40px auto;padding:0 20px;}
+        .card{background:#1a1a2e;border-radius:16px;padding:32px;border:1px solid #2a2a3e;margin-bottom:20px;}
+        h1{font-size:28px;font-weight:800;margin-bottom:8px;}
+        p{color:#aaa;font-size:14px;line-height:1.6;margin-bottom:16px;}
+        .supported{background:#0a0a14;border-radius:10px;padding:16px;margin-bottom:24px;}
+        .supported h3{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#666;margin-bottom:12px;}
+        .app-list{display:flex;flex-wrap:wrap;gap:8px;}
+        .app-tag{background:#1a1a2e;border:1px solid #2a2a3e;border-radius:6px;padding:6px 12px;font-size:13px;color:#aaa;}
+        .upload-area{border:2px dashed #2a2a3e;border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:border-color 0.2s;}
+        .upload-area:hover{border-color:#ff6b35;}
+        .upload-icon{font-size:48px;margin-bottom:12px;}
+        .upload-text{color:#666;font-size:14px;margin-bottom:16px;}
+        .btn{background:#ff6b35;color:white;border:none;padding:14px 28px;border-radius:10px;font-size:15px;cursor:pointer;font-weight:700;width:100%;margin-top:16px;}
+        .btn:hover{background:#e55a25;}
+        .back{color:#666;text-decoration:none;font-size:14px;display:inline-block;margin-bottom:24px;}
+        input[type=file]{display:none;}
+        .format-note{font-size:12px;color:#444;margin-top:8px;}
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+    <div class="nav"><a href="/my-logbook">← Back to logbook</a></div>
+</div>
+<div class="container">
+    <div class="card">
+        <h1>Import logbook</h1>
+        <p>Import your existing digital logbook in CSV format. We support exports from all major logbook apps.</p>
+        
+        <div class="supported">
+            <h3>Supported apps</h3>
+            <div class="app-list">
+                <span class="app-tag">✓ ForeFlight</span>
+                <span class="app-tag">✓ Logten Pro</span>
+                <span class="app-tag">✓ MyFlightbook</span>
+                <span class="app-tag">✓ Safelog</span>
+                <span class="app-tag">✓ Any CSV logbook</span>
+            </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" id="import-form">
+            <div class="upload-area" onclick="document.getElementById('csv-file').click()">
+                <div class="upload-icon">📋</div>
+                <div class="upload-text" id="upload-text">Click to select your CSV file</div>
+                <div class="format-note">Supported formats: .csv, .tsv</div>
+            </div>
+            <input type="file" id="csv-file" name="csv_file" accept=".csv,.tsv" onchange="updateFilename(this)">
+            <button type="submit" class="btn">Import logbook →</button>
+        </form>
+    </div>
+
+    <div class="card" style="background:#0d0d1a;">
+        <h3 style="font-size:13px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">How to export from ForeFlight</h3>
+        <p>1. Go to plan.foreflight.com → Logbook → Export</p>
+        <p>2. Click "Download CSV"</p>
+        <p>3. Upload the downloaded file here</p>
+    </div>
+</div>
+<script>
+function updateFilename(input) {
+    if (input.files[0]) {
+        document.getElementById('upload-text').textContent = '✓ ' + input.files[0].name;
+    }
+}
+</script>
+</body>
+</html>""")
+
+    # POST - process CSV
+    import csv, io
+    from datetime import datetime as dt
+
+    file = request.files.get('csv_file')
+    if not file:
+        return "No file uploaded", 400
+
+    content = file.read().decode('utf-8-sig', errors='replace')
+    
+    # Detect if ForeFlight format (has Aircraft Table header)
+    is_foreflight = 'Aircraft Table' in content or 'Flights Table' in content
+    
+    if is_foreflight:
+        # Skip to Flights Table
+        if 'Flights Table' in content:
+            content = content[content.index('Flights Table'):]
+            lines = content.split('\n')
+            content = '\n'.join(lines[1:])  # Skip "Flights Table" header line
+    
+    reader = csv.DictReader(io.StringIO(content))
+    
+    imported = 0
+    skipped = 0
+    errors = []
+    
+    conn = get_pg_conn()
+    cur = conn.cursor()
+    
+    for row in reader:
+        try:
+            # Map ForeFlight columns to our database
+            def get(keys, default=''):
+                for k in keys:
+                    if k in row and row[k].strip():
+                        return row[k].strip()
+                return default
+            
+            def get_float(keys):
+                val = get(keys)
+                if not val: return None
+                try: return float(val.replace(',','.'))
+                except: return None
+            
+            # Date
+            date_str = get(['Date', 'date', 'FlightDate', 'flight_date'])
+            if not date_str:
+                skipped += 1
+                continue
+            
+            flight_date = None
+            for fmt in ['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%d.%m.%Y']:
+                try:
+                    flight_date = dt.strptime(date_str, fmt).date()
+                    break
+                except:
+                    continue
+            
+            if not flight_date:
+                skipped += 1
+                continue
+            
+            dep = get(['From', 'from', 'DepartureAirport', 'departure', 'DEP', 'dep_place'])
+            arr = get(['To', 'to', 'DestinationAirport', 'destination', 'ARR', 'arr_place'])
+            reg = get(['AircraftID', 'aircraft_id', 'Registration', 'registration', 'Tail'])
+            ac_type = get(['AircraftType', 'aircraft_type', 'TypeCode', 'Type'])
+            pic = get(['PilotInCommand', 'pilot_in_command', 'PIC'])
+            total = get_float(['TotalTime', 'total_time', 'TotalFlightTime', 'Duration'])
+            night = get_float(['Night', 'night_time', 'NightTime'])
+            pic_time = get_float(['PIC', 'pic_time', 'PICTime'])
+            sic_time = get_float(['SIC', 'sic_time', 'SICTime', 'CoPilot'])
+            dual = get_float(['DualReceived', 'dual', 'DualTime'])
+            instr = get_float(['DualGiven', 'instructor_time', 'InstructorTime'])
+            day_ldg = get(['DayLandingsActual', 'landings_day', 'DayLandings'])
+            night_ldg = get(['NightLandingsActual', 'landings_night', 'NightLandings'])
+            remarks = get(['Remarks', 'remarks', 'Notes', 'Comment'])
+            
+            try: day_ldg = int(float(day_ldg)) if day_ldg else None
+            except: day_ldg = None
+            try: night_ldg = int(float(night_ldg)) if night_ldg else None
+            except: night_ldg = None
+            
+            cur.execute("""
+                INSERT INTO logbook_entry 
+                (user_id, flight_date, dep_place, arr_place, aircraft_type, registration, 
+                pilot_in_command, total_time, night_time, pic_time, copilot_time, 
+                dual, instructor_time, landings_day, landings_night, remarks)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (current_user.id, flight_date, dep, arr, ac_type, reg,
+                  pic, total, night, pic_time, sic_time,
+                  dual, instr, day_ldg, night_ldg, remarks))
+            imported += 1
+            
+        except Exception as e:
+            errors.append(str(e)[:80])
+            continue
+    
+    conn.commit()
+    conn.close()
+    
+    return render_template_string("""<!DOCTYPE html>
+<html>
+<head>
+    <title>Import Complete — PanPanParts</title>
+    <meta charset="utf-8">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:-apple-system,sans-serif;background:#0a0a14;color:white;}
+        .header{padding:16px 40px;display:flex;justify-content:space-between;border-bottom:1px solid #1a1a2e;}
+        .logo{font-size:20px;font-weight:700;}.logo span{color:#ff6b35;}
+        .container{max-width:600px;margin:60px auto;padding:0 20px;text-align:center;}
+        .icon{font-size:64px;margin-bottom:16px;}
+        h1{font-size:32px;font-weight:800;margin-bottom:8px;}
+        p{color:#aaa;margin-bottom:8px;}
+        .stats{display:flex;gap:16px;justify-content:center;margin:32px 0;}
+        .stat{background:#1a1a2e;border-radius:12px;padding:20px 32px;border:1px solid #2a2a3e;}
+        .stat-val{font-size:32px;font-weight:800;color:#ff6b35;font-family:monospace;}
+        .stat-lbl{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
+        .btn{display:inline-block;background:#ff6b35;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:700;margin-top:16px;}
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+</div>
+<div class="container">
+    <div class="icon">✅</div>
+    <h1>Import complete!</h1>
+    <p>Your logbook has been imported successfully.</p>
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-val">{{ imported }}</div>
+            <div class="stat-lbl">Flights imported</div>
+        </div>
+        <div class="stat">
+            <div class="stat-val">{{ skipped }}</div>
+            <div class="stat-lbl">Skipped</div>
+        </div>
+    </div>
+    <a href="/my-logbook" class="btn">View my logbook →</a>
+</div>
+</body>
+</html>""", imported=imported, skipped=skipped)
+
+
 @app.route('/logbook/add-aircraft', methods=['POST'])
 @login_required
 def logbook_add_aircraft():
@@ -6123,7 +6351,11 @@ LOGBOOK_HTML = """<!DOCTYPE html>
     <!-- Edit modal -->
         <!-- Scan side -->
         <div class="card">
-            <h3>Scan logbook pages with AI</h3>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3>Scan logbook pages with AI</h3>
+                <a href="/logbook/import-csv" style="background:#1a1a2e;border:1px solid #ff6b35;color:#ff6b35;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">📋 Import CSV</a>
+            </div>
+            <h3 style="display:none;">Scan logbook pages with AI</h3>
             <p style="color:#666;font-size:14px;margin-bottom:16px">Upload photos of left and right page — AI reads all flights automatically</p>
             <div class="upload-row">
                 <div class="upload-box" onclick="document.getElementById('left-page').click()">

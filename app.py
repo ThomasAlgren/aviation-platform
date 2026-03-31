@@ -4716,21 +4716,18 @@ def admin_import_easa_foreign():
 
 @app.route('/sitemap.xml')
 def sitemap():
-    return render_template_string("""<?xml version="1.0" encoding="UTF-8"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <sitemap><loc>https://panpanparts.com/sitemap-pages.xml</loc></sitemap>
-    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-1.xml</loc></sitemap>
-    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-2.xml</loc></sitemap>
-    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-3.xml</loc></sitemap>
-    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-4.xml</loc></sitemap>
-    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-5.xml</loc></sitemap>
-    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-6.xml</loc></sitemap>
-    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-7.xml</loc></sitemap>
-    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-8.xml</loc></sitemap>
-    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-9.xml</loc></sitemap>
-    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-10.xml</loc></sitemap>
-    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-11.xml</loc></sitemap>
-</sitemapindex>"""), 200, {'Content-Type': 'application/xml'}
+    conn_s = get_pg_conn()
+    cur_s = conn_s.cursor()
+    cur_s.execute("SELECT COUNT(*) FROM aircraft")
+    total = cur_s.fetchone()[0]
+    conn_s.close()
+    pages = (total // 10000) + 1
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    xml += '    <sitemap><loc>https://panpanparts.com/sitemap-pages.xml</loc></sitemap>\n'
+    for i in range(1, pages + 1):
+        xml += f'    <sitemap><loc>https://panpanparts.com/sitemap-aircraft-{i}.xml</loc></sitemap>\n'
+    xml += '</sitemapindex>'
+    return xml, 200, {'Content-Type': 'application/xml'}
 
 @app.route('/sitemap-pages.xml')
 def sitemap_pages():
@@ -4753,7 +4750,7 @@ def sitemap_pages():
 
 @app.route('/sitemap-aircraft-<int:page>.xml')
 def sitemap_aircraft(page):
-    limit = 50000
+    limit = 10000
     offset = (page - 1) * limit
     conn_s = get_pg_conn()
     cur_s = conn_s.cursor()

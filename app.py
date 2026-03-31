@@ -6334,7 +6334,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                 {% endfor %}
             </div>
             {% endif %}
-            <div style="display:flex;gap:10px;align-items:center">
+            <div style="display:flex;gap:10px;align-items:center;justify-content:flex-end">
                 <input type="text" id="new-reg-input" placeholder="Add aircraft (e.g. OY-BLZ)" 
                     style="background:#0d0d1a;border:1px solid #333;border-radius:8px;padding:10px 12px;color:white;font-size:14px;width:200px">
                 <button onclick="addAircraft()" 

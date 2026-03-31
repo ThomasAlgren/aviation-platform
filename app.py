@@ -3699,6 +3699,9 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
         .info-bar-meta{font-size:13px;color:#666;}
         .info-bar-meta strong{color:#aaa;}
         .hbadge{display:inline-block;padding:4px 10px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-right:6px;}
+        .info-bar-gauge{padding:12px 16px;border-right:1px solid #1a2a1a;text-align:center;flex-shrink:0;}
+        .info-bar-gauge-lbl{font-size:9px;color:#4a8a4a;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;}
+        .info-bar-gauge-val{font-size:12px;color:#ccc;font-weight:700;margin-top:4px;}
         .hbadge.yes{background:rgba(76,175,80,0.12);color:#4caf50;border:1px solid rgba(76,175,80,0.4);}
         .hbadge.orange{background:rgba(255,107,53,0.12);color:#ff6b35;border:1px solid rgba(255,107,53,0.4);}
 
@@ -3798,28 +3801,44 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
     {% endif %}
 </div>
 
-{% if images|length > 1 %}
-<div class="thumb-strip">
-    {% for img in images %}
-    <img class="thumb {% if loop.first %}active{% endif %}" src="{{ img }}" onclick="setHero({{ loop.index0 }})">
-    {% endfor %}
-</div>
-{% endif %}
-
 <!-- INFO BAR -->
 <div class="info-bar">
-    <div class="info-bar-price">
-        {% if listing.price and listing.price > 0 %}EUR {{ "{:,.0f}".format(listing.price) }}
-        {% else %}Price on request{% endif %}
+    {% if listing.hours_engine and listing.hours_engine_tbo %}
+    {% set eng_pct = (listing.hours_engine / listing.hours_engine_tbo * 100)|int %}
+    <div class="info-bar-gauge">
+        <div class="info-bar-gauge-lbl">ENG · SMOH/TBO</div>
+        <canvas class="gauge-canvas" width="110" height="68" data-pct="{{ eng_pct }}" data-cx="55" data-cy="62" data-r="44"></canvas>
+        <div class="info-bar-gauge-val">{{ listing.hours_engine|int }}h / {{ listing.hours_engine_tbo|int }}h</div>
     </div>
-    <div>
+    {% endif %}
+    {% if listing.hours_total %}
+    {% set af_pct = [listing.hours_total / 10000 * 100, 100]|min|int %}
+    <div class="info-bar-gauge">
+        <div class="info-bar-gauge-lbl">AIRFRAME · TT</div>
+        <canvas class="gauge-canvas" width="110" height="68" data-pct="{{ af_pct }}" data-label="{{ listing.hours_total|int }}h" data-cx="55" data-cy="62" data-r="44"></canvas>
+        <div class="info-bar-gauge-val">{{ listing.hours_total|int }}h TT</div>
+    </div>
+    {% endif %}
+    {% if listing.hours_prop and listing.hours_prop_tbo %}
+    {% set prop_pct = (listing.hours_prop / listing.hours_prop_tbo * 100)|int %}
+    <div class="info-bar-gauge">
+        <div class="info-bar-gauge-lbl">PROP · OH</div>
+        <canvas class="gauge-canvas" width="110" height="68" data-pct="{{ prop_pct }}" data-cx="55" data-cy="62" data-r="44"></canvas>
+        <div class="info-bar-gauge-val">{{ listing.hours_prop|int }}h / {{ listing.hours_prop_tbo|int }}h</div>
+    </div>
+    {% endif %}
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;">
         {% if listing.has_autopilot %}<span class="hbadge yes">✓ Autopilot</span>{% endif %}
         {% if listing.has_adsb %}<span class="hbadge yes">✓ ADS-B</span>{% endif %}
         {% if listing.is_hangared %}<span class="hbadge yes">✓ Hangared</span>{% endif %}
-        {% if listing.arc_verified %}<span class="hbadge yes">✓ ARC Verified</span>{% endif %}
+        {% if listing.arc_verified %}<span class="hbadge yes">✓ ARC</span>{% endif %}
     </div>
-    {% if listing.hours_total %}
-    <div class="info-bar-meta"><strong>{{ listing.hours_total|int }}h</strong> TT</div>
+    {% if images|length > 1 %}
+    <div style="display:flex;gap:6px;overflow-x:auto;flex:1;">
+        {% for img in images %}
+        <img class="thumb {% if loop.first %}active{% endif %}" src="{{ img }}" onclick="setHero({{ loop.index0 }})" style="width:64px;height:46px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent;flex-shrink:0;opacity:0.7;">
+        {% endfor %}
+    </div>
     {% endif %}
 </div>
 
@@ -3847,6 +3866,36 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
             {% for h in highlights %}
             <div class="highlight-item"><span class="highlight-check">✓</span><span>{{ h }}</span></div>
             {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- HOURS GAUGES -->
+        {% if listing.hours_total or listing.hours_engine or listing.hours_prop %}
+        <div class="section">
+            <div class="section-header"><div class="section-title">Airframe & Engine</div></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;">
+                {% if listing.hours_total %}
+                <div style="background:#0d0d1a;border:1px solid #1a2a1a;border-radius:10px;padding:16px;text-align:center;">
+                    <div style="font-size:10px;color:#4a8a4a;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">Airframe TT</div>
+                    <div style="font-size:28px;font-weight:800;font-family:monospace;color:white;">{{ listing.hours_total|int }}</div>
+                    <div style="font-size:10px;color:#456;margin-top:4px;">hours</div>
+                </div>
+                {% endif %}
+                {% if listing.hours_engine %}
+                <div style="background:#0d0d1a;border:1px solid #1a2a1a;border-radius:10px;padding:16px;text-align:center;">
+                    <div style="font-size:10px;color:#4a8a4a;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">Engine SMOH</div>
+                    <div style="font-size:28px;font-weight:800;font-family:monospace;color:white;">{{ listing.hours_engine|int }}</div>
+                    <div style="font-size:10px;color:#456;margin-top:4px;">hours</div>
+                </div>
+                {% endif %}
+                {% if listing.hours_prop %}
+                <div style="background:#0d0d1a;border:1px solid #1a2a1a;border-radius:10px;padding:16px;text-align:center;">
+                    <div style="font-size:10px;color:#4a8a4a;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">Prop</div>
+                    <div style="font-size:28px;font-weight:800;font-family:monospace;color:white;">{{ listing.hours_prop|int }}</div>
+                    <div style="font-size:10px;color:#456;margin-top:4px;">hours</div>
+                </div>
+                {% endif %}
+            </div>
         </div>
         {% endif %}
 
@@ -4045,6 +4094,39 @@ function navHero(dir) {
     var next = (currentIdx + dir + allImages.length) % allImages.length;
     setHero(next);
 }
+
+document.querySelectorAll('.gauge-canvas').forEach(function(canvas) {
+    var pct = parseInt(canvas.dataset.pct) || 0;
+    var label = canvas.dataset.label || (pct + '%');
+    var ctx = canvas.getContext('2d');
+    var cx = parseInt(canvas.dataset.cx) || Math.round(canvas.width/2);
+    var cy = parseInt(canvas.dataset.cy) || Math.round(canvas.height*0.88);
+    var r = parseInt(canvas.dataset.r) || Math.round(canvas.width*0.40);
+    var startAngle = Math.PI;
+    var endAngle = 2 * Math.PI;
+    var color = pct < 50 ? '#4caf50' : (pct < 75 ? '#ffc107' : '#f44336');
+    ctx.beginPath(); ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.strokeStyle = '#1a2a1a'; ctx.lineWidth = 12; ctx.lineCap = 'butt'; ctx.stroke();
+    var grad = ctx.createLinearGradient(14, 0, 116, 0);
+    grad.addColorStop(0, '#4caf50'); grad.addColorStop(0.55, '#ffc107'); grad.addColorStop(1, '#f44336');
+    ctx.beginPath(); ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.strokeStyle = grad; ctx.globalAlpha = 0.8; ctx.stroke(); ctx.globalAlpha = 1;
+    var angle = Math.PI + (pct / 100) * Math.PI;
+    var nx = cx + r * Math.cos(angle);
+    var ny = cy + r * Math.sin(angle);
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(nx, ny);
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.globalAlpha = 0.4; ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(nx, ny);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, 2*Math.PI);
+    ctx.fillStyle = '#0d0d1a'; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, 2, 0, 2*Math.PI);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.fillStyle = color; ctx.font = 'bold 12px monospace';
+    ctx.textAlign = 'center'; ctx.fillText(label || pct + '%', cx, 62);
+});
 
 async function loadAIInsight() {
     document.getElementById('btn-ai-insight').style.display = 'none';

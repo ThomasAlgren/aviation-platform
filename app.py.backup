@@ -2823,14 +2823,7 @@ Examples:
 - "glass cockpit" -> keywords: ["G1000", "Avidyne", "glass", "Garmin", "GTN", "GNS"]
 - "under 100k" -> max_price: 100000
 - "Cessna" -> manufacturer: "Cessna"
-- "with autopilot" -> has_autopilot: true
-- "newer than 2010" -> year_from: 2010
-- "older than 1990" -> year_to: 1990
-- "between 2005 and 2015" -> year_from: 2005, year_to: 2015
-
-Also add to JSON:
-  "year_from": null or number,
-  "year_to": null or number,"""
+- "with autopilot" -> has_autopilot: true"""
         }]
     )
 
@@ -2859,12 +2852,6 @@ Also add to JSON:
         conditions.append("has_autopilot = true")
     if filters.get('has_adsb'):
         conditions.append("has_adsb = true")
-    if filters.get('year_from'):
-        conditions.append("CAST(year AS INTEGER) >= %s")
-        params.append(int(filters['year_from']))
-    if filters.get('year_to'):
-        conditions.append("CAST(year AS INTEGER) <= %s")
-        params.append(int(filters['year_to']))
 
     keywords = filters.get('keywords', [])
     if keywords:

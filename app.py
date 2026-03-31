@@ -2758,7 +2758,7 @@ SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
 def aircraft_for_sale():
     try:
         import json as _json
-        listings = AircraftListing.query.order_by(AircraftListing.created_at.desc()).limit(200).all()
+        listings = AircraftListing.query.order_by(AircraftListing.created_at.desc()).limit(800).all()
         listings_data = []
         for l in listings:
             listings_data.append({'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer, 'model': l.model, 'year': l.year, 'price': l.price or 0, 'hours_total': l.hours_total, 'location': l.location, 'hero_image': l.hero_image, 'condition': l.condition, 'seller_type': l.seller_type, 'ai_highlights': l.ai_highlights, 'description': l.description, 'images': l.images})
@@ -2771,7 +2771,12 @@ def aircraft_for_sale():
         for fr in featured_rows:
             imgs = _json.loads(fr[7]) if isinstance(fr[7], str) else fr[7]
             featured_aircraft.append({'id': fr[0], 'tail': fr[1], 'manufacturer': fr[2], 'model': fr[3], 'year': fr[4], 'price': fr[5], 'location': fr[6], 'hero_image': imgs[0] if imgs else ''})
-        return render_template_string(AIRCRAFT_FOR_SALE_HTML, listings=listings, listings_json=_json.dumps(listings_data), current_user=current_user, featured_aircraft=featured_aircraft)
+        conn_m = get_pg_conn()
+        cur_m = conn_m.cursor()
+        cur_m.execute("SELECT DISTINCT manufacturer FROM aircraft_listing WHERE manufacturer IS NOT NULL AND status='active' ORDER BY manufacturer")
+        manufacturers = [r[0] for r in cur_m.fetchall() if r[0]]
+        conn_m.close()
+        return render_template_string(AIRCRAFT_FOR_SALE_HTML, listings=listings, listings_json=_json.dumps(listings_data), current_user=current_user, featured_aircraft=featured_aircraft, manufacturers=manufacturers)
     except Exception as e:
         return f'FEJL: {str(e)}', 500
 
@@ -2957,10 +2962,7 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
                 <label>Manufacturer</label>
                 <select id="f-manufacturer" onchange="applyFilters()">
                     <option value="">All manufacturers</option>
-                    <option>Cessna</option><option>Piper</option><option>Cirrus</option>
-                    <option>Diamond</option><option>Beechcraft</option><option>Mooney</option>
-                    <option>Robin</option><option>Tecnam</option><option>Socata</option>
-                    <option>Extra</option><option>Pitts</option><option>Grumman</option>
+                    {% for m in manufacturers %}<option>{{ m }}</option>{% endfor %}
                 </select>
             </div>
 

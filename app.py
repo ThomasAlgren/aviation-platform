@@ -3665,501 +3665,373 @@ def aircraft_listing_detail_OLD(listing_id):
 AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
 <html>
 <head>
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-K3PJMNF1JE');
-    </script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-K3PJMNF1JE');</script>
     <title>{{ listing.tail }} — {{ listing.manufacturer }} {{ listing.model }} for Sale | PanPanParts</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="{{ listing.manufacturer }} {{ listing.model }}{% if listing.year %} ({{ listing.year }}){% endif %}{% if listing.price %} for sale at EUR {{ "{:,.0f}".format(listing.price) }}{% else %} for sale{% endif %}{% if listing.location %} — {{ listing.location }}{% endif %}. {% if listing.hours_total %}Total time {{ listing.hours_total|int }} hrs. {% endif %}Listed on PanPanParts aviation marketplace.">
-    <meta property="og:title" content="{{ listing.tail }} — {{ listing.manufacturer }} {{ listing.model }} for Sale">
-    <meta property="og:description" content="{{ listing.manufacturer }} {{ listing.model }}{% if listing.price %} — EUR {{ "{:,.0f}".format(listing.price) }}{% else %} — Price on request{% endif %}{% if listing.location %} — {{ listing.location }}{% endif %}">
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="{{ listing.manufacturer }} {{ listing.model }}{% if listing.year %} ({{ listing.year }}){% endif %}{% if listing.price and listing.price > 0 %} for sale at EUR {{ "{:,.0f}".format(listing.price) }}{% else %} for sale{% endif %}{% if listing.location %} — {{ listing.location }}{% endif %}. Listed on PanPanParts.">
     {% if images %}<meta property="og:image" content="{{ images[0] }}">{% endif %}
-    <meta property="og:type" content="website">
     <link rel="canonical" href="https://panpanparts.com/aircraft-listing/{{ listing.id }}">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, sans-serif; background: #0a0a14; color: white; }
-        .header { padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a2e; position: sticky; top: 0; background: rgba(10,10,20,0.95); backdrop-filter: blur(10px); z-index: 100; }
-        .logo { font-size: 20px; font-weight: 700; }
-        .logo span { color: #ff6b35; }
-        .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
-        .back { color: #666; text-decoration: none; font-size: 14px; display: inline-block; padding: 8px 0; }
-        
-        /* Hero billede */
-        .hero-img { width: 100%; height: 60vh; min-height: 380px; object-fit: cover; display: block; }
-        .hero-placeholder { width: 100%; height: 40vh; background: linear-gradient(135deg, #1a1a2e, #2a1a3e); display: flex; align-items: center; justify-content: center; font-size: 80px; }
-        
-        /* Thumbnail strip */
-        .thumb-strip { display: flex; gap: 6px; padding: 6px; background: #0a0a14; overflow-x: auto; }
-        .info-bar { display: flex; align-items: stretch; background: #0d0d1a; border-bottom: 1px solid #1a2a1a; font-family: monospace; }
-        .info-bar-gauge { padding: 12px 16px; border-right: 1px solid #1a2a1a; text-align: center; flex-shrink: 0; }
-        .info-bar-price { padding: 12px 20px; display: flex; flex-direction: column; justify-content: center; flex-shrink: 0; border-right: 1px solid #1a2a1a; }
-        .info-bar-thumbs { display: flex; gap: 6px; padding: 8px 12px; align-items: center; overflow-x: auto; flex: 1; }
-        .info-bar-gauge-lbl { font-size: 9px; color: #4a8a4a; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
-        .info-bar-gauge-val { font-size: 12px; color: #ccc; font-weight: 700; margin-top: 4px; }
-        .info-bar-price-amount { font-size: 26px; font-weight: 800; color: #ff6b35; font-family: monospace; line-height: 1; }
-        .info-bar-price-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-        .info-bar-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-        .info-thumb { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; opacity: 0.6; flex-shrink: 0; }
-        .info-thumb.active { opacity: 1; outline: 2px solid #ff6b35; }
-        .hero-wrap { position: relative; }
-        .hero-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; font-size: 28px; width: 52px; height: 52px; border-radius: 50%; cursor: pointer; z-index: 10; transition: background 0.2s; display: flex; align-items: center; justify-content: center; }
-        .hero-nav:hover { background: rgba(255,107,53,0.8); }
-        .hero-nav-left { left: 16px; }
-        .hero-nav-right { right: 16px; }
-        .thumb { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; opacity: 0.6; flex-shrink: 0; }
-        .thumb.active { opacity: 1; outline: 2px solid #ff6b35; }
-        
-        .container { max-width: 1000px; margin: 0 auto; padding: 32px 20px; }
-        .layout { display: block; max-width: 900px; }
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:-apple-system,sans-serif;background:#0a0a14;color:white;}
+        .header{padding:16px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1a1a2e;position:sticky;top:0;background:rgba(10,10,20,0.97);backdrop-filter:blur(10px);z-index:100;}
+        .logo{font-size:20px;font-weight:700;}.logo span{color:#ff6b35;}
+        .nav a{color:#aaa;text-decoration:none;font-size:14px;margin-left:16px;}
+        .nav a.primary{background:#ff6b35;color:white;padding:8px 16px;border-radius:8px;}
 
-        
-        /* Left column */
-        .main-col {}
-        
-        /* Titel sektion */
-        .listing-header { margin-bottom: 24px; }
-        .tail-reg { font-size: 14px; color: #666; font-family: monospace; letter-spacing: 1px; margin-bottom: 4px; }
-        .listing-title { font-size: 32px; font-weight: 800; line-height: 1.1; margin-bottom: 8px; }
-        .listing-subtitle { font-size: 16px; color: #aaa; margin-bottom: 16px; }
-        .badges { display: flex; gap: 8px; flex-wrap: wrap; }
-        .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge-verified { background: rgba(76,175,80,0.2); color: #4caf50; border: 1px solid rgba(76,175,80,0.3); }
-        .badge-condition { background: rgba(255,107,53,0.15); color: #ff6b35; border: 1px solid rgba(255,107,53,0.3); }
-        .badge-seller { background: rgba(255,255,255,0.05); color: #aaa; border: 1px solid #333; }
-        
-        /* Health panel */
-        .health-panel { background: #0d0d1a; border: 1px solid #1e2a1e; border-radius: 12px; padding: 16px; margin-bottom: 24px; font-family: monospace; }
-        .health-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-        .hbadge { padding: 4px 12px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-        .hbadge.yes { background: rgba(76,175,80,0.12); color: #4caf50; border: 1px solid rgba(76,175,80,0.4); }
-        .hbadge.no  { background: rgba(244,67,54,0.10); color: #f44336; border: 1px solid rgba(244,67,54,0.3); }
-        .health-gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
-        .gauge-card { background: #080810; border: 1px solid #1a2a1a; border-radius: 8px; padding: 12px 8px 8px; text-align: center; }
-        .gauge-lbl { font-size: 9px; color: #4a8a4a; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
-        .gauge-val { font-size: 13px; font-weight: 700; color: #ccc; margin-top: 4px; }
-        .gauge-sub { font-size: 9px; color: #456; margin-top: 2px; letter-spacing: 0.5px; }
+        /* HERO */
+        .hero-wrap{position:relative;background:#000;}
+        .hero-img{width:100%;height:65vh;min-height:400px;object-fit:cover;display:block;cursor:pointer;}
+        .hero-placeholder{width:100%;height:40vh;background:linear-gradient(135deg,#1a1a2e,#2a1a3e);display:flex;align-items:center;justify-content:center;font-size:80px;}
+        .hero-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:white;border:none;font-size:24px;width:48px;height:48px;border-radius:50%;cursor:pointer;z-index:10;}
+        .hero-nav-left{left:16px;}.hero-nav-right{right:16px;}
+        .hero-counter{position:absolute;bottom:16px;right:16px;background:rgba(0,0,0,0.6);color:white;font-size:12px;padding:4px 10px;border-radius:20px;}
+        .thumb-strip{display:flex;gap:6px;padding:8px;background:#0d0d1a;overflow-x:auto;}
+        .thumb{width:72px;height:52px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent;flex-shrink:0;opacity:0.6;transition:all 0.2s;}
+        .thumb.active,.thumb:hover{border-color:#ff6b35;opacity:1;}
 
-        /* AI description */
-        .ai-desc { background: linear-gradient(135deg, #1a1a2e, #1a2a1e); border-radius: 12px; padding: 20px; margin-bottom: 24px; border-left: 3px solid #ff6b35; color: #ccc; font-size: 15px; line-height: 1.7; font-style: italic; }
+        /* INFO BAR */
+        .info-bar{background:#0d0d1a;border-bottom:1px solid #1a1a2e;padding:16px 40px;display:flex;align-items:center;gap:32px;flex-wrap:wrap;}
+        .info-bar-price{font-size:28px;font-weight:800;color:#ff6b35;font-family:monospace;}
+        .info-bar-meta{font-size:13px;color:#666;}
+        .info-bar-meta strong{color:#aaa;}
+        .hbadge{display:inline-block;padding:4px 10px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-right:6px;}
+        .hbadge.yes{background:rgba(76,175,80,0.12);color:#4caf50;border:1px solid rgba(76,175,80,0.4);}
+        .hbadge.orange{background:rgba(255,107,53,0.12);color:#ff6b35;border:1px solid rgba(255,107,53,0.4);}
+
+        /* LAYOUT */
+        .page{max-width:1100px;margin:0 auto;padding:32px 20px;display:grid;grid-template-columns:1fr 340px;gap:32px;}
+        @media(max-width:800px){.page{grid-template-columns:1fr;}}
         
-        /* Highlights */
-        .highlights { margin-bottom: 24px; }
-        .highlights h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 12px; }
-        .highlight-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid #1a1a2e; font-size: 15px; }
-        .highlight-item:last-child { border-bottom: none; }
-        .highlight-check { color: #4caf50; font-size: 16px; flex-shrink: 0; }
+        /* SECTIONS */
+        .section{background:#1a1a2e;border-radius:16px;padding:24px;margin-bottom:20px;border:1px solid #2a2a3e;}
+        .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+        .section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#666;font-weight:700;}
+        .section-badge{font-size:10px;color:#666;background:#0a0a14;border:1px solid #2a2a3e;padding:3px 8px;border-radius:4px;}
         
-        /* Specs grid */
-        .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1a1a2e; border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
-        .spec-item { background: #0d0d1a; padding: 16px; }
-        .spec-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .spec-value { font-size: 18px; font-weight: 700; color: white; font-family: monospace; }
-        
-        /* Beskrivelse */
-        .description-card { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
-        .description-card h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 16px; }
-        .description-text { color: #aaa; font-size: 14px; line-height: 1.8; white-space: pre-wrap; }
-        
-        /* Right column — sticky sidebar */
-        .sidebar { position: sticky; top: 72px; height: fit-content; }
-        .price-card { background: #1a1a2e; border-radius: 16px; padding: 28px; border: 1px solid #2a2a3e; margin-bottom: 16px; }
-        .price-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-        .price-amount { font-size: 40px; font-weight: 800; color: #ff6b35; font-family: monospace; line-height: 1; }
-        .price-currency { font-size: 18px; color: #666; }
-        .hours-row { display: flex; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2a3e; }
-        .hours-item { flex: 1; }
-        .hours-label { font-size: 11px; color: #666; text-transform: uppercase; }
-        .hours-value { font-size: 20px; font-weight: 700; font-family: monospace; margin-top: 2px; }
-        .location-row { margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2a3e; font-size: 14px; color: #666; }
-        .location-row span { color: white; }
-        
-        .contact-card { background: #1a1a2e; border-radius: 16px; padding: 24px; border: 1px solid #2a2a3e; }
-        .contact-card h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 16px; }
-        .contact-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-        .contact-email { font-size: 14px; color: #aaa; margin-bottom: 16px; }
-        .btn-contact { display: block; background: #ff6b35; color: white; text-align: center; padding: 14px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px; margin-bottom: 8px; }
-        .btn-contact:hover { background: #e55a25; }
-        .views-count { font-size: 12px; color: #444; text-align: center; margin-top: 12px; }
+        /* AIRCRAFT HEADER */
+        .back{color:#666;text-decoration:none;font-size:14px;display:inline-block;margin-bottom:16px;}
+        .back:hover{color:#ff6b35;}
+        .tail-reg{font-size:13px;color:#666;font-family:monospace;letter-spacing:2px;margin-bottom:4px;}
+        .listing-title{font-size:34px;font-weight:800;line-height:1.1;margin-bottom:6px;}
+        .listing-subtitle{font-size:15px;color:#aaa;margin-bottom:16px;}
+        .badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
+        .badge{padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;}
+        .badge-orange{background:rgba(255,107,53,0.15);color:#ff6b35;border:1px solid rgba(255,107,53,0.3);}
+        .badge-gray{background:rgba(255,255,255,0.05);color:#aaa;border:1px solid #333;}
+        .badge-green{background:rgba(76,175,80,0.15);color:#4caf50;border:1px solid rgba(76,175,80,0.3);}
+
+        /* HIGHLIGHTS */
+        .highlight-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #2a2a3e;font-size:14px;color:#ccc;}
+        .highlight-item:last-child{border-bottom:none;}
+        .highlight-check{color:#4caf50;flex-shrink:0;}
+
+        /* SPECS GRID */
+        .specs-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#2a2a3e;border-radius:10px;overflow:hidden;}
+        .spec-item{background:#0d0d1a;padding:14px 16px;}
+        .spec-label{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+        .spec-value{font-size:16px;font-weight:700;font-family:monospace;color:white;}
+
+        /* DESCRIPTION */
+        .desc-line{padding:8px 0;border-bottom:1px solid #2a2a3e;font-size:14px;color:#ccc;line-height:1.5;}
+        .desc-line:last-child{border-bottom:none;}
+        .desc-category{font-size:10px;color:#ff6b35;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-top:16px;margin-bottom:4px;}
+
+        /* HISTORY SECTIONS — locked */
+        .locked{text-align:center;padding:32px;color:#444;}
+        .locked-icon{font-size:32px;margin-bottom:8px;}
+        .locked-title{font-size:14px;color:#555;margin-bottom:8px;}
+        .locked-cta{display:inline-block;background:#ff6b35;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700;margin-top:8px;}
+
+        /* SIDEBAR */
+        .price-card{background:#1a1a2e;border-radius:16px;padding:24px;border:1px solid #2a2a3e;margin-bottom:16px;}
+        .price-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+        .price-amount{font-size:36px;font-weight:800;color:#ff6b35;font-family:monospace;line-height:1;}
+        .price-note{font-size:12px;color:#666;margin-top:4px;}
+        .hours-row{display:flex;gap:16px;margin-top:16px;padding-top:16px;border-top:1px solid #2a2a3e;}
+        .hours-item{flex:1;}
+        .hours-label{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;}
+        .hours-value{font-size:20px;font-weight:700;font-family:monospace;margin-top:2px;}
+        .location-row{margin-top:16px;padding-top:16px;border-top:1px solid #2a2a3e;font-size:13px;color:#666;}
+        .location-row span{color:#aaa;}
+        .contact-card{background:#1a1a2e;border-radius:16px;padding:24px;border:1px solid #2a2a3e;margin-bottom:16px;}
+        .btn-contact{display:block;background:#ff6b35;color:white;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;margin-bottom:8px;}
+        .btn-contact:hover{background:#e55a25;}
+        .contact-name{font-size:15px;font-weight:600;margin-bottom:2px;}
+        .contact-email{font-size:13px;color:#666;margin-bottom:16px;}
+        .views-count{font-size:11px;color:#444;text-align:center;margin-top:8px;}
+        .ai-btn{display:block;background:transparent;border:1px solid #ff6b35;color:#ff6b35;text-align:center;padding:12px;border-radius:10px;font-size:13px;cursor:pointer;width:100%;margin-top:8px;}
+        .ai-btn:hover{background:#ff6b35;color:white;}
+        .registry-card{background:#1a1a2e;border-radius:16px;padding:20px;border:1px solid #2a2a3e;}
+        .reg-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2a3e;font-size:13px;}
+        .reg-row:last-child{border-bottom:none;}
+        .reg-label{color:#666;}
+        .reg-value{color:#aaa;font-family:monospace;}
+        .spinner{display:inline-block;width:16px;height:16px;border:2px solid #333;border-top-color:#ff6b35;border-radius:50%;animation:spin 0.8s linear infinite;}
+        @keyframes spin{to{transform:rotate(360deg);}}
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
-        <div class="nav">
-            <a href="/aircraft-for-sale">All listings</a>
-            {% if current_user.is_authenticated %}
-            <a href="/my-logbook">My logbook</a>
-            {% else %}
-            <a href="/login">Log in</a>
-            {% endif %}
-        </div>
+<div class="header">
+    <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+    <div class="nav">
+        <a href="/aircraft-for-sale">All listings</a>
+        {% if current_user.is_authenticated %}<a href="/my-logbook">My logbook</a>
+        {% else %}<a href="/login">Log in</a><a href="/register" class="primary">Sign up</a>{% endif %}
     </div>
+</div>
 
-    <!-- Hero billede -->
-    <div class="hero-wrap">
-    {% if listing.hero_image %}
-    <img class="hero-img" id="hero-img" src="{{ listing.hero_image }}" alt="{{ listing.tail }}">
-    {% elif images %}
+<!-- HERO -->
+<div class="hero-wrap">
+    {% if images %}
     <img class="hero-img" id="hero-img" src="{{ images[0] }}" alt="{{ listing.tail }}">
-    {% else %}
-    <div class="hero-placeholder">✈️</div>
-    {% endif %}
     {% if images|length > 1 %}
     <button class="hero-nav hero-nav-left" onclick="navHero(-1)">&#8592;</button>
     <button class="hero-nav hero-nav-right" onclick="navHero(1)">&#8594;</button>
+    <div class="hero-counter" id="hero-counter">1 / {{ images|length }}</div>
     {% endif %}
-    </div>
-    <script>
-        var allImages = [{% for img in images %}'{{ img }}'{% if not loop.last %},{% endif %}{% endfor %}];
-        var currentIndex = 0;
-    </script>
+    {% else %}
+    <div class="hero-placeholder">✈️</div>
+    {% endif %}
+</div>
 
-    <!-- INFO BAR: titel + gauges + pris + thumbnails -->
-    <div class="info-bar">
-        {% if listing.hours_engine and listing.hours_engine_tbo %}
-        {% set eng_pct = (listing.hours_engine / listing.hours_engine_tbo * 100)|int %}
-        <div class="info-bar-gauge">
-            <div class="info-bar-gauge-lbl">ENG · SMOH/TBO</div>
-            <canvas class="gauge-canvas" width="110" height="68" data-pct="{{ eng_pct }}" data-cx="55" data-cy="62" data-r="44"></canvas>
-            <div class="info-bar-gauge-val">{{ listing.hours_engine|int }}h / {{ listing.hours_engine_tbo|int }}h</div>
+{% if images|length > 1 %}
+<div class="thumb-strip">
+    {% for img in images %}
+    <img class="thumb {% if loop.first %}active{% endif %}" src="{{ img }}" onclick="setHero({{ loop.index0 }})">
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- INFO BAR -->
+<div class="info-bar">
+    <div class="info-bar-price">
+        {% if listing.price and listing.price > 0 %}EUR {{ "{:,.0f}".format(listing.price) }}
+        {% else %}Price on request{% endif %}
+    </div>
+    <div>
+        {% if listing.has_autopilot %}<span class="hbadge yes">✓ Autopilot</span>{% endif %}
+        {% if listing.has_adsb %}<span class="hbadge yes">✓ ADS-B</span>{% endif %}
+        {% if listing.is_hangared %}<span class="hbadge yes">✓ Hangared</span>{% endif %}
+        {% if listing.arc_verified %}<span class="hbadge yes">✓ ARC Verified</span>{% endif %}
+    </div>
+    {% if listing.hours_total %}
+    <div class="info-bar-meta"><strong>{{ listing.hours_total|int }}h</strong> TT</div>
+    {% endif %}
+</div>
+
+<!-- PAGE -->
+<div class="page">
+    <!-- LEFT COLUMN -->
+    <div>
+        <a href="/aircraft-for-sale" class="back">← Back to listings</a>
+        
+        <div class="tail-reg">{{ listing.tail }}</div>
+        <h1 class="listing-title">{{ listing.manufacturer }} {{ listing.model }}</h1>
+        <div class="listing-subtitle">{{ listing.year }}{% if listing.location %} · {{ listing.location }}{% endif %}</div>
+        <div class="badges">
+            {% if listing.condition %}<span class="badge badge-orange">{{ listing.condition|title }}</span>{% endif %}
+            {% if listing.seller_type %}<span class="badge badge-gray">{{ listing.seller_type|title }}</span>{% endif %}
+            {% if listing.arc_verified %}<span class="badge badge-green">✓ ARC Verified</span>{% endif %}
         </div>
-        {% endif %}
-        {% if listing.hours_total %}
-        {% set af_pct = [listing.hours_total / 10000 * 100, 100]|min|int %}
-        <div class="info-bar-gauge">
-            <div class="info-bar-gauge-lbl">AIRFRAME · TT</div>
-            <canvas class="gauge-canvas" width="110" height="68" data-pct="{{ af_pct }}" data-label="{{ listing.hours_total|int }}h" data-cx="55" data-cy="62" data-r="44"></canvas>
-            <div class="info-bar-gauge-val">{{ listing.hours_total|int }}h TT</div>
-        </div>
-        {% endif %}
-        {% if listing.hours_prop and listing.hours_prop_tbo %}
-        {% set prop_pct = (listing.hours_prop / listing.hours_prop_tbo * 100)|int %}
-        <div class="info-bar-gauge">
-            <div class="info-bar-gauge-lbl">PROP · OH</div>
-            <canvas class="gauge-canvas" width="110" height="68" data-pct="{{ prop_pct }}" data-cx="55" data-cy="62" data-r="44"></canvas>
-            <div class="info-bar-gauge-val">{{ listing.hours_prop|int }}h / {{ listing.hours_prop_tbo|int }}h</div>
-        </div>
-        {% endif %}
-        <div class="info-bar-price">
-            <div class="info-bar-price-label">Asking price</div>
-            <div class="info-bar-price-amount">{% if listing.price and listing.price > 0 %}EUR {{ "{:,.0f}".format(listing.price) }}{% else %}Price on request{% endif %}</div>
-            <div class="info-bar-badges">
-                {% if listing.has_autopilot %}<span class="hbadge yes">▲ AP</span>{% endif %}
-                {% if listing.has_adsb %}<span class="hbadge yes">▲ ADS-B</span>{% endif %}
-                {% if listing.is_hangared %}<span class="hbadge yes">▲ HANGAR</span>{% endif %}
-                {% if listing.arc_verified %}<span class="hbadge yes">▲ ARC</span>{% endif %}
+
+        <!-- HIGHLIGHTS -->
+        {% if highlights %}
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">Highlights</div>
             </div>
-        </div>
-        <!-- Thumbnails til højre -->
-        {% if images|length > 1 %}
-        <div class="info-bar-thumbs">
-            {% for img in images %}
-            <img class="info-thumb {% if loop.first %}active{% endif %}" src="{{ img }}" onclick="setHero(this, '{{ img }}')">
+            {% for h in highlights %}
+            <div class="highlight-item"><span class="highlight-check">✓</span><span>{{ h }}</span></div>
             {% endfor %}
         </div>
         {% endif %}
+
+        <!-- SPECS -->
+        {% if specs %}
+        <div class="section">
+            <div class="section-header"><div class="section-title">Specifications</div></div>
+            <div class="specs-grid">
+                {% if specs.engine %}<div class="spec-item"><div class="spec-label">Engine</div><div class="spec-value" style="font-size:13px">{{ specs.engine }}</div></div>{% endif %}
+                {% if specs.avionics %}<div class="spec-item"><div class="spec-label">Avionics</div><div class="spec-value" style="font-size:13px">{{ specs.avionics }}</div></div>{% endif %}
+                {% if specs.seats %}<div class="spec-item"><div class="spec-label">Seats</div><div class="spec-value">{{ specs.seats }}</div></div>{% endif %}
+                {% if specs.cruise_kt %}<div class="spec-item"><div class="spec-label">Cruise</div><div class="spec-value">{{ specs.cruise_kt }} kt</div></div>{% endif %}
+                {% if specs.range_nm %}<div class="spec-item"><div class="spec-label">Range</div><div class="spec-value">{{ specs.range_nm }} nm</div></div>{% endif %}
+                {% if specs.useful_load_kg %}<div class="spec-item"><div class="spec-label">Useful load</div><div class="spec-value">{{ specs.useful_load_kg }} kg</div></div>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- AI DESCRIPTION -->
+        {% if listing.ai_description %}
+        <div class="section">
+            <div class="section-header"><div class="section-title">About this aircraft</div><div class="section-badge">✦ AI Summary</div></div>
+            <div style="color:#aaa;font-size:14px;line-height:1.8;">{{ listing.ai_description }}</div>
+        </div>
+        {% endif %}
+
+        <!-- FULL DESCRIPTION -->
+        {% if listing.description %}
+        <div class="section">
+            <div class="section-header"><div class="section-title">Full details</div></div>
+            <div>
+            {%- set lines = listing.description.split(";") -%}
+            {%- for line in lines -%}
+            {%- set stripped = line.strip() -%}
+            {%- if stripped and stripped|length > 2 %}
+            <div class="desc-line">{{ stripped }}</div>
+            {%- endif -%}
+            {%- endfor -%}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- MAINTENANCE HISTORY — locked -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">Maintenance history</div>
+                <div class="section-badge">Coming soon</div>
+            </div>
+            {% if listing.arc_verified %}
+            <div style="padding:8px 0;font-size:14px;color:#4caf50;">✓ ARC verified by PanPanParts</div>
+            {% if listing.arc_valid_until %}
+            <div style="padding:8px 0;font-size:13px;color:#aaa;">Valid until: {{ listing.arc_valid_until }}</div>
+            {% endif %}
+            {% else %}
+            <div class="locked">
+                <div class="locked-icon">🔧</div>
+                <div class="locked-title">No maintenance records yet</div>
+                <div style="font-size:12px;color:#444;margin-bottom:8px;">Own this aircraft? Claim it to add service history, ARC documents and more.</div>
+                <a href="/register" class="locked-cta">Claim this aircraft</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- DOCUMENTS — locked -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">Documents</div>
+                <div class="section-badge">Coming soon</div>
+            </div>
+            <div class="locked">
+                <div class="locked-icon">📄</div>
+                <div class="locked-title">No documents uploaded</div>
+                <div style="font-size:12px;color:#444;margin-bottom:8px;">ARC, weight & balance, STC certificates and logbook scans will appear here.</div>
+                <a href="/register" class="locked-cta">Claim this aircraft</a>
+            </div>
+        </div>
+
+        <!-- AI ANALYSIS -->
+        <div class="section" id="ai-insight-card">
+            <div class="section-header">
+                <div class="section-title">✦ AI Aircraft Analysis</div>
+                <button class="ai-btn" id="btn-ai-insight" onclick="loadAIInsight()" style="width:auto;padding:6px 14px;">Analyze →</button>
+            </div>
+            <div id="ai-insight-loading" style="display:none;text-align:center;padding:24px;color:#666;">
+                <div class="spinner"></div>
+                <div style="margin-top:8px;font-size:13px;">AI is analyzing this aircraft...</div>
+            </div>
+            <div id="ai-insight-content" style="display:none;">
+                <div id="insight-character" style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px;font-style:italic;"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                    <div>
+                        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#4caf50;margin-bottom:8px;">Strengths</div>
+                        <div id="insight-strengths"></div>
+                    </div>
+                    <div>
+                        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#f44336;margin-bottom:8px;">Considerations</div>
+                        <div id="insight-weaknesses"></div>
+                    </div>
+                </div>
+                <div id="insight-recommendation" style="border-top:1px solid #2a2a3e;padding-top:16px;font-size:13px;color:#ff6b35;line-height:1.6;"></div>
+            </div>
+        </div>
     </div>
 
-    <div class="container">
-        <a href="/aircraft-for-sale" class="back">← Back to listings</a>
-        
-        <div class="layout">
-            <!-- Venstre kolonne -->
-            <div class="main-col">
-                <div class="listing-header">
-                    <div class="tail-reg">{{ listing.tail }}</div>
-                    <h1 class="listing-title">{{ listing.manufacturer }} {{ listing.model }}</h1>
-                    <div class="listing-subtitle">{{ listing.year }}{% if listing.location %} · {{ listing.location }}{% endif %}</div>
-                    <div class="badges">
-                        {% if listing.condition %}<span class="badge badge-condition">{{ listing.condition|title }}</span>{% endif %}
-                        {% if listing.seller_type %}<span class="badge badge-seller">{{ listing.seller_type|title }}</span>{% endif %}
-                        {% if listing.arc_verified %}<span class="badge badge-verified">✓ ARC Verified</span>{% endif %}
-                    </div>
-                </div>
-
-
-
-
-                {% if highlights %}
-                <div class="highlights">
-                    <h3>Highlights</h3>
-                    {% for h in highlights %}
-                    <div class="highlight-item">
-                        <span class="highlight-check">✓</span>
-                        <span>{{ h }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                {% if specs %}
-                <div class="specs-grid">
-                    {% if specs.engine %}<div class="spec-item"><div class="spec-label">Engine</div><div class="spec-value" style="font-size:14px">{{ specs.engine }}</div></div>{% endif %}
-                    {% if specs.avionics %}<div class="spec-item"><div class="spec-label">Avionics</div><div class="spec-value" style="font-size:14px">{{ specs.avionics }}</div></div>{% endif %}
-                    {% if specs.seats %}<div class="spec-item"><div class="spec-label">Seats</div><div class="spec-value">{{ specs.seats }}</div></div>{% endif %}
-                    {% if specs.range_nm %}<div class="spec-item"><div class="spec-label">Range</div><div class="spec-value">{{ specs.range_nm }} nm</div></div>{% endif %}
-                    {% if specs.cruise_kt %}<div class="spec-item"><div class="spec-label">Cruise</div><div class="spec-value">{{ specs.cruise_kt }} kt</div></div>{% endif %}
-                    {% if specs.useful_load_kg %}<div class="spec-item"><div class="spec-label">Useful load</div><div class="spec-value">{{ specs.useful_load_kg }} kg</div></div>{% endif %}
-                </div>
-                {% endif %}
-
-                {% if listing.ai_description %}
-                <div class="description-card">
-                    <h3>About this aircraft</h3>
-                    <div class="description-text">{{ listing.ai_description }}</div>
-                </div>
-                {% elif listing.description %}
-                <div class="description-card">
-                    <h3>Full description</h3>
-                    <div class="description-text">{{ listing.description }}</div>
-                </div>
-                {% endif %}
-
-                <!-- AI Insight sektion -->
-                <div class="ai-insight-card" id="ai-insight-card" style="background:#1a1a2e;border-radius:16px;padding:24px;border:1px solid #2a2a3e;margin-bottom:16px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <span style="color:#ff6b35;font-size:18px">✦</span>
-                            <span style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#888">AI Aircraft Analysis</span>
-                        </div>
-                        <button id="btn-ai-insight" onclick="loadAIInsight()" style="background:#ff6b35;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;cursor:pointer;">Analyze this aircraft →</button>
-                    </div>
-                    <div id="ai-insight-loading" style="display:none;text-align:center;padding:24px;color:#666;">
-                        <div style="font-size:24px;margin-bottom:8px">✦</div>
-                        <div style="font-size:13px">AI is analyzing this aircraft...</div>
-                    </div>
-                    <div id="ai-insight-content" style="display:none;">
-                        <div id="insight-character" style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:20px;font-style:italic;border-bottom:1px solid #2a2a3e;padding-bottom:16px;"></div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-                            <div>
-                                <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#4caf50;margin-bottom:8px;">Strengths</div>
-                                <div id="insight-strengths"></div>
-                            </div>
-                            <div>
-                                <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#f44336;margin-bottom:8px;">Considerations</div>
-                                <div id="insight-weaknesses"></div>
-                            </div>
-                        </div>
-                        <div id="insight-economy" style="background:#0d0d1a;border-radius:12px;padding:16px;margin-bottom:20px;display:none;">
-                            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:12px;">Operating Economy (estimated)</div>
-                            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;" id="insight-economy-grid"></div>
-                            <div id="insight-economy-note" style="font-size:12px;color:#666;margin-top:10px;"></div>
-                        </div>
-                        <div id="insight-buyer-match" style="display:none;border-radius:12px;padding:16px;margin-bottom:20px;">
-                            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:8px;">Your Buyer Match</div>
-                            <div id="insight-match-reason" style="font-size:14px;color:#ccc;line-height:1.6;"></div>
-                        </div>
-                        <div id="insight-recommendation" style="border-top:1px solid #2a2a3e;padding-top:16px;font-size:14px;line-height:1.6;color:#ff6b35;"></div>
-                    </div>
-                </div>
-
-                <!-- Kontakt -->
-                <div style="background:#1a1a2e;border-radius:16px;padding:24px;border:1px solid #2a2a3e;margin-top:8px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
-                        <div>
-                            <div style="font-size:13px;color:#666;margin-bottom:4px;">Listed by</div>
-                            <div style="font-size:16px;font-weight:600;">{{ listing.contact_name }}</div>
-                            <div style="font-size:14px;color:#aaa;">{{ listing.contact_email }}</div>
-                            {% if listing.contact_phone %}<div style="font-size:14px;color:#aaa;">{{ listing.contact_phone }}</div>{% endif %}
-                        </div>
-                        <div style="text-align:right;">
-                            <a href="mailto:{{ listing.contact_email }}?subject=Re: {{ listing.tail }} for sale on PanPanParts" class="btn-contact" style="display:inline-block;padding:14px 32px;font-size:16px;">✉ Send message</a>
-                            <div style="font-size:12px;color:#444;margin-top:8px;">{{ listing.views or 0 }} views</div>
-                        </div>
-                    </div>
-                </div>
+    <!-- RIGHT SIDEBAR -->
+    <div>
+        <!-- PRICE CARD -->
+        <div class="price-card">
+            <div class="price-label">Asking price</div>
+            <div class="price-amount">
+                {% if listing.price and listing.price > 0 %}EUR {{ "{:,.0f}".format(listing.price) }}
+                {% else %}Price on request{% endif %}
             </div>
+            {% if listing.hours_total or listing.hours_engine %}
+            <div class="hours-row">
+                {% if listing.hours_total %}<div class="hours-item"><div class="hours-label">Airframe TT</div><div class="hours-value">{{ listing.hours_total|int }}h</div></div>{% endif %}
+                {% if listing.hours_engine %}<div class="hours-item"><div class="hours-label">Engine SMOH</div><div class="hours-value">{{ listing.hours_engine|int }}h</div></div>{% endif %}
+            </div>
+            {% endif %}
+            {% if listing.location %}
+            <div class="location-row">📍 <span>{{ listing.location }}</span></div>
+            {% endif %}
+        </div>
 
-        <script>
-        // Tegn gauges med canvas
-        window.addEventListener("load", function() {
-        document.querySelectorAll('.gauge-canvas').forEach(function(canvas) {
-            var pct = parseInt(canvas.dataset.pct) || 0;
-            var label = canvas.dataset.label || (pct + '%');
-            var ctx = canvas.getContext('2d');
-            var cx = parseInt(canvas.dataset.cx) || Math.round(canvas.width/2);
-            var cy = parseInt(canvas.dataset.cy) || Math.round(canvas.height*0.88);
-            var r = parseInt(canvas.dataset.r) || Math.round(canvas.width*0.40);
-            var startAngle = Math.PI;
-            var endAngle = 2 * Math.PI;
-            var color = pct < 50 ? '#4caf50' : (pct < 75 ? '#ffc107' : '#f44336');
+        <!-- CONTACT -->
+        <div class="contact-card">
+            <div class="section-title" style="margin-bottom:16px;">Listed by</div>
+            <div class="contact-name">{{ listing.contact_name or 'Seller' }}</div>
+            <div class="contact-email">{{ listing.contact_email or '' }}</div>
+            {% if listing.source_url %}
+            <a href="{{ listing.source_url }}" target="_blank" class="btn-contact">View original listing →</a>
+            {% else %}
+            <a href="mailto:{{ listing.contact_email }}" class="btn-contact">✉ Send message</a>
+            {% endif %}
+            <div class="views-count">{{ listing.views or 0 }} views</div>
+        </div>
 
-            // Baggrund arc
-            ctx.beginPath();
-            ctx.arc(cx, cy, r, startAngle, endAngle);
-            ctx.strokeStyle = '#1a2a1a';
-            ctx.lineWidth = 12;
-            ctx.lineCap = 'butt';
-            ctx.stroke();
+        <!-- REGISTRY INFO -->
+        <div class="registry-card">
+            <div class="section-title" style="margin-bottom:16px;">Registry</div>
+            <div class="reg-row"><span class="reg-label">Registration</span><span class="reg-value">{{ listing.tail }}</span></div>
+            <div class="reg-row"><span class="reg-label">Year</span><span class="reg-value">{{ listing.year or '—' }}</span></div>
+            <div class="reg-row"><span class="reg-label">Condition</span><span class="reg-value">{{ listing.condition|title if listing.condition else '—' }}</span></div>
+            <div class="reg-row"><span class="reg-label">Seller type</span><span class="reg-value">{{ listing.seller_type|title if listing.seller_type else '—' }}</span></div>
+            {% if listing.source %}
+            <div class="reg-row"><span class="reg-label">Source</span><span class="reg-value">{{ listing.source|title }}</span></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 
-            // Gradient arc
-            var grad = ctx.createLinearGradient(14, 0, 116, 0);
-            grad.addColorStop(0, '#4caf50');
-            grad.addColorStop(0.55, '#ffc107');
-            grad.addColorStop(1, '#f44336');
-            ctx.beginPath();
-            ctx.arc(cx, cy, r, startAngle, endAngle);
-            ctx.strokeStyle = grad;
-            ctx.globalAlpha = 0.8;
-            ctx.stroke();
-            ctx.globalAlpha = 1;
+<script>
+var allImages = [{% for img in images %}'{{ img }}'{% if not loop.last %},{% endif %}{% endfor %}];
+var currentIdx = 0;
+function setHero(idx) {
+    currentIdx = idx;
+    document.getElementById('hero-img').src = allImages[idx];
+    document.querySelectorAll('.thumb').forEach((t,i) => t.classList.toggle('active', i===idx));
+    var ctr = document.getElementById('hero-counter');
+    if(ctr) ctr.textContent = (idx+1) + ' / ' + allImages.length;
+}
+function navHero(dir) {
+    var next = (currentIdx + dir + allImages.length) % allImages.length;
+    setHero(next);
+}
 
-            // Tick marks
-            ctx.strokeStyle = '#2a3a2a';
-            ctx.lineWidth = 1;
-            [[14,76,19,71],[29,43,35,46],[65,28,65,35],[101,43,95,46],[116,76,111,71]].forEach(function(t) {
-                ctx.beginPath(); ctx.moveTo(t[0],t[1]); ctx.lineTo(t[2],t[3]); ctx.stroke();
-            });
-
-            // Nål
-            var angle = Math.PI + (pct / 100) * Math.PI;
-            var nx = cx + r * Math.cos(angle);
-            var ny = cy + r * Math.sin(angle);
-            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(nx, ny);
-            ctx.strokeStyle = '#000'; ctx.lineWidth = 4; ctx.lineCap = 'round';
-            ctx.globalAlpha = 0.4; ctx.stroke(); ctx.globalAlpha = 1;
-            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(nx, ny);
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
-
-            // Hub
-            ctx.beginPath(); ctx.arc(cx, cy, 5, 0, 2*Math.PI);
-            ctx.fillStyle = '#0d0d1a'; ctx.fill();
-            ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
-            ctx.beginPath(); ctx.arc(cx, cy, 2, 0, 2*Math.PI);
-            ctx.fillStyle = color; ctx.fill();
-
-            // Label
-            ctx.fillStyle = color;
-            ctx.font = 'bold 12px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(label || pct + '%', cx, 62);
-        });
-        }); // end load
-        function loadAIInsight() {
-            document.getElementById('btn-ai-insight').style.display = 'none';
-            document.getElementById('ai-insight-loading').style.display = 'block';
-
-            var userHours = {% if current_user.is_authenticated and current_user.total_flight_hours %}{{ current_user.total_flight_hours }}{% else %}null{% endif %};
-            var userLicense = {% if current_user.is_authenticated and current_user.license_type %}'{{ current_user.license_type }}'{% else %}null{% endif %};
-
-            fetch('/aircraft-listing/{{ listing.id }}/ai-insight', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_hours: userHours, user_license: userLicense})
-            })
-            .then(r => r.json())
-            .then(function(result) {
-                document.getElementById('ai-insight-loading').style.display = 'none';
-                if (!result.ok) return;
-                var d = result.data;
-                document.getElementById('ai-insight-content').style.display = 'block';
-
-                // Karakter
-                if (d.character) document.getElementById('insight-character').textContent = d.character;
-
-                // Styrker
-                var sDiv = document.getElementById('insight-strengths');
-                (d.strengths || []).forEach(function(s) {
-                    var el = document.createElement('div');
-                    el.style.cssText = 'font-size:13px;color:#ccc;padding:4px 0;display:flex;gap:8px;align-items:flex-start;';
-                    el.innerHTML = '<span style="color:#4caf50;flex-shrink:0;">✓</span>' + s;
-                    sDiv.appendChild(el);
-                });
-
-                // Svagheder
-                var wDiv = document.getElementById('insight-weaknesses');
-                (d.weaknesses || []).forEach(function(w) {
-                    var el = document.createElement('div');
-                    el.style.cssText = 'font-size:13px;color:#ccc;padding:4px 0;display:flex;gap:8px;align-items:flex-start;';
-                    el.innerHTML = '<span style="color:#f44336;flex-shrink:0;">!</span>' + w;
-                    wDiv.appendChild(el);
-                });
-
-                // Økonomi
-                if (d.economy) {
-                    var econ = d.economy;
-                    var grid = document.getElementById('insight-economy-grid');
-                    var items = [
-                        {label: 'Fuel burn', value: econ.fuel_burn_lph ? econ.fuel_burn_lph + ' L/h' : '—'},
-                        {label: 'Cruise', value: econ.cruise_speed_kt ? econ.cruise_speed_kt + ' kt' : '—'},
-                        {label: 'Range', value: econ.range_nm ? econ.range_nm + ' nm' : '—'},
-                        {label: 'Cost/hour', value: econ.cost_per_hour_eur ? '~€' + econ.cost_per_hour_eur : '—'}
-                    ];
-                    items.forEach(function(item) {
-                        var el = document.createElement('div');
-                        el.style.cssText = 'text-align:center;';
-                        el.innerHTML = '<div style="font-size:18px;font-weight:700;color:#fff;">' + item.value + '</div><div style="font-size:11px;color:#666;margin-top:2px;">' + item.label + '</div>';
-                        grid.appendChild(el);
-                    });
-                    if (econ.note) document.getElementById('insight-economy-note').textContent = '* ' + econ.note;
-                    document.getElementById('insight-economy').style.display = 'block';
-                }
-
-                // Køber-match
-                if (d.buyer_match) {
-                    var matchColors = {'great': '#4caf50', 'good': '#8bc34a', 'caution': '#ffc107', 'mismatch': '#f44336'};
-                    var matchLabels = {'great': '✓ Great match', 'good': '✓ Good match', 'caution': '⚠ Proceed with caution', 'mismatch': '✗ Not ideal match'};
-                    var score = d.buyer_match.score || 'good';
-                    var color = matchColors[score] || '#888';
-                    var matchDiv = document.getElementById('insight-buyer-match');
-                    matchDiv.style.background = color + '15';
-                    matchDiv.style.border = '1px solid ' + color + '44';
-                    matchDiv.querySelector('div:first-child').style.color = color;
-                    matchDiv.querySelector('div:first-child').textContent = matchLabels[score] || 'Buyer Match';
-                    document.getElementById('insight-match-reason').textContent = d.buyer_match.reason || '';
-                    matchDiv.style.display = 'block';
-                }
-
-                // Anbefaling
-                if (d.recommendation) {
-                    document.getElementById('insight-recommendation').innerHTML = '<strong style="color:#ff6b35;">✦ Recommendation:</strong> ' + d.recommendation;
-                }
-            })
-            .catch(function() {
-                document.getElementById('ai-insight-loading').style.display = 'none';
-                document.getElementById('btn-ai-insight').style.display = 'block';
-            });
-        }
-
-        function setHero(thumb, src) {
-            document.getElementById('hero-img').src = src;
-            document.querySelectorAll('.thumb, .info-thumb').forEach(t => t.classList.remove('active'));
-            thumb.classList.add('active');
-            currentIndex = allImages.indexOf(src);
-        }
-
-        function navHero(dir) {
-            if (allImages.length === 0) return;
-            currentIndex = (currentIndex + dir + allImages.length) % allImages.length;
-            var src = allImages[currentIndex];
-            document.getElementById('hero-img').src = src;
-            document.querySelectorAll('.thumb, .info-thumb').forEach(function(t, i) {
-                t.classList.toggle('active', i === currentIndex);
-            });
-        }
-
-        // Keyboard navigation
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'ArrowLeft') navHero(-1);
-            if (e.key === 'ArrowRight') navHero(1);
-        });
-    </script>
+async function loadAIInsight() {
+    document.getElementById('btn-ai-insight').style.display = 'none';
+    document.getElementById('ai-insight-loading').style.display = 'block';
+    try {
+        const resp = await fetch('/aircraft-listing/{{ listing.id }}/ai-insight', {method:'POST', headers:{'Content-Type':'application/json'}});
+        const data = await resp.json();
+        document.getElementById('ai-insight-loading').style.display = 'none';
+        document.getElementById('ai-insight-content').style.display = 'block';
+        document.getElementById('insight-character').textContent = data.character || '';
+        const str = document.getElementById('insight-strengths');
+        (data.strengths||[]).forEach(s => { const d=document.createElement('div'); d.style.cssText='font-size:13px;color:#ccc;padding:4px 0;border-bottom:1px solid #2a2a3e;'; d.textContent='✓ '+s; str.appendChild(d); });
+        const weak = document.getElementById('insight-weaknesses');
+        (data.weaknesses||[]).forEach(w => { const d=document.createElement('div'); d.style.cssText='font-size:13px;color:#ccc;padding:4px 0;border-bottom:1px solid #2a2a3e;'; d.textContent='• '+w; weak.appendChild(d); });
+        document.getElementById('insight-recommendation').textContent = data.recommendation || '';
+    } catch(e) {
+        document.getElementById('ai-insight-loading').innerHTML = '<div style="color:#f44336;font-size:13px;">Analysis failed. Please try again.</div>';
+    }
+}
+</script>
 </body>
 </html>"""
-
-
-
-
-
-
-
 
 
 @app.route('/aircraft-listing/<int:listing_id>/ai-insight', methods=['POST'])

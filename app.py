@@ -6006,6 +6006,141 @@ If a field doesn't exist in the CSV, use null.'''}]
 </html>""", imported=imported, skipped=skipped)
 
 
+@app.route('/logbook/add-manual', methods=['GET', 'POST'])
+@login_required
+def logbook_add_manual():
+    if request.method == 'POST':
+        from datetime import datetime as dt
+        def f(key): return request.form.get(key, '').strip()
+        def fnum(key):
+            v = f(key)
+            try: return float(v) if v else None
+            except: return None
+        def fint(key):
+            v = f(key)
+            try: return int(v) if v else None
+            except: return None
+        
+        entry = LogbookEntry(
+            user_id=current_user.id,
+            flight_date=dt.strptime(f('flight_date'), '%Y-%m-%d').date() if f('flight_date') else None,
+            dep_place=f('dep_place').upper(),
+            arr_place=f('arr_place').upper(),
+            off_block=f('off_block'),
+            on_block=f('on_block'),
+            aircraft_type=f('aircraft_type'),
+            registration=f('registration').upper(),
+            pilot_in_command=f('pilot_in_command'),
+            total_time=f('total_time'),
+            pic_time=fnum('pic_time'),
+            dual=fnum('dual'),
+            instructor_time=fnum('instructor_time'),
+            night_time=fnum('night_time'),
+            sep_vfr=fnum('sep_vfr'),
+            sep_ifr=fnum('sep_ifr'),
+            landings_day=fint('landings_day'),
+            landings_night=fint('landings_night'),
+            remarks=f('remarks')
+        )
+        db.session.add(entry)
+        db.session.commit()
+        return redirect('/my-logbook')
+    
+    # Hent seneste fly til auto-udfyld
+    last = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.id.desc()).first()
+    
+    return render_template_string("""<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Flight — PanPanParts</title>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:-apple-system,sans-serif;background:#0a0a14;color:white;}
+        .header{padding:16px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1a1a2e;}
+        .logo{font-size:20px;font-weight:700;}.logo span{color:#ff6b35;}
+        .nav a{color:#aaa;text-decoration:none;font-size:14px;}
+        .container{max-width:700px;margin:40px auto;padding:0 20px;}
+        .back{color:#666;text-decoration:none;font-size:14px;display:inline-block;margin-bottom:24px;}
+        h1{font-size:28px;font-weight:800;margin-bottom:4px;}
+        h1 span{color:#ff6b35;}
+        .card{background:#1a1a2e;border-radius:16px;padding:28px;border:1px solid #2a2a3e;margin-bottom:20px;}
+        .section-title{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#666;margin-bottom:16px;font-weight:700;}
+        .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+        .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+        .field{display:flex;flex-direction:column;gap:6px;}
+        label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.5px;}
+        input,textarea{background:#0d0d1a;border:1px solid #2a2a3e;border-radius:8px;color:white;padding:12px;font-size:15px;width:100%;}
+        input:focus,textarea:focus{outline:none;border-color:#ff6b35;}
+        textarea{height:80px;resize:vertical;}
+        .btn{background:#ff6b35;color:white;border:none;padding:16px;border-radius:10px;font-size:16px;cursor:pointer;font-weight:700;width:100%;margin-top:8px;}
+        .btn:hover{background:#e55a25;}
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+    <div class="nav"><a href="/my-logbook">← My logbook</a></div>
+</div>
+<div class="container">
+    <h1>Add <span>flight</span></h1>
+    <p style="color:#666;margin-bottom:24px;font-size:14px;">Log a flight manually</p>
+    
+    <form method="POST">
+        <div class="card">
+            <div class="section-title">General</div>
+            <div class="row">
+                <div class="field"><label>Date</label><input type="date" name="flight_date" required value="{{ today }}"></div>
+                <div class="field"><label>Aircraft registration</label><input type="text" name="registration" placeholder="OY-BJM" value="{{ last.registration if last else '' }}"></div>
+            </div>
+            <div class="row">
+                <div class="field"><label>Departure (ICAO)</label><input type="text" name="dep_place" placeholder="EKRK" value="{{ last.dep_place if last else '' }}"></div>
+                <div class="field"><label>Arrival (ICAO)</label><input type="text" name="arr_place" placeholder="EKRK"></div>
+            </div>
+            <div class="row">
+                <div class="field"><label>Off block</label><input type="time" name="off_block" placeholder="10:00"></div>
+                <div class="field"><label>On block</label><input type="time" name="on_block" placeholder="11:30"></div>
+            </div>
+            <div class="row">
+                <div class="field"><label>Aircraft type</label><input type="text" name="aircraft_type" placeholder="C172" value="{{ last.aircraft_type if last else '' }}"></div>
+                <div class="field"><label>Pilot in command</label><input type="text" name="pilot_in_command" value="{{ current_user.name }}"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">Flight time</div>
+            <div class="row3">
+                <div class="field"><label>Total time</label><input type="text" name="total_time" placeholder="1:30"></div>
+                <div class="field"><label>PIC time</label><input type="number" name="pic_time" step="0.01" placeholder="1.5"></div>
+                <div class="field"><label>SEP VFR</label><input type="number" name="sep_vfr" step="0.01" placeholder="1.5"></div>
+            </div>
+            <div class="row3">
+                <div class="field"><label>Night time</label><input type="number" name="night_time" step="0.01" placeholder="0"></div>
+                <div class="field"><label>Dual received</label><input type="number" name="dual" step="0.01" placeholder="0"></div>
+                <div class="field"><label>Instructor time</label><input type="number" name="instructor_time" step="0.01" placeholder="0"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">Landings & remarks</div>
+            <div class="row">
+                <div class="field"><label>Day landings</label><input type="number" name="landings_day" placeholder="1" min="0"></div>
+                <div class="field"><label>Night landings</label><input type="number" name="landings_night" placeholder="0" min="0"></div>
+            </div>
+            <div class="field"><label>Remarks</label><textarea name="remarks" placeholder="Training flight, circuits..."></textarea></div>
+        </div>
+
+        <button type="submit" class="btn">Save flight →</button>
+    </form>
+</div>
+<script>
+// Sæt dagens dato som default
+document.querySelector('[name=flight_date]').value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>""", last=last, current_user=current_user, today=__import__('datetime').date.today())
+
+
 @app.route('/logbook/add-aircraft', methods=['POST'])
 @login_required
 def logbook_add_aircraft():
@@ -6349,7 +6484,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
         <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                 <h3>Recent flights</h3>
-                <a href="/logbook-review" style="background:#ff6b35;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700;">+ Add flight</a>
+                <a href="/logbook/add-manual" style="background:#ff6b35;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700;">+ Add flight</a>
             </div>
             {% if entries %}
             <div class="table-scroll">

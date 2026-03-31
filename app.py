@@ -6049,6 +6049,19 @@ def logbook_add_manual():
     # Hent seneste fly til auto-udfyld
     last = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.id.desc()).first()
     
+    # Slå aircraft type op fra register
+    last_type = None
+    if last and last.aircraft_type:
+        last_type = last.aircraft_type
+    elif last and last.registration:
+        conn_t = get_pg_conn()
+        cur_t = conn_t.cursor()
+        cur_t.execute("SELECT model FROM aircraft WHERE registration = %s LIMIT 1", (last.registration.upper(),))
+        row_t = cur_t.fetchone()
+        conn_t.close()
+        if row_t:
+            last_type = row_t[0]
+    
     return render_template_string("""<!DOCTYPE html>
 <html>
 <head>
@@ -6102,7 +6115,7 @@ def logbook_add_manual():
                 <div class="field"><label>On block</label><input type="time" name="on_block" placeholder="11:30"></div>
             </div>
             <div class="row">
-                <div class="field"><label>Aircraft type</label><input type="text" name="aircraft_type" placeholder="C172" value="{{ last.aircraft_type if last else '' }}"></div>
+                <div class="field"><label>Aircraft type</label><input type="text" name="aircraft_type" placeholder="C172" value="{{ last_type or '' }}"></div>
                 <div class="field"><label>Pilot in command</label><input type="text" name="pilot_in_command" value="{{ current_user.name }}"></div>
             </div>
         </div>

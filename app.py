@@ -3849,7 +3849,7 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
         {% endif %}
         <div class="info-bar-price">
             <div class="info-bar-price-label">Asking price</div>
-            <div class="info-bar-price-amount">EUR {{ "{:,.0f}".format(listing.price) }}</div>
+            <div class="info-bar-price-amount">{% if listing.price and listing.price > 0 %}EUR {{ "{:,.0f}".format(listing.price) }}{% else %}Price on request{% endif %}</div>
             <div class="info-bar-badges">
                 {% if listing.has_autopilot %}<span class="hbadge yes">▲ AP</span>{% endif %}
                 {% if listing.has_adsb %}<span class="hbadge yes">▲ ADS-B</span>{% endif %}

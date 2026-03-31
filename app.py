@@ -2756,36 +2756,25 @@ SELL_AIRCRAFT_HTML = """<!DOCTYPE html>
 
 @app.route('/aircraft-for-sale')
 def aircraft_for_sale():
-    import json as _json
-    listings = AircraftListing.query.order_by(AircraftListing.created_at.desc()).all()
-    # Serialiser listings til JSON for frontend search
-    listings_data = []
-    for l in listings:
-        listings_data.append({
-            'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer,
-            'model': l.model, 'year': l.year, 'price': l.price or 0,
-            'hours_total': l.hours_total, 'hours_engine': l.hours_engine,
-            'location': l.location, 'hero_image': l.hero_image,
-            'condition': l.condition, 'seller_type': l.seller_type,
-            'ai_highlights': l.ai_highlights, 'description': l.description,
-            'images': l.images, 'hero_image': l.hero_image
-        })
-    # Hent 16 featured fly til karussel
-    conn_f = get_pg_conn()
-    cur_f = conn_f.cursor()
-    cur_f.execute("SELECT id, tail, manufacturer, model, year, price, location, images FROM aircraft_listing WHERE status='active' AND images != '[]' ORDER BY RANDOM() LIMIT 16")
-    featured_rows = cur_f.fetchall()
-    conn_f.close()
-    featured_aircraft = []
-    for fr in featured_rows:
-        imgs = _json.loads(fr[7]) if isinstance(fr[7], str) else fr[7]
-        featured_aircraft.append({'id': fr[0], 'tail': fr[1], 'manufacturer': fr[2], 'model': fr[3], 'year': fr[4], 'price': fr[5], 'location': fr[6], 'hero_image': imgs[0] if imgs else ''})
+    try:
+        import json as _json
+        listings = AircraftListing.query.order_by(AircraftListing.created_at.desc()).limit(200).all()
+        listings_data = []
+        for l in listings:
+            listings_data.append({'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer, 'model': l.model, 'year': l.year, 'price': l.price or 0, 'hours_total': l.hours_total, 'location': l.location, 'hero_image': l.hero_image, 'condition': l.condition, 'seller_type': l.seller_type, 'ai_highlights': l.ai_highlights, 'description': l.description, 'images': l.images})
+        conn_f = get_pg_conn()
+        cur_f = conn_f.cursor()
+        cur_f.execute("SELECT id, tail, manufacturer, model, year, price, location, images FROM aircraft_listing WHERE status='active' AND images != '[]' ORDER BY RANDOM() LIMIT 16")
+        featured_rows = cur_f.fetchall()
+        conn_f.close()
+        featured_aircraft = []
+        for fr in featured_rows:
+            imgs = _json.loads(fr[7]) if isinstance(fr[7], str) else fr[7]
+            featured_aircraft.append({'id': fr[0], 'tail': fr[1], 'manufacturer': fr[2], 'model': fr[3], 'year': fr[4], 'price': fr[5], 'location': fr[6], 'hero_image': imgs[0] if imgs else ''})
+        return render_template_string(AIRCRAFT_FOR_SALE_HTML, listings=listings, listings_json=_json.dumps(listings_data), current_user=current_user, featured_aircraft=featured_aircraft)
+    except Exception as e:
+        return f'FEJL: {str(e)}', 500
 
-    return render_template_string(AIRCRAFT_FOR_SALE_HTML, listings=listings,
-        listings_json=_json.dumps(listings_data), current_user=current_user, featured_aircraft=featured_aircraft)
-
-@app.route('/api/aircraft-search', methods=['POST'])
-def api_aircraft_search():
     import json as _json
     import anthropic as ac
     data = request.get_json()
@@ -2892,14 +2881,8 @@ Also add to JSON:
 AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
 <html>
 <head>
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3PJMNF1JE"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-K3PJMNF1JE');
-    </script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-K3PJMNF1JE');</script>
     <title>Aircraft for Sale — PanPanParts</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -2911,54 +2894,48 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
         .logo span { color: #ff6b35; }
         .nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 16px; }
         .nav a.primary { background: #ff6b35; color: white; padding: 8px 16px; border-radius: 8px; }
-        .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+        .page { display: flex; max-width: 1400px; margin: 0 auto; padding: 32px 20px; gap: 32px; }
         
-        /* Konversations-søgning */
-        .search-section { margin-bottom: 40px; }
-        .search-section h1 { font-size: 36px; font-weight: 800; margin-bottom: 8px; }
-        .search-section h1 span { color: #ff6b35; }
-        .search-section p { color: #666; margin-bottom: 24px; font-size: 15px; }
+        /* FILTER PANEL */
+        .filter-panel { width: 260px; flex-shrink: 0; }
+        .filter-panel h2 { font-size: 13px; font-weight: 700; color: #666; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px; }
+        .filter-group { margin-bottom: 24px; border-bottom: 1px solid #1a1a2e; padding-bottom: 24px; }
+        .filter-group label { display: block; font-size: 12px; color: #666; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .filter-group select, .filter-group input[type=number] { width: 100%; background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 8px; color: white; padding: 10px 12px; font-size: 14px; }
+        .filter-group select:focus, .filter-group input:focus { outline: none; border-color: #ff6b35; }
+        .filter-row { display: flex; gap: 8px; }
+        .filter-row input { width: 50%; }
+        .filter-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; }
+        .filter-toggle input[type=checkbox] { width: 18px; height: 18px; accent-color: #ff6b35; cursor: pointer; }
+        .filter-toggle span { font-size: 14px; color: #ccc; }
+        .btn-reset { width: 100%; background: transparent; border: 1px solid #2a2a3e; color: #666; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; margin-top: 8px; }
+        .btn-reset:hover { border-color: #ff6b35; color: #ff6b35; }
         
-        .search-history { margin-bottom: 12px; }
-        .search-bubble { display: inline-block; background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 20px; padding: 6px 14px; font-size: 13px; color: #aaa; margin: 4px; }
-        .search-bubble .remove { color: #666; cursor: pointer; margin-left: 6px; }
-        .search-bubble .remove:hover { color: #ff6b35; }
-        
-        .search-box { display: flex; gap: 12px; }
-        .search-input { flex: 1; padding: 16px 20px; border: 2px solid #2a2a3e; border-radius: 12px; font-size: 15px; background: #1a1a2e; color: white; transition: border-color 0.2s; }
+        /* MAIN CONTENT */
+        .main { flex: 1; min-width: 0; }
+        .search-box { display: flex; gap: 12px; margin-bottom: 24px; }
+        .search-input { flex: 1; padding: 14px 18px; border: 2px solid #2a2a3e; border-radius: 12px; font-size: 15px; background: #1a1a2e; color: white; }
         .search-input:focus { outline: none; border-color: #ff6b35; }
-        .search-btn { background: #ff6b35; color: white; border: none; padding: 16px 28px; border-radius: 12px; font-size: 15px; cursor: pointer; font-weight: 700; white-space: nowrap; }
-        .search-btn:hover { background: #e55a25; }
-        
-        .ai-suggestion { background: #1a1a2e; border-radius: 10px; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: #666; display: none; }
-        .ai-suggestion span { color: #ff6b35; cursor: pointer; }
-        .ai-suggestion span:hover { text-decoration: underline; }
-        
-        /* Resultater */
+        .search-btn { background: #ff6b35; color: white; border: none; padding: 14px 24px; border-radius: 12px; font-size: 15px; cursor: pointer; font-weight: 700; }
         .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .results-count { font-size: 14px; color: #666; }
-        
-        .listings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
-        
+        .listings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .listing-card { background: #1a1a2e; border-radius: 16px; overflow: hidden; border: 1px solid #2a2a3e; text-decoration: none; color: white; display: block; transition: transform 0.2s, border-color 0.2s; }
         .listing-card:hover { transform: translateY(-2px); border-color: #ff6b35; }
         .card-img { width: 100%; height: 180px; object-fit: cover; display: block; }
         .card-img-placeholder { width: 100%; height: 180px; background: linear-gradient(135deg, #1a1a2e, #2a1a3e); display: flex; align-items: center; justify-content: center; font-size: 48px; }
         .card-body { padding: 16px; }
         .card-tail { font-size: 12px; color: #666; font-family: monospace; letter-spacing: 1px; margin-bottom: 4px; }
-        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; line-height: 1.3; }
-        .card-meta { font-size: 13px; color: #666; margin-bottom: 12px; }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .card-meta { font-size: 13px; color: #666; margin-bottom: 10px; }
         .card-price { font-size: 22px; font-weight: 800; color: #ff6b35; font-family: monospace; }
         .card-hours { font-size: 12px; color: #666; margin-top: 4px; }
-        
-        .empty { text-align: center; padding: 80px 0; }
-        .empty-icon { font-size: 64px; margin-bottom: 16px; }
-        .empty h3 { font-size: 20px; margin-bottom: 8px; }
-        .empty p { color: #666; margin-bottom: 24px; }
-        .btn-list { display: inline-block; background: #ff6b35; color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 700; }
-        
+        .card-tags { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+        .tag { font-size: 11px; background: #0a0a14; border: 1px solid #2a2a3e; border-radius: 4px; padding: 2px 8px; color: #aaa; }
+        .tag.green { border-color: #2a5a2a; color: #4caf50; }
         .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #333; border-top-color: #ff6b35; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .ai-suggestion { background: #1a1a2e; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #aaa; display: none; }
     </style>
 </head>
 <body>
@@ -2966,158 +2943,214 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
         <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
         <div class="nav">
             <a href="/parts">Parts for sale</a>
-            {% if current_user.is_authenticated %}
-            <a href="/my-listings" class="primary">+ List aircraft</a>
-            {% else %}
-            <a href="/register" class="primary">+ List aircraft</a>
-            {% endif %}
+            {% if current_user.is_authenticated %}<a href="/my-listings" class="primary">+ List aircraft</a>
+            {% else %}<a href="/register" class="primary">+ List aircraft</a>{% endif %}
         </div>
     </div>
 
-    <div class="container">
-        <div class="search-section">
-            <h1>Find your <span>next aircraft</span></h1>
-            <p>Search naturally — describe what you want, then refine step by step</p>
+    <div class="page">
+        <!-- FILTER PANEL -->
+        <div class="filter-panel">
+            <h2>Filters</h2>
             
-            <div class="search-history" id="search-history"></div>
-            
+            <div class="filter-group">
+                <label>Manufacturer</label>
+                <select id="f-manufacturer" onchange="applyFilters()">
+                    <option value="">All manufacturers</option>
+                    <option>Cessna</option><option>Piper</option><option>Cirrus</option>
+                    <option>Diamond</option><option>Beechcraft</option><option>Mooney</option>
+                    <option>Robin</option><option>Tecnam</option><option>Socata</option>
+                    <option>Extra</option><option>Pitts</option><option>Grumman</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Price (EUR)</label>
+                <div class="filter-row">
+                    <input type="number" id="f-price-min" placeholder="Min" onchange="applyFilters()">
+                    <input type="number" id="f-price-max" placeholder="Max" onchange="applyFilters()">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Year</label>
+                <div class="filter-row">
+                    <input type="number" id="f-year-min" placeholder="From" max="2025" onchange="applyFilters()">
+                    <input type="number" id="f-year-max" placeholder="To" max="2025" onchange="applyFilters()">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Total hours (max)</label>
+                <input type="number" id="f-hours-max" placeholder="e.g. 2000" onchange="applyFilters()">
+            </div>
+
+            <div class="filter-group">
+                <label>Equipment</label>
+                <label class="filter-toggle">
+                    <input type="checkbox" id="f-autopilot" onchange="applyFilters()">
+                    <span>Autopilot</span>
+                </label>
+                <label class="filter-toggle">
+                    <input type="checkbox" id="f-adsb" onchange="applyFilters()">
+                    <span>ADS-B</span>
+                </label>
+                <label class="filter-toggle">
+                    <input type="checkbox" id="f-hangared" onchange="applyFilters()">
+                    <span>Hangared</span>
+                </label>
+            </div>
+
+            <button class="btn-reset" onclick="resetFilters()">Reset filters</button>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main">
             <div class="search-box">
                 <input type="text" class="search-input" id="search-input" 
-                    placeholder="e.g. 4-seat single engine with glass cockpit..."
+                    placeholder="Search — e.g. Garmin G1000, fresh annual, IFR equipped..."
                     onkeydown="if(event.key==='Enter') doSearch()">
                 <button class="search-btn" onclick="doSearch()">Search →</button>
             </div>
+            
             <div class="ai-suggestion" id="ai-suggestion"></div>
-        </div>
 
-        <div class="results-header">
-            <div class="results-count" id="results-count">{{ listings|length }} aircraft listed</div>
-            {% if listings|length > 0 %}
-            <div style="font-size:13px;color:#666">Sorted by relevance</div>
-            {% endif %}
-        </div>
+            <div class="results-header">
+                <div class="results-count" id="results-count">{{ listings|length }} aircraft listed</div>
+                <div id="loading-indicator"></div>
+            </div>
 
-        <div class="listings-grid" id="listings-grid">
-            {% if listings %}
+            <div class="listings-grid" id="listings-grid">
                 {% for l in listings %}
-                <a class="listing-card" href="/aircraft-listing/{{ l.id }}">
-                    {% if l.hero_image %}
-                    <img class="card-img" src="{{ l.hero_image }}" alt="{{ l.tail }}">
-                    {% elif l.images %}
-                    <img class="card-img" src="{{ l.images | from_json_first }}" alt="{{ l.tail }}">
+                {% set imgs = l.images|from_json_first if l.images else '' %}
+                {% set hero = l.hero_image or imgs %}
+                <a href="/aircraft-listing/{{ l.id }}" class="listing-card">
+                    {% if hero %}
+                    <img class="card-img" src="{{ hero }}" alt="{{ l.manufacturer }} {{ l.model }}" loading="lazy">
                     {% else %}
                     <div class="card-img-placeholder">✈️</div>
                     {% endif %}
                     <div class="card-body">
                         <div class="card-tail">{{ l.tail }}</div>
                         <div class="card-title">{{ l.manufacturer }} {{ l.model }}</div>
-                        <div class="card-meta">{{ l.year }}{% if l.location %} · {{ l.location }}{% endif %}</div>
-                        <div class="card-price">{% if l.price %}EUR {{ "{:,.0f}".format(l.price) }}{% else %}Price on request{% endif %}</div>
-                        {% if l.hours_total %}
-                        <div class="card-hours">{{ l.hours_total|int }}h TT{% if l.hours_engine %} · {{ l.hours_engine|int }}h SMOH{% endif %}</div>
-                        {% endif %}
+                        <div class="card-meta">{{ l.year }}{% if l.location %} · {{ l.location[:30] }}{% endif %}</div>
+                        <div class="card-price">{% if l.price and l.price > 0 %}EUR {{ "{:,.0f}".format(l.price) }}{% else %}Price on request{% endif %}</div>
+                        <div class="card-hours">{% if l.hours_total %}{{ l.hours_total|int }}h TT{% endif %}</div>
+                        <div class="card-tags">
+                            {% if l.has_autopilot %}<span class="tag green">Autopilot</span>{% endif %}
+                            {% if l.has_adsb %}<span class="tag green">ADS-B</span>{% endif %}
+                            {% if l.is_hangared %}<span class="tag green">Hangared</span>{% endif %}
+                        </div>
                     </div>
                 </a>
                 {% endfor %}
-            {% else %}
-            <div class="empty" style="grid-column:1/-1">
-                <div class="empty-icon">✈️</div>
-                <h3>No aircraft listed yet</h3>
-                <p>Be the first to list your aircraft on PanPanParts</p>
-                <a href="/" class="btn-list">+ List your aircraft — free</a>
             </div>
-            {% endif %}
         </div>
     </div>
 
-    <script>
-        var searchHistory = [];
-        var allListings = {{ listings_json|safe }};
+<script>
+const ALL_LISTINGS = {{ listings_json|safe }};
+let currentListings = [...ALL_LISTINGS];
 
-        function doSearch() {
-            var query = document.getElementById('search-input').value.trim();
-            if (!query) return;
-            
-            searchHistory.push(query);
-            document.getElementById('search-input').value = '';
-            renderHistory();
-            
-            document.getElementById('results-count').innerHTML = '<span class="spinner"></span> Searching...';
-            document.getElementById('ai-suggestion').style.display = 'none';
+function renderListings(listings) {
+    const grid = document.getElementById('listings-grid');
+    document.getElementById('results-count').textContent = listings.length + ' aircraft listed';
+    if (listings.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:80px 0;color:#666"><div style="font-size:48px;margin-bottom:16px">✈️</div><div>No aircraft found</div></div>';
+        return;
+    }
+    grid.innerHTML = listings.map(l => {
+        let imgs = [];
+        try { imgs = typeof l.images === 'string' ? JSON.parse(l.images) : (l.images || []); } catch(e) {}
+        const hero = l.hero_image || (imgs.length > 0 ? imgs[0] : '');
+        const price = l.price > 0 ? 'EUR ' + l.price.toLocaleString('en', {maximumFractionDigits:0}) : 'Price on request';
+        const tags = [
+            l.has_autopilot ? '<span class="tag green">Autopilot</span>' : '',
+            l.has_adsb ? '<span class="tag green">ADS-B</span>' : '',
+            l.is_hangared ? '<span class="tag green">Hangared</span>' : ''
+        ].join('');
+        return `<a href="/aircraft-listing/${l.id}" class="listing-card">
+            ${hero ? `<img class="card-img" src="${hero}" alt="${l.manufacturer} ${l.model}" loading="lazy">` : '<div class="card-img-placeholder">✈️</div>'}
+            <div class="card-body">
+                <div class="card-tail">${l.tail || ''}</div>
+                <div class="card-title">${l.manufacturer || ''} ${l.model || ''}</div>
+                <div class="card-meta">${l.year || ''}${l.location ? ' · ' + l.location.substring(0,30) : ''}</div>
+                <div class="card-price">${price}</div>
+                <div class="card-hours">${l.hours_total ? Math.round(l.hours_total) + 'h TT' : ''}</div>
+                <div class="card-tags">${tags}</div>
+            </div>
+        </a>`;
+    }).join('');
+}
 
-            fetch('/api/aircraft-search', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({queries: searchHistory, listings: allListings})
-            })
-            .then(r => r.json())
-            .then(result => {
-                renderResults(result.matches);
-                document.getElementById('results-count').textContent = result.matches.length + ' aircraft found';
-                if (result.suggestion) {
-                    var sug = document.getElementById('ai-suggestion');
-                    sug.style.display = 'block';
-                    sug.innerHTML = '💡 ' + result.suggestion;
-                }
-            });
+function applyFilters() {
+    const manufacturer = document.getElementById('f-manufacturer').value.toLowerCase();
+    const priceMin = parseFloat(document.getElementById('f-price-min').value) || 0;
+    const priceMax = parseFloat(document.getElementById('f-price-max').value) || Infinity;
+    const yearMin = parseInt(document.getElementById('f-year-min').value) || 0;
+    const yearMax = parseInt(document.getElementById('f-year-max').value) || 9999;
+    const hoursMax = parseFloat(document.getElementById('f-hours-max').value) || Infinity;
+    const needAutopilot = document.getElementById('f-autopilot').checked;
+    const needAdsb = document.getElementById('f-adsb').checked;
+    const needHangared = document.getElementById('f-hangared').checked;
+
+    let filtered = ALL_LISTINGS.filter(l => {
+        if (manufacturer && !(l.manufacturer || '').toLowerCase().includes(manufacturer)) return false;
+        if (priceMin > 0 && l.price < priceMin) return false;
+        if (priceMax < Infinity && l.price > priceMax) return false;
+        if (yearMin > 0 && parseInt(l.year) < yearMin) return false;
+        if (yearMax < 9999 && parseInt(l.year) > yearMax) return false;
+        if (hoursMax < Infinity && l.hours_total > hoursMax) return false;
+        if (needAutopilot && !l.has_autopilot) return false;
+        if (needAdsb && !l.has_adsb) return false;
+        if (needHangared && !l.is_hangared) return false;
+        return true;
+    });
+    currentListings = filtered;
+    renderListings(filtered);
+}
+
+function resetFilters() {
+    document.getElementById('f-manufacturer').value = '';
+    document.getElementById('f-price-min').value = '';
+    document.getElementById('f-price-max').value = '';
+    document.getElementById('f-year-min').value = '';
+    document.getElementById('f-year-max').value = '';
+    document.getElementById('f-hours-max').value = '';
+    document.getElementById('f-autopilot').checked = false;
+    document.getElementById('f-adsb').checked = false;
+    document.getElementById('f-hangared').checked = false;
+    document.getElementById('search-input').value = '';
+    document.getElementById('ai-suggestion').style.display = 'none';
+    currentListings = [...ALL_LISTINGS];
+    renderListings(ALL_LISTINGS);
+}
+
+async function doSearch() {
+    const query = document.getElementById('search-input').value.trim();
+    if (!query) { applyFilters(); return; }
+    
+    document.getElementById('loading-indicator').innerHTML = '<div class="spinner"></div>';
+    
+    try {
+        const resp = await fetch('/api/aircraft-search', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({queries: [query], listings: currentListings})
+        });
+        const data = await resp.json();
+        renderListings(data.matches || []);
+        if (data.suggestion) {
+            const s = document.getElementById('ai-suggestion');
+            s.textContent = '💡 ' + data.suggestion;
+            s.style.display = 'block';
         }
-
-        function renderHistory() {
-            var div = document.getElementById('search-history');
-            div.innerHTML = searchHistory.map(function(q, i) {
-                return '<span class="search-bubble">' + q + 
-                    '<span class="remove" onclick="removeSearch(' + i + ')">×</span></span>';
-            }).join('');
-        }
-
-        function removeSearch(idx) {
-            searchHistory.splice(idx, 1);
-            renderHistory();
-            if (searchHistory.length === 0) {
-                renderResults(allListings);
-                document.getElementById('results-count').textContent = allListings.length + ' aircraft listed';
-            } else {
-                doSearchWithHistory();
-            }
-        }
-
-        function doSearchWithHistory() {
-            fetch('/api/aircraft-search', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({queries: searchHistory, listings: allListings})
-            })
-            .then(r => r.json())
-            .then(result => {
-                renderResults(result.matches);
-                document.getElementById('results-count').textContent = result.matches.length + ' aircraft found';
-            });
-        }
-
-        function renderResults(listings) {
-            var grid = document.getElementById('listings-grid');
-            if (listings.length === 0) {
-                grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><h3>No matches found</h3><p>Try broadening your search or removing a filter</p></div>';
-                return;
-            }
-            grid.innerHTML = listings.map(function(l) {
-                var imgSrc = l.hero_image || (Array.isArray(l.images) && l.images[0]) || (typeof l.images === 'string' && JSON.parse(l.images || '[]')[0]) || null;
-                var img = imgSrc ? 
-                    '<img class="card-img" src="' + imgSrc + '">' :
-                    '<div class="card-img-placeholder">✈️</div>';
-                var hours = l.hours_total ? l.hours_total + 'h TT' + (l.hours_engine ? ' · ' + l.hours_engine + 'h SMOH' : '') : '';
-                return '<a class="listing-card" href="/aircraft-listing/' + l.id + '">' +
-                    img +
-                    '<div class="card-body">' +
-                    '<div class="card-tail">' + (l.tail || '') + '</div>' +
-                    '<div class="card-title">' + (l.manufacturer || '') + ' ' + (l.model || '') + '</div>' +
-                    '<div class="card-meta">' + (l.year || '') + (l.location ? ' · ' + l.location : '') + '</div>' +
-                    '<div class="card-price">EUR ' + Number(l.price).toLocaleString() + '</div>' +
-                    (hours ? '<div class="card-hours">' + hours + '</div>' : '') +
-                    '</div></a>';
-            }).join('');
-        }
-    </script>
+    } catch(e) {
+        console.error(e);
+    }
+    document.getElementById('loading-indicator').innerHTML = '';
+}
+</script>
 </body>
 </html>"""
 

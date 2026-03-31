@@ -6348,14 +6348,9 @@ LOGBOOK_HTML = """<!DOCTYPE html>
         <!-- Logbog entries -->
         <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                 <h3>Recent flights</h3>
                 <a href="/logbook-review" style="background:#ff6b35;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700;">+ Add flight</a>
             </div>
-            <h3 style="display:none;">Recent flights</h3>
-                <a href="/logbook-review" style="background:#ff6b35;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700;">+ Add flight</a>
-            </div>
-            <h3 style="display:none;">Recent flights</h3>
             {% if entries %}
             <div class="table-scroll">
             <table>

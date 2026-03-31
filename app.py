@@ -5819,6 +5819,52 @@ function updateFilename(input) {
 
     content = file.read().decode('utf-8-sig', errors='replace')
     
+    # Brug AI til at detektere kolonnenavne
+    import anthropic as _ac
+    
+    # Tag de første 3 linjer for at detecte format
+    first_lines = content.split('\n')[:3]
+    header_sample = '\n'.join(first_lines)
+    
+    ai_client = _ac.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
+    ai_resp = ai_client.messages.create(
+        model='claude-sonnet-4-20250514',
+        max_tokens=300,
+        messages=[{'role': 'user', 'content': f'''These are the first lines of a pilot logbook CSV export. 
+Map the column names to standard fields. Return ONLY JSON.
+
+CSV headers: {header_sample}
+
+Return this JSON with the actual column names from the CSV:
+{{
+  "date": "column name for date",
+  "departure": "column name for departure airport",
+  "arrival": "column name for arrival airport", 
+  "aircraft_reg": "column name for aircraft registration",
+  "aircraft_type": "column name for aircraft type",
+  "total_time": "column name for total flight time",
+  "pic_time": "column name for PIC time",
+  "dual_time": "column name for dual received time",
+  "instructor_time": "column name for instructor time",
+  "night_time": "column name for night time",
+  "ifr_time": "column name for IFR time",
+  "day_landings": "column name for day landings",
+  "night_landings": "column name for night landings",
+  "remarks": "column name for remarks/comments",
+  "is_foreflight": true or false
+}}
+
+If a field doesn't exist in the CSV, use null.'''}]
+    )
+    
+    import json as _json2
+    try:
+        col_map = _json2.loads(ai_resp.content[0].text.replace('```json','').replace('```','').strip())
+    except:
+        col_map = {}
+    
+    is_foreflight = col_map.get('is_foreflight', False)
+    
     # Detect if ForeFlight format (has Aircraft Table header)
     is_foreflight = 'Aircraft Table' in content or 'Flights Table' in content
     
@@ -5842,9 +5888,15 @@ function updateFilename(input) {
         try:
             # Map ForeFlight columns to our database
             def get(keys, default=''):
+                # Prøv col_map først
+                for field in keys:
+                    mapped = col_map.get(field.lower().replace(' ','_'))
+                    if mapped and mapped in row and str(row[mapped]).strip():
+                        return str(row[mapped]).strip()
+                # Fallback til direkte match
                 for k in keys:
-                    if k in row and row[k].strip():
-                        return row[k].strip()
+                    if k in row and str(row[k]).strip():
+                        return str(row[k]).strip()
                 return default
             
             def get_float(keys):

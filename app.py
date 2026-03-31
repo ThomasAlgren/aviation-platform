@@ -3875,15 +3875,48 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
         {% if listing.description %}
         <div class="section">
             <div class="section-header"><div class="section-title">Full details</div></div>
-            <div>
-            {%- set lines = listing.description.split(";") -%}
+            {%- set ns = namespace(category="") -%}
+            {%- set lines = listing.description.split("
+") -%}
             {%- for line in lines -%}
             {%- set stripped = line.strip() -%}
-            {%- if stripped and stripped|length > 2 %}
+            {%- if stripped and not stripped.startswith("Highlights:") and not stripped.startswith("Engine:") -%}
+            {%- if stripped == "Avionics:" %}
+            <div class="desc-category">Avionics</div>
+            {%- set ns.category = "avionics" -%}
+            {%- elif stripped == "Additional Remarks:" or stripped.startswith("Additional Remarks:") %}
+            <div class="desc-category">Additional remarks</div>
+            {%- set ns.category = "remarks" -%}
+            {%- if stripped|length > 19 -%}
+            {%- for item in stripped[19:].split(";") -%}
+            {%- if item.strip() %}<div class="desc-line">{{ item.strip() }}</div>{%- endif -%}
+            {%- endfor -%}
+            {%- endif -%}
+            {%- elif stripped == "Maintenance:" or stripped.startswith("Maintenance:") %}
+            <div class="desc-category">Maintenance</div>
+            {%- set ns.category = "maintenance" -%}
+            {%- if stripped|length > 12 -%}
+            {%- for item in stripped[12:].split(";") -%}
+            {%- if item.strip() %}<div class="desc-line">{{ item.strip() }}</div>{%- endif -%}
+            {%- endfor -%}
+            {%- endif -%}
+            {%- elif ns.category == "avionics" -%}
+            {%- for item in stripped.split(";") -%}
+            {%- if item.strip() %}<div class="desc-line">{{ item.strip() }}</div>{%- endif -%}
+            {%- endfor -%}
+            {%- elif ns.category == "remarks" -%}
+            {%- for item in stripped.split(";") -%}
+            {%- if item.strip() %}<div class="desc-line">{{ item.strip() }}</div>{%- endif -%}
+            {%- endfor -%}
+            {%- elif ns.category == "maintenance" -%}
+            {%- for item in stripped.split(";") -%}
+            {%- if item.strip() %}<div class="desc-line">{{ item.strip() }}</div>{%- endif -%}
+            {%- endfor -%}
+            {%- else %}
             <div class="desc-line">{{ stripped }}</div>
+            {%- endif %}
             {%- endif -%}
             {%- endfor -%}
-            </div>
         </div>
         {% endif %}
 

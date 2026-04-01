@@ -4975,11 +4975,27 @@ def my_profile():
             'days_left': days_left
         })
 
+    # Beregn flyvetid fra logbog
+    entries = LogbookEntry.query.filter_by(user_id=current_user.id).all()
+    total_minutes = 0
+    for e in entries:
+        if e.total_time and e.total_time not in ['—', '-', '']:
+            try:
+                parts = e.total_time.replace(":", " ").replace(".", " ").split()
+                if len(parts) == 2:
+                    total_minutes += int(parts[0]) * 60 + int(parts[1])
+            except:
+                pass
+    th = total_minutes // 60
+    tm = total_minutes % 60
+    logbook_total = f"{th}:{tm:02d}" if total_minutes > 0 else "0:00"
+
     return render_template_string(MY_PROFILE_HTML,
         current_user=current_user,
         medical_days=medical_days,
         license_days=license_days,
-        certificates=certificates)
+        certificates=certificates,
+        logbook_total=logbook_total)
 
 MY_PROFILE_HTML = """<!DOCTYPE html>
 <html>
@@ -5160,7 +5176,7 @@ MY_PROFILE_HTML = """<!DOCTYPE html>
             <h3>Flight hours
                 <button class="edit-btn" onclick="document.getElementById('hours-form').classList.toggle('hidden')">Edit</button>
             </h3>
-            <div class="hours-value">{{ current_user.total_flight_hours or '0' }}</div>
+            <div class="hours-value">{{ logbook_total }}</div>
             <div class="hours-label">Total flight hours</div>
 
             <div id="hours-form" class="hidden" style="margin-top:16px">

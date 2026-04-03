@@ -523,6 +523,7 @@ class AircraftListing(db.Model):
     has_autopilot = db.Column(db.Boolean, default=False)
     has_adsb = db.Column(db.Boolean, default=False)
     is_hangared = db.Column(db.Boolean, default=False)
+    currency = db.Column(db.String(10), default='EUR')
     engine_overhauls = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -886,7 +887,7 @@ SEARCH_HTML = """
                         <div style="font-size:11px;color:#ff6b35;font-family:monospace">{{ f.tail }}</div>
                         <div style="font-size:14px;font-weight:600;margin:2px 0">{{ f.manufacturer }} {{ f.model }}</div>
                         <div style="font-size:12px;color:#666">{{ f.year }}{% if f.location %} · {{ f.location[:20] }}{% endif %}</div>
-                        <div style="font-size:13px;color:#ff6b35;font-weight:600;margin-top:6px">{% if f.price %}EUR {{ "{:,.0f}".format(f.price) }}{% else %}Price on request{% endif %}</div>
+                        <div style="font-size:13px;color:#ff6b35;font-weight:600;margin-top:6px">{% if f.price %}{{ f.currency or 'EUR' }} {{ "{:,.0f}".format(f.price) }}{% else %}Price on request{% endif %}</div>
                     </div>
                 </a>
                 {% endfor %}
@@ -2761,7 +2762,7 @@ def aircraft_for_sale():
         listings = AircraftListing.query.order_by(AircraftListing.created_at.desc()).limit(800).all()
         listings_data = []
         for l in listings:
-            listings_data.append({'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer, 'model': l.model, 'year': l.year, 'price': l.price or 0, 'hours_total': l.hours_total, 'location': l.location, 'hero_image': l.hero_image, 'condition': l.condition, 'seller_type': l.seller_type, 'ai_highlights': l.ai_highlights, 'description': l.description, 'images': l.images, 'has_autopilot': l.has_autopilot or False, 'has_adsb': l.has_adsb or False, 'is_hangared': l.is_hangared or False})
+            listings_data.append({'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer, 'model': l.model, 'year': l.year, 'price': l.price or 0, 'hours_total': l.hours_total, 'location': l.location, 'hero_image': l.hero_image, 'condition': l.condition, 'seller_type': l.seller_type, 'ai_highlights': l.ai_highlights, 'description': l.description, 'images': l.images, 'has_autopilot': l.has_autopilot or False, 'has_adsb': l.has_adsb or False, 'is_hangared': l.is_hangared or False, 'currency': l.currency or 'EUR'})
         conn_f = get_pg_conn()
         cur_f = conn_f.cursor()
         cur_f.execute("SELECT id, tail, manufacturer, model, year, price, location, images FROM aircraft_listing WHERE status='active' AND images != '[]' ORDER BY RANDOM() LIMIT 16")
@@ -3036,7 +3037,7 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
                         <div class="card-tail">{{ l.tail }}</div>
                         <div class="card-title">{{ l.manufacturer }} {{ l.model }}</div>
                         <div class="card-meta">{{ l.year }}{% if l.location %} · {{ l.location[:30] }}{% endif %}</div>
-                        <div class="card-price">{% if l.price and l.price > 0 %}EUR {{ "{:,.0f}".format(l.price) }}{% else %}Price on request{% endif %}</div>
+                        <div class="card-price">{% if l.price and l.price > 0 %}{{ l.currency or 'EUR' }} {{ "{:,.0f}".format(l.price) }}{% else %}Price on request{% endif %}</div>
                         <div class="card-hours">{% if l.hours_total %}{{ l.hours_total|int }}h TT{% endif %}</div>
                         <div class="card-tags">
                             {% if l.has_autopilot %}<span class="tag green">Autopilot</span>{% endif %}
@@ -3065,7 +3066,7 @@ function renderListings(listings) {
         let imgs = [];
         try { imgs = typeof l.images === 'string' ? JSON.parse(l.images) : (l.images || []); } catch(e) {}
         const hero = l.hero_image || (imgs.length > 0 ? imgs[0] : '');
-        const price = l.price > 0 ? 'EUR ' + l.price.toLocaleString('en', {maximumFractionDigits:0}) : 'Price on request';
+        const price = l.price > 0 ? (l.currency || 'EUR') + ' ' + l.price.toLocaleString('en', {maximumFractionDigits:0}) : 'Price on request';
         const tags = [
             l.has_autopilot ? '<span class="tag green">Autopilot</span>' : '',
             l.has_adsb ? '<span class="tag green">ADS-B</span>' : '',
@@ -3722,7 +3723,7 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
     <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-K3PJMNF1JE');</script>
     <title>{{ listing.tail }} — {{ listing.manufacturer }} {{ listing.model }} for Sale | PanPanParts</title>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="{{ listing.manufacturer }} {{ listing.model }}{% if listing.year %} ({{ listing.year }}){% endif %}{% if listing.price and listing.price > 0 %} for sale at EUR {{ "{:,.0f}".format(listing.price) }}{% else %} for sale{% endif %}{% if listing.location %} — {{ listing.location }}{% endif %}. Listed on PanPanParts.">
+    <meta name="description" content="{{ listing.manufacturer }} {{ listing.model }}{% if listing.year %} ({{ listing.year }}){% endif %}{% if listing.price and listing.price > 0 %} for sale at {{ listing.currency or 'EUR' }} {{ "{:,.0f}".format(listing.price) }}{% else %} for sale{% endif %}{% if listing.location %} — {{ listing.location }}{% endif %}. Listed on PanPanParts.">
     {% if images %}<meta property="og:image" content="{{ images[0] }}">{% endif %}
     <link rel="canonical" href="https://panpanparts.com/aircraft-listing/{{ listing.id }}">
     <style>
@@ -4090,7 +4091,7 @@ AIRCRAFT_LISTING_HTML = """<!DOCTYPE html>
         <div class="price-card">
             <div class="price-label">Asking price</div>
             <div class="price-amount">
-                {% if listing.price and listing.price > 0 %}EUR {{ "{:,.0f}".format(listing.price) }}
+                {% if listing.price and listing.price > 0 %}{{ listing.currency or 'EUR' }} {{ "{:,.0f}".format(listing.price) }}
                 {% else %}Price on request{% endif %}
             </div>
             {% if listing.hours_total or listing.hours_engine %}
@@ -4216,7 +4217,7 @@ Registration: {listing.tail}
 Total time: {listing.hours_total or 'unknown'} hours
 Engine SMOH: {listing.hours_engine or 'unknown'} hours
 Engine TBO: {listing.hours_engine_tbo or 'unknown'} hours
-Price: EUR {listing.price or 'unknown'}
+Price: {listing.currency or 'EUR'} {listing.price or 'unknown'}
 Location: {listing.location or 'unknown'}
 Condition: {listing.condition or 'unknown'}
 Has autopilot: {listing.has_autopilot}
@@ -4616,8 +4617,8 @@ def admin_scrape_winglist():
             desc = d.get("description","")
             reg = d.get("registration","") or ("WING-"+str(imported+1))
             price_val = d.get("price") if isinstance(d.get("price"), (int, float)) else None
-            cur.execute("INSERT INTO aircraft_listing (tail,manufacturer,model,year,price,location,condition,seller_type,hours_total,images,description,source_url,source,has_autopilot,has_adsb,contact_name,contact_email,status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (reg, manufacturer, model, year, price_val, d.get("location",""), d.get("condition","Pre-owned"), d.get("seller_type",""), ph(d.get("total_time")), _json.dumps(d.get("images",[])), desc, url, "winglist", "autopilot" in desc.lower(), ("ads-b" in desc.lower() or "adsb" in desc.lower()), "Winglist Seller", "listings@winglist.aero", "active"))
+            cur.execute("INSERT INTO aircraft_listing (tail,manufacturer,model,year,price,currency,location,condition,seller_type,hours_total,images,description,source_url,source,has_autopilot,has_adsb,contact_name,contact_email,status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (reg, manufacturer, model, year, price_val, d.get("currency","EUR"), d.get("location",""), d.get("condition","Pre-owned"), d.get("seller_type",""), ph(d.get("total_time")), _json.dumps(d.get("images",[])), desc, url, "winglist", "autopilot" in desc.lower(), ("ads-b" in desc.lower() or "adsb" in desc.lower()), "Winglist Seller", "listings@winglist.aero", "active"))
             imported += 1
             _time.sleep(0.3)
         except Exception as e:

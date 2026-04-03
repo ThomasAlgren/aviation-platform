@@ -2765,7 +2765,7 @@ def aircraft_for_sale():
         listings = AircraftListing.query.order_by(AircraftListing.created_at.desc()).limit(800).all()
         listings_data = []
         for l in listings:
-            listings_data.append({'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer, 'model': l.model, 'year': l.year, 'price': l.price or 0, 'hours_total': l.hours_total, 'location': l.location, 'hero_image': l.hero_image, 'condition': l.condition, 'seller_type': l.seller_type, 'ai_highlights': l.ai_highlights, 'description': l.description, 'images': l.images, 'has_autopilot': l.has_autopilot or False, 'has_adsb': l.has_adsb or False, 'is_hangared': l.is_hangared or False, 'currency': l.currency or 'EUR', 'fuel_type': l.fuel_type or 'Avgas', 'country': l.country or '', 'region': l.region or ''})
+            listings_data.append({'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer, 'model': l.model, 'year': l.year, 'price': l.price or 0, 'hours_total': l.hours_total, 'location': l.location, 'hero_image': l.hero_image, 'condition': l.condition, 'seller_type': l.seller_type, 'ai_highlights': l.ai_highlights, 'description': l.description, 'images': l.images, 'has_autopilot': l.has_autopilot or False, 'has_adsb': l.has_adsb or False, 'is_hangared': l.is_hangared or False, 'currency': l.currency or 'EUR', 'fuel_type': l.fuel_type or 'Avgas', 'country': l.country or '', 'region': l.region or '', 'seats': l.seats or 0, 'is_experimental': l.is_experimental or False, 'is_ifr': l.is_ifr or False})
         conn_f = get_pg_conn()
         cur_f = conn_f.cursor()
         cur_f.execute("SELECT id, tail, manufacturer, model, year, price, location, images FROM aircraft_listing WHERE status='active' AND images != '[]' ORDER BY RANDOM() LIMIT 16")
@@ -3005,6 +3005,32 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
                     <input type="checkbox" id="f-hangared" onchange="applyFilters()">
                     <span>Hangared</span>
                 </label>
+                <label class="filter-toggle">
+                    <input type="checkbox" id="f-ifr" onchange="applyFilters()">
+                    <span>IFR certified</span>
+                </label>
+                <label class="filter-toggle">
+                    <input type="checkbox" id="f-experimental" onchange="applyFilters()">
+                    <span>Experimental only</span>
+                </label>
+                <label class="filter-toggle">
+                    <input type="checkbox" id="f-ifr" onchange="applyFilters()">
+                    <span>IFR certified</span>
+                </label>
+                <label class="filter-toggle">
+                    <input type="checkbox" id="f-experimental" onchange="applyFilters()">
+                    <span>Experimental only</span>
+                </label>
+            </div>
+
+            <div class="filter-group">
+                <label>Seats</label>
+                <select id="f-seats" onchange="applyFilters()">
+                    <option value="">All</option>
+                    <option value="2">1-2 seats</option>
+                    <option value="4">3-4 seats</option>
+                    <option value="5">5+ seats</option>
+                </select>
             </div>
 
             <div class="filter-group">
@@ -3130,10 +3156,13 @@ function applyFilters() {
     const yearMax = parseInt(document.getElementById('f-year-max').value) || 9999;
     const hoursMax = parseFloat(document.getElementById('f-hours-max').value) || Infinity;
     const region = document.getElementById('f-region').value;
+    const seats = document.getElementById('f-seats').value;
     const fuel = document.getElementById('f-fuel').value;
     const needAutopilot = document.getElementById('f-autopilot').checked;
     const needAdsb = document.getElementById('f-adsb').checked;
     const needHangared = document.getElementById('f-hangared').checked;
+    const needIfr = document.getElementById('f-ifr').checked;
+    const needExperimental = document.getElementById('f-experimental').checked;
 
     let filtered = ALL_LISTINGS.filter(l => {
         if (manufacturer && !(l.manufacturer || '').toLowerCase().includes(manufacturer)) return false;
@@ -3143,10 +3172,15 @@ function applyFilters() {
         if (yearMax < 9999 && parseInt(l.year) > yearMax) return false;
         if (hoursMax < Infinity && l.hours_total > hoursMax) return false;
         if (region && l.region !== region) return false;
+        if (seats === '2' && l.seats > 2) return false;
+        if (seats === '4' && (l.seats < 3 || l.seats > 4)) return false;
+        if (seats === '5' && l.seats < 5) return false;
         if (fuel && l.fuel_type !== fuel) return false;
         if (needAutopilot && !l.has_autopilot) return false;
         if (needAdsb && !l.has_adsb) return false;
         if (needHangared && !l.is_hangared) return false;
+        if (needIfr && !l.is_ifr) return false;
+        if (needExperimental && !l.is_experimental) return false;
         return true;
     });
     // Sortering
@@ -3171,7 +3205,10 @@ function resetFilters() {
     document.getElementById('f-autopilot').checked = false;
     document.getElementById('f-adsb').checked = false;
     document.getElementById('f-hangared').checked = false;
+    document.getElementById('f-ifr').checked = false;
+    document.getElementById('f-experimental').checked = false;
     document.getElementById('f-region').value = '';
+    document.getElementById('f-seats').value = '';
     document.getElementById('f-fuel').value = '';
     document.getElementById('f-sort').value = 'newest';
     document.getElementById('search-input').value = '';

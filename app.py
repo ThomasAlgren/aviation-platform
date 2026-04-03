@@ -527,6 +527,9 @@ class AircraftListing(db.Model):
     fuel_type = db.Column(db.String(20), default='Avgas')
     country = db.Column(db.String(100))
     region = db.Column(db.String(50))
+    seats = db.Column(db.Integer)
+    is_experimental = db.Column(db.Boolean, default=False)
+    is_ifr = db.Column(db.Boolean, default=False)
     engine_overhauls = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

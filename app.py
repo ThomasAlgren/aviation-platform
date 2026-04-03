@@ -3004,6 +3004,18 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
                 </label>
             </div>
 
+            <div class="filter-group">
+                <label>Sort by</label>
+                <select id="f-sort" onchange="applyFilters()">
+                    <option value="newest">Newest listings</option>
+                    <option value="price-asc">Price: low to high</option>
+                    <option value="price-desc">Price: high to low</option>
+                    <option value="year-desc">Year: newest first</option>
+                    <option value="year-asc">Year: oldest first</option>
+                    <option value="hours-asc">Hours: lowest first</option>
+                </select>
+            </div>
+
             <button class="btn-reset" onclick="resetFilters()">Reset filters</button>
         </div>
 
@@ -3109,6 +3121,14 @@ function applyFilters() {
         if (needHangared && !l.is_hangared) return false;
         return true;
     });
+    // Sortering
+    const sort = document.getElementById('f-sort').value;
+    if (sort === 'price-asc') filtered.sort((a,b) => (a.price||0) - (b.price||0));
+    else if (sort === 'price-desc') filtered.sort((a,b) => (b.price||0) - (a.price||0));
+    else if (sort === 'year-desc') filtered.sort((a,b) => (parseInt(b.year)||0) - (parseInt(a.year)||0));
+    else if (sort === 'year-asc') filtered.sort((a,b) => (parseInt(a.year)||0) - (parseInt(b.year)||0));
+    else if (sort === 'hours-asc') filtered.sort((a,b) => (a.hours_total||99999) - (b.hours_total||99999));
+
     currentListings = filtered;
     renderListings(filtered);
 }
@@ -3123,6 +3143,7 @@ function resetFilters() {
     document.getElementById('f-autopilot').checked = false;
     document.getElementById('f-adsb').checked = false;
     document.getElementById('f-hangared').checked = false;
+    document.getElementById('f-sort').value = 'newest';
     document.getElementById('search-input').value = '';
     document.getElementById('ai-suggestion').style.display = 'none';
     currentListings = [...ALL_LISTINGS];

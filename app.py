@@ -3012,10 +3012,13 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
                     <input type="checkbox" id="f-ifr" onchange="applyFilters()">
                     <span>IFR certified</span>
                 </label>
-                <label class="filter-toggle">
-                    <input type="checkbox" id="f-experimental" onchange="applyFilters()">
-                    <span>Experimental only</span>
-                </label>
+                <div style="margin-top:8px">
+                    <select id="f-experimental" onchange="applyFilters()" style="width:100%;padding:8px;border:1px solid #333;border-radius:8px;background:#0d0d1a;color:white;font-size:13px">
+                        <option value="">All aircraft</option>
+                        <option value="certified">Certified only</option>
+                        <option value="experimental">Experimental only</option>
+                    </select>
+                </div>
             </div>
 
             <div class="filter-group">
@@ -3035,7 +3038,7 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
                     <option value="EU">🇪🇺 EU</option>
                     <option value="UK">🇬🇧 UK</option>
                     <option value="EEA">Norway / Switzerland</option>
-                    <option value="North America">🇺🇸 North America</option>
+                    <option value="North America">🌎 North America</option>
                     <option value="Other">Other</option>
                 </select>
             </div>
@@ -3157,7 +3160,7 @@ function applyFilters() {
     const needAdsb = document.getElementById('f-adsb').checked;
     const needHangared = document.getElementById('f-hangared').checked;
     const needIfr = document.getElementById('f-ifr').checked;
-    const needExperimental = document.getElementById('f-experimental').checked;
+    const experimental = document.getElementById('f-experimental').value;
 
     let filtered = ALL_LISTINGS.filter(l => {
         if (manufacturer && !(l.manufacturer || '').toLowerCase().includes(manufacturer)) return false;
@@ -3175,7 +3178,8 @@ function applyFilters() {
         if (needAdsb && !l.has_adsb) return false;
         if (needHangared && !l.is_hangared) return false;
         if (needIfr && !l.is_ifr) return false;
-        if (needExperimental && !l.is_experimental) return false;
+        if (experimental === 'experimental' && !l.is_experimental) return false;
+        if (experimental === 'certified' && l.is_experimental) return false;
         return true;
     });
     // Sortering
@@ -3201,7 +3205,7 @@ function resetFilters() {
     document.getElementById('f-adsb').checked = false;
     document.getElementById('f-hangared').checked = false;
     document.getElementById('f-ifr').checked = false;
-    document.getElementById('f-experimental').checked = false;
+    document.getElementById('f-experimental').value = '';
     document.getElementById('f-region').value = '';
     document.getElementById('f-seats').value = '';
     document.getElementById('f-fuel').value = '';

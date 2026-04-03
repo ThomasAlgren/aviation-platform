@@ -530,6 +530,7 @@ class AircraftListing(db.Model):
     seats = db.Column(db.Integer)
     is_experimental = db.Column(db.Boolean, default=False)
     is_ifr = db.Column(db.Boolean, default=False)
+    has_glass_cockpit = db.Column(db.Boolean, default=False)
     engine_overhauls = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -2768,7 +2769,7 @@ def aircraft_for_sale():
         listings = AircraftListing.query.order_by(AircraftListing.created_at.desc()).limit(800).all()
         listings_data = []
         for l in listings:
-            listings_data.append({'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer, 'model': l.model, 'year': l.year, 'price': l.price or 0, 'hours_total': l.hours_total, 'location': l.location, 'hero_image': l.hero_image, 'condition': l.condition, 'seller_type': l.seller_type, 'ai_highlights': l.ai_highlights, 'description': l.description, 'images': l.images, 'has_autopilot': l.has_autopilot or False, 'has_adsb': l.has_adsb or False, 'is_hangared': l.is_hangared or False, 'currency': l.currency or 'EUR', 'fuel_type': l.fuel_type or 'Avgas', 'country': l.country or '', 'region': l.region or '', 'seats': getattr(l, 'seats', None) or 0, 'is_experimental': getattr(l, 'is_experimental', False) or False, 'is_ifr': getattr(l, 'is_ifr', False) or False})
+            listings_data.append({'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer, 'model': l.model, 'year': l.year, 'price': l.price or 0, 'hours_total': l.hours_total, 'location': l.location, 'hero_image': l.hero_image, 'condition': l.condition, 'seller_type': l.seller_type, 'ai_highlights': l.ai_highlights, 'description': l.description, 'images': l.images, 'has_autopilot': l.has_autopilot or False, 'has_adsb': l.has_adsb or False, 'is_hangared': l.is_hangared or False, 'currency': l.currency or 'EUR', 'fuel_type': l.fuel_type or 'Avgas', 'country': l.country or '', 'region': l.region or '', 'seats': getattr(l, 'seats', None) or 0, 'is_experimental': getattr(l, 'is_experimental', False) or False, 'is_ifr': getattr(l, 'is_ifr', False) or False, 'has_glass_cockpit': getattr(l, 'has_glass_cockpit', False) or False})
         conn_f = get_pg_conn()
         cur_f = conn_f.cursor()
         cur_f.execute("SELECT id, tail, manufacturer, model, year, price, location, images FROM aircraft_listing WHERE status='active' AND images != '[]' ORDER BY RANDOM() LIMIT 16")
@@ -3009,6 +3010,10 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
                     <span>Hangared</span>
                 </label>
                 <label class="filter-toggle">
+                    <input type="checkbox" id="f-glass" onchange="applyFilters()">
+                    <span>Glass cockpit</span>
+                </label>
+                <label class="filter-toggle">
                     <input type="checkbox" id="f-ifr" onchange="applyFilters()">
                     <span>IFR certified</span>
                 </label>
@@ -3159,6 +3164,7 @@ function applyFilters() {
     const needAutopilot = document.getElementById('f-autopilot').checked;
     const needAdsb = document.getElementById('f-adsb').checked;
     const needHangared = document.getElementById('f-hangared').checked;
+    const needGlass = document.getElementById('f-glass').checked;
     const needIfr = document.getElementById('f-ifr').checked;
     const experimental = document.getElementById('f-experimental').value;
 
@@ -3177,6 +3183,7 @@ function applyFilters() {
         if (needAutopilot && !l.has_autopilot) return false;
         if (needAdsb && !l.has_adsb) return false;
         if (needHangared && !l.is_hangared) return false;
+        if (needGlass && !l.has_glass_cockpit) return false;
         if (needIfr && !l.is_ifr) return false;
         if (experimental === 'experimental' && !l.is_experimental) return false;
         if (experimental === 'certified' && l.is_experimental) return false;
@@ -3204,6 +3211,7 @@ function resetFilters() {
     document.getElementById('f-autopilot').checked = false;
     document.getElementById('f-adsb').checked = false;
     document.getElementById('f-hangared').checked = false;
+    document.getElementById('f-glass').checked = false;
     document.getElementById('f-ifr').checked = false;
     document.getElementById('f-experimental').value = '';
     document.getElementById('f-region').value = '';

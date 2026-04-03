@@ -3266,10 +3266,11 @@ def api_aircraft_search():
             max_tokens=300,
             messages=[{"role": "user", "content": prompt}]
         )
-        filters = _json.loads(response.content[0].text)
+        raw = response.content[0].text.strip().strip('`').replace('json\n','').replace('```','')
+        filters = _json.loads(raw)
     except Exception as e:
         print("AI fejl:", e)
-        filters = {"keywords": combined_query.split()}
+        filters = {"keywords": [combined_query]}
 
     matches = []
     for l in listings:

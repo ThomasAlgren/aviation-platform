@@ -525,6 +525,8 @@ class AircraftListing(db.Model):
     is_hangared = db.Column(db.Boolean, default=False)
     currency = db.Column(db.String(10), default='EUR')
     fuel_type = db.Column(db.String(20), default='Avgas')
+    country = db.Column(db.String(100))
+    region = db.Column(db.String(50))
     engine_overhauls = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -2763,7 +2765,7 @@ def aircraft_for_sale():
         listings = AircraftListing.query.order_by(AircraftListing.created_at.desc()).limit(800).all()
         listings_data = []
         for l in listings:
-            listings_data.append({'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer, 'model': l.model, 'year': l.year, 'price': l.price or 0, 'hours_total': l.hours_total, 'location': l.location, 'hero_image': l.hero_image, 'condition': l.condition, 'seller_type': l.seller_type, 'ai_highlights': l.ai_highlights, 'description': l.description, 'images': l.images, 'has_autopilot': l.has_autopilot or False, 'has_adsb': l.has_adsb or False, 'is_hangared': l.is_hangared or False, 'currency': l.currency or 'EUR', 'fuel_type': l.fuel_type or 'Avgas'})
+            listings_data.append({'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer, 'model': l.model, 'year': l.year, 'price': l.price or 0, 'hours_total': l.hours_total, 'location': l.location, 'hero_image': l.hero_image, 'condition': l.condition, 'seller_type': l.seller_type, 'ai_highlights': l.ai_highlights, 'description': l.description, 'images': l.images, 'has_autopilot': l.has_autopilot or False, 'has_adsb': l.has_adsb or False, 'is_hangared': l.is_hangared or False, 'currency': l.currency or 'EUR', 'fuel_type': l.fuel_type or 'Avgas', 'country': l.country or '', 'region': l.region or ''})
         conn_f = get_pg_conn()
         cur_f = conn_f.cursor()
         cur_f.execute("SELECT id, tail, manufacturer, model, year, price, location, images FROM aircraft_listing WHERE status='active' AND images != '[]' ORDER BY RANDOM() LIMIT 16")
@@ -3006,6 +3008,18 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
             </div>
 
             <div class="filter-group">
+                <label>Region</label>
+                <select id="f-region" onchange="applyFilters()">
+                    <option value="">All regions</option>
+                    <option value="EU">🇪🇺 EU</option>
+                    <option value="UK">🇬🇧 UK</option>
+                    <option value="EEA">Norway / Switzerland</option>
+                    <option value="North America">🇺🇸 North America</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
                 <label>Fuel type</label>
                 <select id="f-fuel" onchange="applyFilters()">
                     <option value="">All</option>
@@ -3115,6 +3129,7 @@ function applyFilters() {
     const yearMin = parseInt(document.getElementById('f-year-min').value) || 0;
     const yearMax = parseInt(document.getElementById('f-year-max').value) || 9999;
     const hoursMax = parseFloat(document.getElementById('f-hours-max').value) || Infinity;
+    const region = document.getElementById('f-region').value;
     const fuel = document.getElementById('f-fuel').value;
     const needAutopilot = document.getElementById('f-autopilot').checked;
     const needAdsb = document.getElementById('f-adsb').checked;
@@ -3127,6 +3142,7 @@ function applyFilters() {
         if (yearMin > 0 && parseInt(l.year) < yearMin) return false;
         if (yearMax < 9999 && parseInt(l.year) > yearMax) return false;
         if (hoursMax < Infinity && l.hours_total > hoursMax) return false;
+        if (region && l.region !== region) return false;
         if (fuel && l.fuel_type !== fuel) return false;
         if (needAutopilot && !l.has_autopilot) return false;
         if (needAdsb && !l.has_adsb) return false;
@@ -3155,6 +3171,7 @@ function resetFilters() {
     document.getElementById('f-autopilot').checked = false;
     document.getElementById('f-adsb').checked = false;
     document.getElementById('f-hangared').checked = false;
+    document.getElementById('f-region').value = '';
     document.getElementById('f-fuel').value = '';
     document.getElementById('f-sort').value = 'newest';
     document.getElementById('search-input').value = '';

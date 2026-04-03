@@ -3013,14 +3013,6 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
                     <input type="checkbox" id="f-experimental" onchange="applyFilters()">
                     <span>Experimental only</span>
                 </label>
-                <label class="filter-toggle">
-                    <input type="checkbox" id="f-ifr" onchange="applyFilters()">
-                    <span>IFR certified</span>
-                </label>
-                <label class="filter-toggle">
-                    <input type="checkbox" id="f-experimental" onchange="applyFilters()">
-                    <span>Experimental only</span>
-                </label>
             </div>
 
             <div class="filter-group">

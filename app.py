@@ -2761,7 +2761,7 @@ def aircraft_for_sale():
         listings = AircraftListing.query.order_by(AircraftListing.created_at.desc()).limit(800).all()
         listings_data = []
         for l in listings:
-            listings_data.append({'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer, 'model': l.model, 'year': l.year, 'price': l.price or 0, 'hours_total': l.hours_total, 'location': l.location, 'hero_image': l.hero_image, 'condition': l.condition, 'seller_type': l.seller_type, 'ai_highlights': l.ai_highlights, 'description': l.description, 'images': l.images})
+            listings_data.append({'id': l.id, 'tail': l.tail, 'manufacturer': l.manufacturer, 'model': l.model, 'year': l.year, 'price': l.price or 0, 'hours_total': l.hours_total, 'location': l.location, 'hero_image': l.hero_image, 'condition': l.condition, 'seller_type': l.seller_type, 'ai_highlights': l.ai_highlights, 'description': l.description, 'images': l.images, 'has_autopilot': l.has_autopilot or False, 'has_adsb': l.has_adsb or False, 'is_hangared': l.is_hangared or False})
         conn_f = get_pg_conn()
         cur_f = conn_f.cursor()
         cur_f.execute("SELECT id, tail, manufacturer, model, year, price, location, images FROM aircraft_listing WHERE status='active' AND images != '[]' ORDER BY RANDOM() LIMIT 16")
@@ -3156,6 +3156,57 @@ async function doSearch() {
 </body>
 </html>"""
 
+
+@app.route('/api/aircraft-search', methods=['POST'])
+def api_aircraft_search():
+    import json as _json
+    import anthropic as ac
+    data = request.get_json()
+    queries = data.get('queries', [])
+    listings = data.get('listings', [])
+
+    if not queries:
+        return _json.dumps({'matches': listings, 'suggestion': None})
+
+    combined_query = ' AND '.join(queries)
+
+    try:
+        client = ac.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+        prompt = "Extract search filters from: " + combined_query + ". Return ONLY JSON: {\"keywords\": [], \"max_price\": null, \"min_price\": null, \"manufacturer\": null, \"has_autopilot\": null, \"has_adsb\": null, \"year_from\": null, \"year_to\": null, \"suggestion\": null}"
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=300,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        filters = _json.loads(response.content[0].text)
+    except Exception as e:
+        print("AI fejl:", e)
+        filters = {"keywords": combined_query.split()}
+
+    matches = []
+    for l in listings:
+        if filters.get('manufacturer') and filters['manufacturer'].lower() not in (l.get('manufacturer') or '').lower():
+            continue
+        if filters.get('max_price') and (l.get('price') or 0) > filters['max_price']:
+            continue
+        if filters.get('min_price') and (l.get('price') or 0) < filters['min_price']:
+            continue
+        if filters.get('year_from') and int(l.get('year') or 0) < filters['year_from']:
+            continue
+        if filters.get('year_to') and int(l.get('year') or 0) > filters['year_to']:
+            continue
+        if filters.get('has_autopilot') and not l.get('has_autopilot'):
+            continue
+        if filters.get('has_adsb') and not l.get('has_adsb'):
+            continue
+        keywords = filters.get('keywords', [])
+        if keywords:
+            text = (l.get('manufacturer','') + ' ' + l.get('model','') + ' ' + l.get('description','') + ' ' + l.get('ai_highlights','')).lower()
+            if not any(kw.lower() in text for kw in keywords):
+                continue
+        matches.append(l)
+
+    return _json.dumps({'matches': matches, 'suggestion': filters.get('suggestion')})
 
 @app.route('/type/<query>')
 def aircraft_type(query):

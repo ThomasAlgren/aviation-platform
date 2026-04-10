@@ -6710,7 +6710,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <td class="desktop-col">{{ e.landings_night or '—' }}</td>
                     <td class="desktop-col" style="color:#666;font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis">{{ e.remarks or '' }}</td>
                     <td style="white-space:nowrap">
-                        <a href="#" onclick="event.stopPropagation();var r=this.closest('tr');editEntry(r.dataset.id,r.dataset.date,r.dataset.dep,r.dataset.arr,r.dataset.type,r.dataset.reg,r.dataset.total,r.dataset.dual,r.dataset.ldg);return false;" style="color:#666;text-decoration:none;font-size:14px;margin-right:8px">✎</a>
+                        <button onclick="event.stopPropagation();var r=this.closest('tr');editEntry(r.dataset.id,r.dataset.date,r.dataset.dep,r.dataset.arr,r.dataset.type,r.dataset.reg,r.dataset.total,r.dataset.dual,r.dataset.ldg);" style="background:none;border:none;color:#888;font-size:16px;cursor:pointer;padding:0 4px">✎</button>
                         <a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="event.stopPropagation();return confirm('Delete this flight?')">✕</a>
                     </td>
                 </tr>

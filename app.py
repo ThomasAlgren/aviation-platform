@@ -6559,8 +6559,8 @@ LOGBOOK_HTML = """<!DOCTYPE html>
         td { padding: 8px 6px; border-bottom: 1px solid #1a1a2e; white-space: nowrap; }
         tr:hover td { background: #1a1a2e; cursor: pointer; }
         .total-row td { color: #ff6b35; font-weight: 600; border-top: 2px solid #2a2a3e; }
-        .delete-btn { color: #444; text-decoration: none; font-size: 11px; }
-        .delete-btn:hover { color: #ff6b35; }
+        .delete-btn { color: #666; text-decoration: none; font-size: 14px; }
+        .delete-btn:hover { color: #ff4444; }
         .desktop-col { display: table-cell; }
         @media (max-width: 768px) {
             .desktop-col { display: none; }
@@ -6699,7 +6699,10 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     </td>
                     <td class="desktop-col">{{ e.landings_night or '—' }}</td>
                     <td class="desktop-col" style="color:#666;font-size:12px">{{ e.remarks or '' }}</td>
-                    <td><a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="event.stopPropagation();return confirm('Delete?')">✕</a></td>
+                    <td style="white-space:nowrap">
+                        <a href="#" onclick="event.stopPropagation();editEntry({{ e.id }}, '{{ e.flight_date }}', '{{ e.dep_place or '' }}', '{{ e.arr_place or '' }}', '{{ e.aircraft_type or '' }}', '{{ e.registration or '' }}', '{{ e.total_time or '' }}', '{{ e.dual or '' }}', '{{ e.remarks or '' }}');return false;" style="color:#666;text-decoration:none;font-size:14px;margin-right:8px">✎</a>
+                        <a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="event.stopPropagation();return confirm('Delete this flight?')">✕</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </table>
@@ -7131,8 +7134,8 @@ LOGBOOK_ALL_HTML = """<!DOCTYPE html>
         td { padding: 8px 6px; border-bottom: 1px solid #1a1a2e; white-space: nowrap; }
         tr:hover td { background: #1a1a2e; }
         .total-row td { color: #ff6b35; font-weight: 600; border-top: 2px solid #2a2a3e; }
-        .delete-btn { color: #444; text-decoration: none; font-size: 11px; }
-        .delete-btn:hover { color: #ff6b35; }
+        .delete-btn { color: #666; text-decoration: none; font-size: 14px; }
+        .delete-btn:hover { color: #ff4444; }
     </style>
 </head>
 <body>
@@ -7188,7 +7191,10 @@ LOGBOOK_ALL_HTML = """<!DOCTYPE html>
                     <td>{{ e.landings_day or '—' }}</td>
                     <td>{{ e.landings_night or '—' }}</td>
                     <td style="color:#666;font-size:11px">{{ e.remarks or '' }}</td>
-                    <td><a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="return confirm('Delete?')">✕</a></td>
+                    <td style="white-space:nowrap">
+                        <a href="#" onclick="editEntry({{ e.id }}, '{{ e.flight_date }}', '{{ e.dep_place or '' }}', '{{ e.arr_place or '' }}', '{{ e.aircraft_type or '' }}', '{{ e.registration or '' }}', '{{ e.total_time or '' }}', '{{ e.dual or '' }}', '{{ e.remarks or '' }}');return false;" style="color:#666;text-decoration:none;font-size:14px;margin-right:8px">✎</a>
+                        <a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="return confirm('Delete this flight?')">✕</a>
+                    </td>
                 </tr>
                 {% endfor %}
                 <tr class="total-row">
@@ -7690,7 +7696,7 @@ MAINTENANCE_HTML = """<!DOCTYPE html>
         .entry-desc { font-size: 14px; margin-bottom: 4px; }
         .entry-meta { font-size: 12px; color: #666; }
         .delete-btn { color: #444; text-decoration: none; font-size: 11px; margin-left: 12px; }
-        .delete-btn:hover { color: #ff6b35; }
+        .delete-btn:hover { color: #ff4444; }
         label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; margin-top: 10px; }
         input[type=text], input[type=number], textarea, select { width: 100%; padding: 10px 12px; border: 1px solid #333; border-radius: 8px; font-size: 14px; background: #0d0d1a; color: white; margin-bottom: 4px; }
         textarea { height: 80px; resize: vertical; }

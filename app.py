@@ -6682,7 +6682,16 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <th></th>
                 </tr>
                 {% for e in entries[:5] %}
-                <tr onclick="editEntry({{ e.id }}, '{{ e.flight_date or '' | replace("'", "") }}', '{{ e.dep_place or '' | replace("'", "") }}', '{{ e.arr_place or '' | replace("'", "") }}', '{{ e.aircraft_type or '' | replace("'", "") }}', '{{ e.registration or '' | replace("'", "") }}', '{{ e.total_time or '' | replace("'", "") }}', '{{ e.dual or '' | replace("'", "") }}', '{{ e.landings_day or 0 }}')">
+                <tr class="logbook-row" style="cursor:pointer"
+                    data-id="{{ e.id }}"
+                    data-date="{{ e.flight_date or '' }}"
+                    data-dep="{{ e.dep_place or '' }}"
+                    data-arr="{{ e.arr_place or '' }}"
+                    data-type="{{ e.aircraft_type or '' }}"
+                    data-reg="{{ e.registration or '' }}"
+                    data-total="{{ e.total_time or '' }}"
+                    data-dual="{{ e.dual or '' }}"
+                    data-ldg="{{ e.landings_day or 0 }}">
                     <td>{{ e.flight_date or '—' }}</td>
                     <td class="desktop-col">{{ e.dep_place or '—' }}</td>
                     <td class="desktop-col">{{ e.arr_place or '—' }}</td>
@@ -6701,7 +6710,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <td class="desktop-col">{{ e.landings_night or '—' }}</td>
                     <td class="desktop-col" style="color:#666;font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis">{{ e.remarks or '' }}</td>
                     <td style="white-space:nowrap">
-                        <a href="#" onclick="event.stopPropagation();editEntry({{ e.id }}, '{{ e.flight_date or '' }}', '{{ (e.dep_place or '')|replace("'","") }}', '{{ (e.arr_place or '')|replace("'","") }}', '{{ (e.aircraft_type or '')|replace("'","") }}', '{{ (e.registration or '')|replace("'","") }}', '{{ e.total_time or '' }}', '{{ e.dual or '' }}', {{ e.landings_day or 0 }});return false;" style="color:#666;text-decoration:none;font-size:14px;margin-right:8px">✎</a>
+                        <a href="#" onclick="event.stopPropagation();var r=this.closest('tr');editEntry(r.dataset.id,r.dataset.date,r.dataset.dep,r.dataset.arr,r.dataset.type,r.dataset.reg,r.dataset.total,r.dataset.dual,r.dataset.ldg);return false;" style="color:#666;text-decoration:none;font-size:14px;margin-right:8px">✎</a>
                         <a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="event.stopPropagation();return confirm('Delete this flight?')">✕</a>
                     </td>
                 </tr>
@@ -6868,16 +6877,30 @@ LOGBOOK_HTML = """<!DOCTYPE html>
 
         function editEntry(id, date, dep, arr, type, reg, total, dual, ldg) {
             document.getElementById('edit-form').action = '/edit-logbook-entry/' + id;
-            document.getElementById('edit-date').value = date;
-            document.getElementById('edit-dep').value = dep;
-            document.getElementById('edit-arr').value = arr;
-            document.getElementById('edit-type').value = type;
-            document.getElementById('edit-reg').value = reg;
-            document.getElementById('edit-total').value = total;
-            document.getElementById('edit-dual').value = dual;
-            document.getElementById('edit-ldg').value = ldg;
+            document.getElementById('edit-date').value = date || '';
+            document.getElementById('edit-dep').value = dep || '';
+            document.getElementById('edit-arr').value = arr || '';
+            document.getElementById('edit-type').value = type || '';
+            document.getElementById('edit-reg').value = reg || '';
+            document.getElementById('edit-total').value = total || '';
+            document.getElementById('edit-dual').value = dual || '';
+            document.getElementById('edit-ldg').value = ldg || 0;
             document.getElementById('edit-modal').style.display = 'block';
         }
+
+        // Klik på række åbner edit
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('tr.logbook-row').forEach(function(row) {
+                row.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
+                    editEntry(
+                        row.dataset.id, row.dataset.date, row.dataset.dep,
+                        row.dataset.arr, row.dataset.type, row.dataset.reg,
+                        row.dataset.total, row.dataset.dual, row.dataset.ldg
+                    );
+                });
+            });
+        });
 
         function scanPages() {
             var btn = document.getElementById("scan-btn");

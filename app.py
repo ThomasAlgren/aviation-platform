@@ -6554,7 +6554,8 @@ LOGBOOK_HTML = """<!DOCTYPE html>
         .scan-btn:disabled { background: #444; cursor: not-allowed; }
         .status { background: #0d0d1a; border-radius: 8px; padding: 16px; margin-top: 12px; color: #aaa; font-size: 14px; display: none; border: 1px solid #2a2a3e; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+        .table-scroll table { min-width: 900px; }
         th { text-align: left; padding: 8px 6px; color: #666; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #2a2a3e; white-space: nowrap; }
         td { padding: 8px 6px; border-bottom: 1px solid #1a1a2e; white-space: nowrap; }
         tr:hover td { background: #1a1a2e; cursor: pointer; }
@@ -6698,7 +6699,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                         <button onclick="event.stopPropagation();adjustLandings({{ e.id }}, 1)" style="background:#1a1a2e;border:1px solid #333;color:#aaa;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1">+</button>
                     </td>
                     <td class="desktop-col">{{ e.landings_night or '—' }}</td>
-                    <td class="desktop-col" style="color:#666;font-size:12px">{{ e.remarks or '' }}</td>
+                    <td class="desktop-col" style="color:#666;font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis">{{ e.remarks or '' }}</td>
                     <td style="white-space:nowrap">
                         <a href="#" onclick="event.stopPropagation();editEntry({{ e.id }}, '{{ e.flight_date }}', '{{ e.dep_place or '' }}', '{{ e.arr_place or '' }}', '{{ e.aircraft_type or '' }}', '{{ e.registration or '' }}', '{{ e.total_time or '' }}', '{{ e.dual or '' }}', '{{ e.remarks or '' }}');return false;" style="color:#666;text-decoration:none;font-size:14px;margin-right:8px">✎</a>
                         <a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="event.stopPropagation();return confirm('Delete this flight?')">✕</a>
@@ -7128,7 +7129,8 @@ LOGBOOK_ALL_HTML = """<!DOCTYPE html>
         .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
         .back { color: #666; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 24px; }
         .card { background: #1a1a2e; border-radius: 12px; padding: 24px; border: 1px solid #2a2a3e; margin-bottom: 16px; }
-        .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+        .table-scroll table { min-width: 900px; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th { text-align: left; padding: 8px 6px; color: #666; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #2a2a3e; white-space: nowrap; }
         td { padding: 8px 6px; border-bottom: 1px solid #1a1a2e; white-space: nowrap; }

@@ -6503,6 +6503,93 @@ Respond ONLY with a JSON object:
     db.session.commit()
     return json.dumps({'ok': True, 'saved': saved, 'flights': flights, 'validation_warning': validation_warning, 'page_totals': page_totals})
 
+@app.route('/logbook/edit/<int:entry_id>', methods=['GET', 'POST'])
+@login_required
+def edit_logbook_entry_page(entry_id):
+    entry = LogbookEntry.query.get_or_404(entry_id)
+    if entry.user_id != current_user.id:
+        return redirect('/my-logbook')
+    if request.method == 'POST':
+        entry.flight_date = request.form.get('flight_date') or entry.flight_date
+        entry.dep_place = request.form.get('dep_place') or entry.dep_place
+        entry.arr_place = request.form.get('arr_place') or entry.arr_place
+        entry.off_block = request.form.get('off_block') or entry.off_block
+        entry.on_block = request.form.get('on_block') or entry.on_block
+        entry.aircraft_type = request.form.get('aircraft_type') or entry.aircraft_type
+        entry.registration = request.form.get('registration') or entry.registration
+        entry.total_time = request.form.get('total_time') or entry.total_time
+        entry.sep_vfr = request.form.get('sep_vfr') or entry.sep_vfr
+        entry.dual = request.form.get('dual') or entry.dual
+        entry.landings_day = request.form.get('landings_day') or entry.landings_day
+        entry.remarks = request.form.get('remarks') or entry.remarks
+        db.session.commit()
+        return redirect('/my-logbook')
+    return render_template_string(LOGBOOK_EDIT_HTML, entry=entry, current_user=current_user)
+
+LOGBOOK_EDIT_HTML = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Flight - PanPanParts</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0d0d1a; color: white; }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a2e; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: #ff6b35; }
+        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .back { color: #666; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 24px; }
+        h1 { font-size: 24px; margin-bottom: 24px; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; border: 1px solid #2a2a3e; }
+        label { font-size: 12px; color: #666; margin-bottom: 4px; display: block; margin-top: 12px; }
+        input, textarea { width: 100%; padding: 10px 12px; border: 1px solid #333; border-radius: 8px; font-size: 14px; background: #0d0d1a; color: white; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .btn-save { background: #ff6b35; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 20px; }
+        .btn-cancel { display: block; text-align: center; color: #666; text-decoration: none; margin-top: 12px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo"><a href="/" style="color:white;text-decoration:none">PanPan<span>Parts</span></a></div>
+    </div>
+    <div class="container">
+        <a href="/my-logbook" class="back">← Back to logbook</a>
+        <h1>Edit flight</h1>
+        <div class="card">
+            <form method="POST">
+                <label>Date</label>
+                <input type="text" name="flight_date" value="{{ entry.flight_date or '' }}">
+                <div class="grid2">
+                    <div><label>From</label><input type="text" name="dep_place" value="{{ entry.dep_place or '' }}"></div>
+                    <div><label>To</label><input type="text" name="arr_place" value="{{ entry.arr_place or '' }}"></div>
+                </div>
+                <div class="grid2">
+                    <div><label>Off block</label><input type="text" name="off_block" value="{{ entry.off_block or '' }}"></div>
+                    <div><label>On block</label><input type="text" name="on_block" value="{{ entry.on_block or '' }}"></div>
+                </div>
+                <div class="grid2">
+                    <div><label>Aircraft type</label><input type="text" name="aircraft_type" value="{{ entry.aircraft_type or '' }}"></div>
+                    <div><label>Registration</label><input type="text" name="registration" value="{{ entry.registration or '' }}"></div>
+                </div>
+                <div class="grid3">
+                    <div><label>Total time</label><input type="text" name="total_time" value="{{ entry.total_time or '' }}"></div>
+                    <div><label>SEP VFR</label><input type="text" name="sep_vfr" value="{{ entry.sep_vfr or '' }}"></div>
+                    <div><label>Dual</label><input type="text" name="dual" value="{{ entry.dual or '' }}"></div>
+                </div>
+                <label>Landings (day)</label>
+                <input type="number" name="landings_day" value="{{ entry.landings_day or 0 }}" min="0">
+                <label>Remarks</label>
+                <input type="text" name="remarks" value="{{ entry.remarks or '' }}">
+                <button type="submit" class="btn-save">Save changes</button>
+            </form>
+            <a href="/my-logbook" class="btn-cancel">Cancel</a>
+        </div>
+    </div>
+</body>
+</html>"""
+
 @app.route('/delete-logbook-entry/<int:entry_id>')
 @login_required
 def delete_logbook_entry(entry_id):
@@ -6717,7 +6804,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <td class="desktop-col">{{ e.landings_night or '—' }}</td>
                     <td class="desktop-col" style="color:#666;font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis">{{ e.remarks or '' }}</td>
                     <td style="white-space:nowrap">
-                        <button onclick="event.stopPropagation();var r=this.closest('tr');editEntry(r.dataset.id,r.dataset.date,r.dataset.dep,r.dataset.arr,r.dataset.type,r.dataset.reg,r.dataset.total,r.dataset.dual,r.dataset.ldg);" style="background:none;border:none;color:#888;font-size:16px;cursor:pointer;padding:0 4px">✎</button>
+                        <a href="#" onclick="event.stopPropagation();window.location='/logbook/edit/'+this.closest('tr').dataset.id;return false;" style="color:#888;text-decoration:none;font-size:16px;padding:0 4px">✎</a>
                         <a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="event.stopPropagation();return confirm('Delete this flight?')">✕</a>
                     </td>
                 </tr>

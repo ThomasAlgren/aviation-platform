@@ -5857,17 +5857,24 @@ def my_logbook():
     for e in entries:
         if e.flight_date:
             try:
-                # Parse DD/MM/YYYY
-                parts = e.flight_date.split('/')
-                if len(parts) == 3:
-                    edate = datetime(int(parts[2]), int(parts[1]), int(parts[0]))
-                    if edate >= six_months_ago:
-                        if e.total_time and e.total_time not in ['—', '-', '']:
-                            tp = e.total_time.replace(':', ' ').split()
-                            if len(tp) == 2:
-                                recent_minutes += int(tp[0]) * 60 + int(tp[1])
-                        if e.landings_day:
-                            recent_landings += int(e.landings_day)
+                # Parse DD/MM/YYYY eller YYYY-MM-DD
+                fd = e.flight_date.strip()
+                edate = None
+                if '/' in fd:
+                    parts = fd.split('/')
+                    if len(parts) == 3:
+                        edate = datetime(int(parts[2]), int(parts[1]), int(parts[0]))
+                elif '-' in fd:
+                    parts = fd.split('-')
+                    if len(parts) == 3:
+                        edate = datetime(int(parts[0]), int(parts[1]), int(parts[2]))
+                if edate and edate >= six_months_ago:
+                    if e.total_time and e.total_time not in ['—', '-', '']:
+                        tp = e.total_time.replace(':', ' ').replace('.', ' ').split()
+                        if len(tp) == 2:
+                            recent_minutes += int(tp[0]) * 60 + int(tp[1])
+                    if e.landings_day:
+                        recent_landings += int(e.landings_day)
             except:
                 pass
     recent_hours = recent_minutes / 60

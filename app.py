@@ -6220,18 +6220,18 @@ def logbook_add_manual():
     # Hent seneste fly til auto-udfyld
     last = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.id.desc()).first()
     
-    # Slå aircraft type op fra register
+    # Slå aircraft type op fra logbogs-historik baseret på registration
     last_type = None
-    if last and last.aircraft_type:
+    if last and last.registration:
+        # Find seneste entry med samme registration der har aircraft_type udfyldt
+        prev = LogbookEntry.query.filter_by(
+            user_id=current_user.id,
+            registration=last.registration
+        ).filter(LogbookEntry.aircraft_type != None, LogbookEntry.aircraft_type != '').order_by(LogbookEntry.id.desc()).first()
+        if prev:
+            last_type = prev.aircraft_type
+    if not last_type and last and last.aircraft_type:
         last_type = last.aircraft_type
-    elif last and last.registration:
-        conn_t = get_pg_conn()
-        cur_t = conn_t.cursor()
-        cur_t.execute("SELECT model FROM aircraft WHERE registration = %s LIMIT 1", (last.registration.upper(),))
-        row_t = cur_t.fetchone()
-        conn_t.close()
-        if row_t:
-            last_type = row_t[0]
     
     return render_template_string("""<!DOCTYPE html>
 <html>
@@ -6278,7 +6278,7 @@ def logbook_add_manual():
                 <div class="field"><label>Aircraft registration</label><input type="text" name="registration" placeholder="OY-BJM" value="{{ last.registration if last else '' }}"></div>
             </div>
             <div class="row">
-                <div class="field"><label>Departure (ICAO)</label><input type="text" name="dep_place" placeholder="EKRK" value="{{ last.dep_place if last else '' }}"></div>
+                <div class="field"><label>Departure (ICAO)</label><input type="text" name="dep_place" placeholder="EKRK" value="{{ last.arr_place if last else '' }}"></div>
                 <div class="field"><label>Arrival (ICAO)</label><input type="text" name="arr_place" placeholder="EKRK"></div>
             </div>
             <div class="row">

@@ -6295,8 +6295,8 @@ def logbook_add_manual():
             <div class="section-title">Flight time</div>
             <div class="row3">
                 <div class="field"><label>Total time</label><input type="text" name="total_time" id="total_time" placeholder="1:30"></div>
-                <div class="field"><label>PIC time</label><input type="text" name="pic_time" placeholder="H:MM"></div>
-                <div class="field"><label>SEP VFR</label><input type="text" name="sep_vfr" placeholder="H:MM"></div>
+                <div class="field"><label>PIC time</label><input type="text" name="pic_time" id="pic_time" placeholder="H:MM"></div>
+                <div class="field"><label>SEP VFR</label><input type="text" name="sep_vfr" id="sep_vfr" placeholder="H:MM"></div>
             </div>
             <div class="row3">
                 <div class="field"><label>Night time</label><input type="number" name="night_time" step="0.01" placeholder="0"></div>
@@ -6332,7 +6332,12 @@ document.querySelector('[name=flight_date]').value = new Date().toISOString().sp
             var diff = onMin - offMin;
             var h = Math.floor(diff / 60);
             var m = diff % 60;
-            document.getElementById('total_time').value = h + ':' + (m < 10 ? '0' : '') + m;
+            var total = h + ':' + (m < 10 ? '0' : '') + m;
+            document.getElementById('total_time').value = total;
+            var pic = document.getElementById('pic_time');
+            var sep = document.getElementById('sep_vfr');
+            if (pic && !pic.value) pic.value = total;
+            if (sep && !sep.value) sep.value = total;
         }
 </script>
 </body>

@@ -6282,8 +6282,8 @@ def logbook_add_manual():
                 <div class="field"><label>Arrival (ICAO)</label><input type="text" name="arr_place" placeholder="EKRK"></div>
             </div>
             <div class="row">
-                <div class="field"><label>Off block</label><input type="time" name="off_block" placeholder="10:00"></div>
-                <div class="field"><label>On block</label><input type="time" name="on_block" placeholder="11:30"></div>
+                <div class="field"><label>Off block</label><input type="time" name="off_block" id="off_block" placeholder="10:00" onchange="calcTotalTime()"></div>
+                <div class="field"><label>On block</label><input type="time" name="on_block" id="on_block" placeholder="11:30" onchange="calcTotalTime()"></div>
             </div>
             <div class="row">
                 <div class="field"><label>Aircraft type</label><input type="text" name="aircraft_type" placeholder="C172" value="{{ last_type or '' }}"></div>
@@ -6294,7 +6294,7 @@ def logbook_add_manual():
         <div class="card">
             <div class="section-title">Flight time</div>
             <div class="row3">
-                <div class="field"><label>Total time</label><input type="text" name="total_time" placeholder="1:30"></div>
+                <div class="field"><label>Total time</label><input type="text" name="total_time" id="total_time" placeholder="1:30"></div>
                 <div class="field"><label>PIC time</label><input type="number" name="pic_time" step="0.01" placeholder="1.5"></div>
                 <div class="field"><label>SEP VFR</label><input type="number" name="sep_vfr" step="0.01" placeholder="1.5"></div>
             </div>
@@ -6320,6 +6320,20 @@ def logbook_add_manual():
 <script>
 // Sæt dagens dato som default
 document.querySelector('[name=flight_date]').value = new Date().toISOString().split('T')[0];
+        function calcTotalTime() {
+            var off = document.getElementById('off_block').value;
+            var on = document.getElementById('on_block').value;
+            if (!off || !on) return;
+            var offParts = off.split(':');
+            var onParts = on.split(':');
+            var offMin = parseInt(offParts[0]) * 60 + parseInt(offParts[1]);
+            var onMin = parseInt(onParts[0]) * 60 + parseInt(onParts[1]);
+            if (onMin < offMin) onMin += 24 * 60;
+            var diff = onMin - offMin;
+            var h = Math.floor(diff / 60);
+            var m = diff % 60;
+            document.getElementById('total_time').value = h + ':' + (m < 10 ? '0' : '') + m;
+        }
 </script>
 </body>
 </html>""", last=last, current_user=current_user, today=__import__('datetime').date.today())

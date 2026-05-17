@@ -6528,18 +6528,18 @@ def edit_logbook_entry_page(entry_id):
         return redirect('/my-logbook')
     if request.method == 'POST':
         entry.flight_date = request.form.get('flight_date') or entry.flight_date
-        entry.dep_place = request.form.get('dep_place') or entry.dep_place
-        entry.arr_place = request.form.get('arr_place') or entry.arr_place
-        entry.off_block = request.form.get('off_block') or entry.off_block
-        entry.on_block = request.form.get('on_block') or entry.on_block
-        entry.aircraft_type = request.form.get('aircraft_type') or entry.aircraft_type
-        entry.registration = request.form.get('registration') or entry.registration
-        entry.total_time = request.form.get('total_time') or entry.total_time
-        entry.pic_time = request.form.get('pic_time') or entry.pic_time
-        entry.sep_vfr = request.form.get('sep_vfr') or entry.sep_vfr
-        entry.dual = request.form.get('dual') or entry.dual
-        entry.landings_day = request.form.get('landings_day') or entry.landings_day
-        entry.remarks = request.form.get('remarks') or entry.remarks
+        entry.dep_place = request.form.get('dep_place', '')
+        entry.arr_place = request.form.get('arr_place', '')
+        entry.off_block = request.form.get('off_block', '')
+        entry.on_block = request.form.get('on_block', '')
+        entry.aircraft_type = request.form.get('aircraft_type', '')
+        entry.registration = request.form.get('registration', '')
+        entry.total_time = request.form.get('total_time', '')
+        entry.pic_time = request.form.get('pic_time', '')
+        entry.sep_vfr = request.form.get('sep_vfr', '')
+        entry.dual = request.form.get('dual', '')
+        entry.landings_day = request.form.get('landings_day') or 0
+        entry.remarks = request.form.get('remarks', '')
         db.session.commit()
         return redirect('/my-logbook')
     return render_template_string(LOGBOOK_EDIT_HTML, entry=entry, current_user=current_user)

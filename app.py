@@ -6787,7 +6787,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <th class="desktop-col">Type</th>
                     <th>Reg</th>
                     <th>Total</th>
-                    <th class="desktop-col">SEP VFR</th>
+                    <th class="desktop-col">PIC</th>
                     <th>Dual</th>
                     <th>Ldg</th>
                     <th></th>
@@ -6811,7 +6811,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <td class="desktop-col">{{ e.aircraft_type or '—' }}</td>
                     <td style="color:#ff6b35">{{ e.registration or '—' }}</td>
                     <td>{{ e.total_time or '—' }}</td>
-                    <td class="desktop-col">{{ e.sep_vfr or '—' }}</td>
+                    <td class="desktop-col">{{ e.pic_time or '—' }}</td>
                     <td>{{ e.dual or '—' }}</td>
                     <td onclick="event.stopPropagation()" style="white-space:nowrap">
                         <button onclick="event.stopPropagation();adjustLandings({{ e.id }}, -1)" style="background:#1a1a2e;border:1px solid #333;color:#aaa;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1">-</button>

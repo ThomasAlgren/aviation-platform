@@ -6295,8 +6295,8 @@ def logbook_add_manual():
             <div class="section-title">Flight time</div>
             <div class="row3">
                 <div class="field"><label>Total time</label><input type="text" name="total_time" id="total_time" placeholder="1:30"></div>
-                <div class="field"><label>PIC time</label><input type="number" name="pic_time" step="0.01" placeholder="1.5"></div>
-                <div class="field"><label>SEP VFR</label><input type="number" name="sep_vfr" step="0.01" placeholder="1.5"></div>
+                <div class="field"><label>PIC time</label><input type="text" name="pic_time" placeholder="H:MM"></div>
+                <div class="field"><label>SEP VFR</label><input type="text" name="sep_vfr" placeholder="H:MM"></div>
             </div>
             <div class="row3">
                 <div class="field"><label>Night time</label><input type="number" name="night_time" step="0.01" placeholder="0"></div>
@@ -6336,7 +6336,7 @@ document.querySelector('[name=flight_date]').value = new Date().toISOString().sp
         }
 </script>
 </body>
-</html>""", last=last, current_user=current_user, today=__import__('datetime').date.today())
+</html>""", last=last, last_type=last_type, current_user=current_user, today=__import__('datetime').date.today())
 
 
 @app.route('/logbook/add-aircraft', methods=['POST'])

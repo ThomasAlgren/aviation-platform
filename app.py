@@ -5800,7 +5800,7 @@ def my_logbook_all():
 @app.route('/my-logbook')
 @login_required
 def my_logbook():
-    entries = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.id.asc()).all()
+    entries = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.id.desc()).all()
     
     total_minutes = 0
     for e in entries:
@@ -6804,7 +6804,7 @@ LOGBOOK_HTML = """<!DOCTYPE html>
                     <td class="desktop-col">{{ e.landings_night or '—' }}</td>
                     <td class="desktop-col" style="color:#666;font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis">{{ e.remarks or '' }}</td>
                     <td style="white-space:nowrap">
-                        <a href="#" onclick="event.stopPropagation();window.location='/logbook/edit/'+this.closest('tr').dataset.id;return false;" style="color:#888;text-decoration:none;font-size:16px;padding:0 4px">✎</a>
+                        <a href="/logbook/edit/{{ e.id }}" onclick="event.stopPropagation();" style="color:#888;text-decoration:none;font-size:16px;padding:0 4px">✎</a>
                         <a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="event.stopPropagation();return confirm('Delete this flight?')">✕</a>
                     </td>
                 </tr>
@@ -7311,7 +7311,7 @@ LOGBOOK_ALL_HTML = """<!DOCTYPE html>
                     <td>{{ e.landings_night or '—' }}</td>
                     <td style="color:#666;font-size:11px">{{ e.remarks or '' }}</td>
                     <td style="white-space:nowrap">
-                        <a href="#" onclick="editEntry({{ e.id }}, '{{ e.flight_date }}', '{{ e.dep_place or '' }}', '{{ e.arr_place or '' }}', '{{ e.aircraft_type or '' }}', '{{ e.registration or '' }}', '{{ e.total_time or '' }}', '{{ e.dual or '' }}', '{{ e.remarks or '' }}');return false;" style="color:#666;text-decoration:none;font-size:14px;margin-right:8px">✎</a>
+                        <a href="/logbook/edit/{{ e.id }}" style="color:#888;text-decoration:none;font-size:16px;margin-right:8px">✎</a>
                         <a href="/delete-logbook-entry/{{ e.id }}" class="delete-btn" onclick="return confirm('Delete this flight?')">✕</a>
                     </td>
                 </tr>

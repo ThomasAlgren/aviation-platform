@@ -6535,6 +6535,7 @@ def edit_logbook_entry_page(entry_id):
         entry.aircraft_type = request.form.get('aircraft_type') or entry.aircraft_type
         entry.registration = request.form.get('registration') or entry.registration
         entry.total_time = request.form.get('total_time') or entry.total_time
+        entry.pic_time = request.form.get('pic_time') or entry.pic_time
         entry.sep_vfr = request.form.get('sep_vfr') or entry.sep_vfr
         entry.dual = request.form.get('dual') or entry.dual
         entry.landings_day = request.form.get('landings_day') or entry.landings_day
@@ -6592,8 +6593,11 @@ LOGBOOK_EDIT_HTML = """<!DOCTYPE html>
                 </div>
                 <div class="grid3">
                     <div><label>Total time</label><input type="text" name="total_time" value="{{ entry.total_time or '' }}"></div>
-                    <div><label>SEP VFR</label><input type="text" name="sep_vfr" value="{{ entry.sep_vfr or '' }}"></div>
+                    <div><label>PIC</label><input type="text" name="pic_time" value="{{ entry.pic_time or '' }}"></div>
                     <div><label>Dual</label><input type="text" name="dual" value="{{ entry.dual or '' }}"></div>
+                </div>
+                <div class="grid3">
+                    <div><label>SEP VFR</label><input type="text" name="sep_vfr" value="{{ entry.sep_vfr or '' }}"></div>
                 </div>
                 <label>Landings (day)</label>
                 <input type="number" name="landings_day" value="{{ entry.landings_day or 0 }}" min="0">

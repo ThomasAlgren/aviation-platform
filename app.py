@@ -6334,10 +6334,8 @@ document.querySelector('[name=flight_date]').value = new Date().toISOString().sp
             var m = diff % 60;
             var total = h + ':' + (m < 10 ? '0' : '') + m;
             document.getElementById('total_time').value = total;
-            var pic = document.getElementById('pic_time');
-            var sep = document.getElementById('sep_vfr');
-            if (pic && !pic.value) pic.value = total;
-            if (sep && !sep.value) sep.value = total;
+            document.getElementById('pic_time').value = total;
+            document.getElementById('sep_vfr').value = total;
         }
 </script>
 </body>

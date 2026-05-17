@@ -1226,9 +1226,9 @@ def index():
     if welcome and current_user.is_authenticated and not current_user.email_verified:
         flash("Welcome! Please check your email and verify your account.", "info")
     tail = request.args.get("tail", "")
-    # Hvis søgning ikke ligner et tail-nummer, send til type-søgning
+    # Hvis søgning ikke ligner et tail-nummer, send til aircraft-for-sale med søgeterm
     if tail and not any(tail.upper().startswith(p) for p in ["OY", "LN", "HB", "VH", "SE", "PH", "OO", "EI", "CS", "EC", "I-", "D-", "F-", "G-", "OE", "C-", "N", "ZK", "ZS"]):
-        return redirect("/type/" + tail.strip().replace(" ", "-"))
+        return redirect("/aircraft-for-sale?q=" + tail.strip().replace(" ", "+"))
     model = request.args.get("model", "")
     state = request.args.get("state", "")
     year_from = request.args.get("year_from", "")
@@ -3119,6 +3119,17 @@ AIRCRAFT_FOR_SALE_HTML = """<!DOCTYPE html>
 <script>
 const ALL_LISTINGS = {{ listings_json|safe }};
 let currentListings = [...ALL_LISTINGS];
+
+// Auto-søg fra URL parameter
+window.addEventListener('DOMContentLoaded', function() {
+    renderListings(ALL_LISTINGS);
+    var params = new URLSearchParams(window.location.search);
+    var q = params.get('q');
+    if (q) {
+        document.getElementById('search-input').value = q;
+        doSearch();
+    }
+});
 
 function renderListings(listings) {
     const grid = document.getElementById('listings-grid');

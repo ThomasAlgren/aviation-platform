@@ -5782,7 +5782,7 @@ def get_certificate(cert_id):
 @app.route('/my-logbook/all')
 @login_required
 def my_logbook_all():
-    entries = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.id.asc()).all()
+    entries = LogbookEntry.query.filter_by(user_id=current_user.id).order_by(LogbookEntry.id.desc()).all()
     total_minutes = 0
     for e in entries:
         if e.total_time and e.total_time not in ['—', '-', '']:

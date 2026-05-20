@@ -1227,7 +1227,7 @@ def index():
         flash("Welcome! Please check your email and verify your account.", "info")
     tail = request.args.get("tail", "")
     # Hvis søgning ikke ligner et tail-nummer, send til aircraft-for-sale med søgeterm
-    if tail and not any(tail.upper().startswith(p) for p in ["OY", "LN", "HB", "VH", "SE", "PH", "OO", "EI", "CS", "EC", "I-", "D-", "F-", "G-", "OE", "C-", "N", "ZK", "ZS"]):
+    if tail and not any(tail.upper().startswith(p) for p in ["OY", "LN", "HB", "VH", "SE", "PH", "OO", "EI", "CS", "EC", "I-", "D-", "F-", "G-", "OE", "C-", "N", "ZK", "ZS", "OH", "SP", "OK", "HA", "YL", "LY", "ES", "YR", "LZ", "SX", "TC", "UR"]):
         return redirect("/aircraft-for-sale?q=" + tail.strip().replace(" ", "+"))
     model = request.args.get("model", "")
     state = request.args.get("state", "")

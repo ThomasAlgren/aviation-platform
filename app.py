@@ -6554,8 +6554,12 @@ def edit_logbook_entry_page(entry_id):
         entry.total_time = request.form.get('total_time', '')
         entry.pic_time = request.form.get('pic_time', '')
         entry.sep_vfr = request.form.get('sep_vfr', '')
+        entry.sep_ifr = request.form.get('sep_ifr', '')
+        entry.mep_ifr = request.form.get('mep_ifr', '')
+        entry.night_time = request.form.get('night_time', '')
         entry.dual = request.form.get('dual', '')
         entry.landings_day = request.form.get('landings_day') or 0
+        entry.landings_night = request.form.get('landings_night') or 0
         entry.remarks = request.form.get('remarks', '')
         db.session.commit()
         return redirect('/my-logbook')
@@ -6615,6 +6619,12 @@ LOGBOOK_EDIT_HTML = """<!DOCTYPE html>
                 </div>
                 <div class="grid3">
                     <div><label>SEP VFR</label><input type="text" name="sep_vfr" value="{{ entry.sep_vfr or '' }}"></div>
+                    <div><label>SEP IFR</label><input type="text" name="sep_ifr" value="{{ entry.sep_ifr or '' }}"></div>
+                    <div><label>Night time</label><input type="text" name="night_time" value="{{ entry.night_time or '' }}"></div>
+                </div>
+                <div class="grid3">
+                    <div><label>Night landings</label><input type="number" name="landings_night" value="{{ entry.landings_night or 0 }}" min="0"></div>
+                    <div><label>MEP IFR</label><input type="text" name="mep_ifr" value="{{ entry.mep_ifr or '' }}"></div>
                 </div>
                 <label>Landings (day)</label>
                 <input type="number" name="landings_day" value="{{ entry.landings_day or 0 }}" min="0">

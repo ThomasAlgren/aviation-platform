@@ -6220,6 +6220,7 @@ def logbook_add_manual():
             night_time=f('night_time'),
             sep_vfr=f('sep_vfr'),
             sep_ifr=f('sep_ifr'),
+            mep_ifr=f('mep_ifr'),
             landings_day=fint('landings_day'),
             landings_night=fint('landings_night'),
             remarks=f('remarks')
@@ -6310,9 +6311,14 @@ def logbook_add_manual():
                 <div class="field"><label>SEP VFR</label><input type="text" name="sep_vfr" id="sep_vfr" placeholder="H:MM"></div>
             </div>
             <div class="row3">
-                <div class="field"><label>Night time</label><input type="number" name="night_time" step="0.01" placeholder="0"></div>
-                <div class="field"><label>Dual received</label><input type="number" name="dual" step="0.01" placeholder="0"></div>
-                <div class="field"><label>Instructor time</label><input type="number" name="instructor_time" step="0.01" placeholder="0"></div>
+                <div class="field"><label>Night time</label><input type="text" name="night_time" placeholder="H:MM"></div>
+                <div class="field"><label>SEP IFR</label><input type="text" name="sep_ifr" placeholder="H:MM"></div>
+                <div class="field"><label>Dual received</label><input type="text" name="dual" placeholder="H:MM"></div>
+            </div>
+            <div class="row3">
+                <div class="field"><label>Instructor time</label><input type="text" name="instructor_time" placeholder="H:MM"></div>
+                <div class="field"><label>MEP IFR</label><input type="text" name="mep_ifr" placeholder="H:MM"></div>
+                <div class="field"></div>
             </div>
         </div>
 
